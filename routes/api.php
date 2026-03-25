@@ -1,0 +1,61 @@
+<?php
+
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ImportController;
+use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\OwnerController;
+use App\Http\Controllers\Api\V1\PlayerController;
+use App\Http\Controllers\Api\V1\ScreenController;
+use App\Http\Controllers\Api\V1\SiteController;
+use App\Http\Controllers\Api\V1\WebhookController;
+use Illuminate\Support\Facades\Route;
+
+// ── Public: OAuth2 client_credentials ───────────────────────
+Route::prefix('v1')->group(function () {
+    Route::post('auth/token', [AuthController::class, 'token']);
+});
+
+// ── OOHX Public API — scope-protected ───────────────────────
+Route::prefix('v1')->middleware(['auth:sanctum', 'ability:inventory'])->group(function () {
+    // Stats & Owners (static routes trước dynamic routes)
+    Route::get('inventory/stats',               [InventoryController::class, 'stats']);
+    Route::get('inventory/venue-types',         [InventoryController::class, 'venueTypes']);
+    Route::get('inventory/networks',            [InventoryController::class, 'networks']);
+    Route::get('inventory/locations',           [InventoryController::class, 'locations']);
+    Route::get('inventory/owners',              [InventoryController::class, 'owners']);
+    Route::get('inventory/owners/{slug}',       [InventoryController::class, 'ownerDetail']);
+
+    // Screens — /map phải đứng TRƯỚC /{screen_id} để tránh route conflict
+    Route::get('inventory/screens/map',         [InventoryController::class, 'map']);
+    Route::get('inventory/screens',             [InventoryController::class, 'index']);
+    Route::get('inventory/screens/{screen_id}', [InventoryController::class, 'show']);
+
+    Route::post('inventory/webhook/register',   [WebhookController::class, 'register']);
+});
+
+// ── Public player endpoints (screen UUID auth) ──────────────
+Route::prefix('v1/player')->group(function () {
+    Route::post('heartbeat',  [PlayerController::class, 'heartbeat']);
+    Route::post('impression', [PlayerController::class, 'impression']);
+});
+
+// ── Authenticated API (Sanctum token) ───────────────────────
+Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
+
+    // Owner management (super_admin only)
+    Route::apiResource('owners', OwnerController::class);
+    Route::post('owners/{owner}/switch',   [OwnerController::class, 'switchContext']);
+    Route::get('owners/{owner}/stats',     [OwnerController::class, 'stats']);
+
+    // Hivestack bulk import
+    Route::post('owners/{owner}/import/hivestack', [ImportController::class, 'hivestackBulk']);
+
+    // Sites (scoped to current owner via GlobalScope)
+    Route::apiResource('sites', SiteController::class);
+
+    // Screens
+    Route::apiResource('screens', ScreenController::class);
+    Route::get ('screens/{screen}/multipliers',    [ScreenController::class, 'multipliers']);
+    Route::put ('screens/{screen}/multipliers',    [ScreenController::class, 'updateMultipliers']);
+    Route::post('screens/{screen}/toggle-programmatic', [ScreenController::class, 'toggleProgrammatic']);
+});

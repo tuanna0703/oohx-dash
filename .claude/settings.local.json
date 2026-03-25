@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'D:/Projects/2026/AdTRUE Platform/adtrue_ssp' -path */Observer -o -path */Events -type d)",
+      "Bash(php artisan:*)",
+      "Bash(grep -r \"protected static string $view\" \"D:/Projects/2026/AdTRUE Platform/adtrue_ssp/app/Filament/Publisher/Resources/ScreenResource\")",
+      "Bash(xargs grep:*)",
+      "Bash(npm run:*)",
+      "Bash(find 'D:/Projects/2026/AdTRUE Platform/adtrue_ssp/vendor/filament' -name *.css)",
+      "Bash(python -c \"import openpyxl; wb = openpyxl.load_workbook\\(''D:/Projects/2026/AdTRUE Platform/AdTRUE_Site_list.xlsx''\\); ws = wb.active; [print\\([cell.value for cell in row]\\) for row in ws.iter_rows\\(max_row=5\\)]\")",
+      "Bash(pip install:*)",
+      "Bash(findstr /i \"disk directory temporary\")",
+      "Bash(findstr /i \"disk\\\\|directory\\\\|temporary_file\")",
+      "Bash(python -c \":*)",
+      "Bash(php -l app/Filament/Publisher/Resources/SiteResource.php)",
+      "Bash(php -l app/Filament/Publisher/Resources/NetworkResource.php)",
+      "Bash(php -l app/Filament/Publisher/Resources/ScreenResource.php)",
+      "Bash(php -l app/Filament/Publisher/Widgets/SiteStatsWidget.php)",
+      "Bash(php -l app/Filament/Publisher/Widgets/NetworkStatsWidget.php)",
+      "Bash(ls \"D:\\\\Projects\\\\2026\\\\AdTRUE Platform\\\\adtrue_ssp\\\\app\\\\Filament\\\\Resources\"\" 2>/dev/null || echo \"not found \")",
+      "WebSearch",
+      "WebFetch(domain:provinces.open-api.vn)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:34tinhthanh.com)",
+      "WebFetch(domain:vanchuyenachau.com.vn)",
+      "Bash(mv CreateNetwork.php Pages/)",
+      "Bash(mv EditNetwork.php Pages/)",
+      "Bash(mv ListNetwork.php Pages/)",
+      "Read(//d/Projects/2026/AdTRUE Platform/**)",
+      "Bash(npx tsc:*)",
+      "Bash(xargs cat:*)"
+    ],
+    "additionalDirectories": [
+      "D:\\Projects\\2026\\AdTRUE Platform\\oohx\\app\\api\\venue-types",
+      "D:\\Projects\\2026\\AdTRUE Platform\\oohx\\app"
+    ]
+  }
+}

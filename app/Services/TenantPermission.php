@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\OwnerUser;
+use App\Models\User;
+
+/**
+ * Helper tập trung để kiểm tra quyền trong Publisher panel.
+ * Dùng thay vì gọi trực tiếp OwnerUser::PERMISSIONS khắp nơi.
+ *
+ * Cách dùng:
+ *   TenantPermission::check('manage_inventory')       // user hiện tại, owner hiện tại
+ *   TenantPermission::check('view_reports', $userId, $ownerId)
+ *   TenantPermission::for(auth()->user())->can('import_inventory')
+ */
+class TenantPermission
+{
+    public function __construct(
+        private readonly User   $user,
+        private readonly string $ownerId,
+    ) {}
+
+    // ── Static entry points ───────────────────────────────────────────────────
+
+    /** Kiểm tra user hiện tại + current_owner_id */
+    public static function check(string $action): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+        if ($user->hasRole('super_admin')) return true;
+
+        return static::for($user)->can($action);
+    }
+
+    /** Tạo instance cho user cụ thể */
+    public static function for(User $user, ?string $ownerId = null): static
+    {
+        return new static($user, $ownerId ?? (string) $user->current_owner_id);
+    }
+
+    // ── Instance methods ──────────────────────────────────────────────────────
+
+    public function can(string $action): bool
+    {
+        if ($this->user->hasRole('super_admin')) return true;
+
+        $ownerUser = $this->getOwnerUser();
+        return $ownerUser?->can($action) ?? false;
+    }
+
+    public function cannot(string $action): bool
+    {
+        return ! $this->can($action);
+    }
+
+    public function role(): ?string
+    {
+        return $this->getOwnerUser()?->role;
+    }
+
+    public function roleLabel(): string
+    {
+        $role = $this->role();
+        return $role ? (OwnerUser::ROLES[$role] ?? $role) : '—';
+    }
+
+    private function getOwnerUser(): ?OwnerUser
+    {
+        if (empty($this->ownerId)) return null;
+
+        return OwnerUser::where('owner_id', $this->ownerId)
+            ->where('user_id', $this->user->id)
+            ->first();
+    }
+}
