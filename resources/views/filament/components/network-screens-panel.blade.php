@@ -60,7 +60,7 @@
 
 @once
     <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
-    <script src="{{ asset('js/network-screens-panel.js') }}"></script>
+    <script src="{{ asset('js/network-screens-panel.js') }}?v={{ filemtime(public_path('js/network-screens-panel.js')) }}"></script>
 @endonce
 
 <div

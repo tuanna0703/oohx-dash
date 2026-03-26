@@ -39,7 +39,7 @@
 
 @once
     <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
-    <script src="{{ asset('js/site-screens-panel.js') }}"></script>
+    <script src="{{ asset('js/site-screens-panel.js') }}?v={{ filemtime(public_path('js/site-screens-panel.js')) }}"></script>
 @endonce
 
 <div
