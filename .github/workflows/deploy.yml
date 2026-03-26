@@ -1,16 +1,20 @@
-name: Test SSH VPS
+name: Deploy Laravel to VPS
 
 on:
   push:
     branches:
       - main
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
 jobs:
-  test-ssh:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH test
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -19,8 +23,6 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script_stop: true
           script: |
-            set -ex
-            whoami
-            hostname
-            pwd
-            ls -la /www/wwwroot/dash.oohx.net
+            set -e
+            cd /www/wwwroot/dash.oohx.net
+            bash deploy.sh
