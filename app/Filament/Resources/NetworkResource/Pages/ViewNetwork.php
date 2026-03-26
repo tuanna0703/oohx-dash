@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\NetworkResource\Pages;
 
 use App\Filament\Resources\NetworkResource;
-use App\Models\Screen;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
@@ -21,11 +20,7 @@ class ViewNetwork extends ViewRecord
     public function infolist(Infolist $infolist): Infolist
     {
         $network = $this->record;
-        $network->load(['owner']);
-
-        $screens = Screen::whereHas('inventory', fn($q) => $q->where('network_id', $network->id))
-            ->with(['site', 'inventory', 'spec'])
-            ->get();
+        $network->loadMissing(['owner']);
 
         return $infolist->schema([
 
@@ -55,43 +50,15 @@ class ViewNetwork extends ViewRecord
                           . ' ' . ($network->default_floor_cpm_currency ?? 'VND')
                         : '—'),
 
-                Infolists\Components\TextEntry::make('screens_count')
-                    ->label('Total Screens')
-                    ->getStateUsing(fn() => $screens->count() . ' màn hình'),
-
             ]),
 
-            Infolists\Components\Section::make('Screens in this network')
-                ->description('Danh sách màn hình thuộc network này')
+            Infolists\Components\Section::make('Màn hình trong network')
+                ->description('Lọc và xem màn hình theo danh sách hoặc bản đồ')
                 ->schema([
-                    Infolists\Components\RepeatableEntry::make('screens_list')
+                    Infolists\Components\ViewEntry::make('screens_panel')
                         ->label('')
-                        ->getStateUsing(fn() => $screens->map(fn($s) => [
-                            'id'          => $s->id,
-                            'name'        => $s->name,
-                            'external_id' => $s->external_id,
-                            'site_name'   => $s->site?->name ?? '—',
-                            'status'      => $s->active ? 'Active' : 'Inactive',
-                            'floor_cpm'   => $s->inventory?->floor_cpm
-                                ? number_format((float) $s->inventory->floor_cpm, 2)
-                                  . ' ' . ($s->inventory->floor_cpm_currency ?? 'VND')
-                                : '—',
-                        ])->toArray())
-                        ->columns(4)
-                        ->schema([
-                            Infolists\Components\TextEntry::make('external_id')
-                                ->label('Screen ID')->fontFamily('mono'),
-                            Infolists\Components\TextEntry::make('name')
-                                ->label('Name'),
-                            Infolists\Components\TextEntry::make('site_name')
-                                ->label('Site'),
-                            Infolists\Components\TextEntry::make('floor_cpm')
-                                ->label('Floor CPM'),
-                            Infolists\Components\TextEntry::make('status')
-                                ->label('Status')
-                                ->badge()
-                                ->color(fn($state) => $state === 'Active' ? 'success' : 'danger'),
-                        ]),
+                        ->view('filament.components.network-screens-panel')
+                        ->columnSpanFull(),
                 ]),
 
         ]);

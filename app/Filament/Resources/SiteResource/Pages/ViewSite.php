@@ -20,7 +20,7 @@ class ViewSite extends ViewRecord
     public function infolist(Infolist $infolist): Infolist
     {
         $site = $this->record;
-        $site->load(['owner', 'province', 'commune', 'screens']);
+        $site->loadMissing(['owner', 'province', 'commune']);
 
         return $infolist->schema([
 
@@ -46,10 +46,6 @@ class ViewSite extends ViewRecord
                         'closed' => 'danger',
                         default  => 'gray',
                     }),
-
-                Infolists\Components\TextEntry::make('screens_count')
-                    ->label('Screens')
-                    ->getStateUsing(fn() => $site->screens->count() . ' màn hình'),
 
             ]),
 
@@ -87,6 +83,15 @@ class ViewSite extends ViewRecord
                     ->columnSpanFull(),
 
             ]),
+
+            Infolists\Components\Section::make('Màn hình tại site')
+                ->description('Lọc và xem màn hình theo danh sách hoặc bản đồ')
+                ->schema([
+                    Infolists\Components\ViewEntry::make('screens_panel')
+                        ->label('')
+                        ->view('filament.components.site-screens-panel')
+                        ->columnSpanFull(),
+                ]),
 
         ]);
     }
