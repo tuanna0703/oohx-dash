@@ -3,7 +3,7 @@
 namespace App\Filament\Publisher\Resources\ScreenResource\Pages;
 
 use App\Filament\Concerns\SavesScreenRelationships;
-use App\Filament\Resources\ScreenResource;
+use App\Filament\Publisher\Resources\ScreenResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateScreen extends CreateRecord

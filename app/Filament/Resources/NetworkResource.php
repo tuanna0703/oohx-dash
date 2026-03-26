@@ -1,50 +1,68 @@
 <?php
+
 namespace App\Filament\Resources;
 
-use App\Models\Network;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
 use App\Filament\Resources\NetworkResource\Pages;
+use App\Filament\Shared\Resources\BaseNetworkResource;
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
 
-
-class NetworkResource extends Resource
+class NetworkResource extends BaseNetworkResource
 {
-    protected static ?string $model = Network::class;
-
-    protected static ?string $navigationGroup = 'Inventory';
-
+    // Admin xem tất cả owners, không scope theo tenant
     protected static ?int $navigationSort = 4;
 
-    public static function form(Form $form): Form
+    // ── Phân quyền: admin luôn có toàn quyền ─────────────────────────────────
+
+    public static function canViewAny(): bool  { return true; }
+    public static function canCreate(): bool   { return true; }
+    public static function canEdit($r): bool   { return true; }
+    public static function canDelete($r): bool { return true; }
+
+    // getEloquentQuery() không override → admin thấy toàn bộ networks
+
+    // ── Owner field trong form ────────────────────────────────────────────────
+
+    protected static function ownerFormField(): Forms\Components\Component
     {
-        return $form->schema([
-            Forms\Components\Select::make('owner_id')
-                ->relationship('owner', 'name')->searchable()->preload()->required(),
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\Textarea::make('description'),
-            Forms\Components\TextInput::make('default_floor_cpm')->numeric()->label('Default Floor CPM'),
-            Forms\Components\Select::make('default_floor_cpm_currency')
-                ->options(['VND'=>'VND','USD'=>'USD'])->default('VND'),
-            Forms\Components\Select::make('status')
-                ->options(['active'=>'Active','paused'=>'Paused'])->default('active'),
-        ]);
+        return Forms\Components\Select::make('owner_id')
+            ->label('Media Owner')
+            ->relationship('owner', 'name')
+            ->searchable()
+            ->preload()
+            ->required();
     }
 
-    public static function table(Table $table): Table
+    // ── Owner column trong table ──────────────────────────────────────────────
+
+    protected static function additionalTableColumns(): array
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-            Tables\Columns\TextColumn::make('owner.name')->label('Owner'),
-            Tables\Columns\TextColumn::make('default_floor_cpm')->label('Floor CPM'),
-            Tables\Columns\TextColumn::make('default_floor_cpm_currency')->label('Currency'),
-            Tables\Columns\BadgeColumn::make('status')
-                ->colors(['success'=>'active','warning'=>'paused']),
-        ])
-        ->actions([Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make()]);
+        return [
+            Tables\Columns\TextColumn::make('owner.name')
+                ->label('Owner')
+                ->sortable()
+                ->searchable()
+                ->toggleable(),
+        ];
     }
+
+    // ── Owner filter trong table ──────────────────────────────────────────────
+
+    protected static function additionalFilters(): array
+    {
+        return [
+            SelectFilter::make('owner')
+                ->label('Media Owner')
+                ->relationship('owner', 'name')
+                ->searchable(),
+        ];
+    }
+
+    // ── Admin không có trang View riêng cho Network ───────────────────────────
+    // hasViewPage() trả false theo default của base class
+
+    // ── Pages ─────────────────────────────────────────────────────────────────
 
     public static function getPages(): array
     {
