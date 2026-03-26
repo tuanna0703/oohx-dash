@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('webhook_subscriptions')) return;
         Schema::create('webhook_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->string('webhook_id')->unique();
