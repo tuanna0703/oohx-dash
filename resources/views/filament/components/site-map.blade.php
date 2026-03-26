@@ -1,9 +1,8 @@
 @php
     $record = $getRecord();
-    $site = $record->relationLoaded('site') ? $record->site : $record->site()->first();
-    $lat = $site?->lat ?? $record->lat ?? null;
-    $lon = $site?->lon ?? $record->lon ?? null;
-    $screenName = e($record->name ?? 'Screen');
+    $lat = $record->lat ?? null;
+    $lon = $record->lon ?? null;
+    $siteName = e($record->name ?? 'Site');
     $hasLocation = $lat && $lon;
 @endphp
 
@@ -31,16 +30,10 @@
                      attribution: '&copy; OpenStreetMap contributors',
                      maxZoom: 19,
                  }).addTo(map);
-                 L.circleMarker([{{ $lat }}, {{ $lon }}], {
-                     radius: 8,
-                     color: '#1d4ed8',
-                     fillColor: '#2563EB',
-                     fillOpacity: 1,
-                     weight: 3,
-                 }).addTo(map).bindPopup('{{ $screenName }}').openPopup();
-                 L.circle([{{ $lat }}, {{ $lon }}], {
-                     radius: 100, color: '#3B82F6', fillColor: '#93C5FD', fillOpacity: 0.35, weight: 2,
-                 }).addTo(map);
+                 L.marker([{{ $lat }}, {{ $lon }}])
+                     .addTo(map)
+                     .bindPopup('{{ $siteName }}')
+                     .openPopup();
              }
          }"
          x-init="initMap()"

@@ -12,6 +12,7 @@ class SiteResource extends BaseSiteResource
     // ── Phân quyền theo tenant ────────────────────────────────────────────────
 
     public static function canViewAny(): bool  { return TenantPermission::check('view_inventory'); }
+    public static function canView($r): bool   { return TenantPermission::check('view_inventory'); }
     public static function canCreate(): bool   { return TenantPermission::check('manage_inventory'); }
     public static function canEdit($r): bool   { return TenantPermission::check('manage_inventory'); }
     public static function canDelete($r): bool { return TenantPermission::check('manage_inventory'); }
@@ -34,6 +35,7 @@ class SiteResource extends BaseSiteResource
             'index'  => Pages\ListSite::route('/'),
             'create' => Pages\CreateSite::route('/create'),
             'edit'   => Pages\EditSite::route('/{record}/edit'),
+            'view'   => Pages\ViewSite::route('/{record}'),
         ];
     }
 }

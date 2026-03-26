@@ -16,6 +16,7 @@ class SiteResource extends BaseSiteResource
     // ── Phân quyền: admin luôn có toàn quyền ─────────────────────────────────
 
     public static function canViewAny(): bool  { return true; }
+    public static function canView($r): bool   { return true; }
     public static function canCreate(): bool   { return true; }
     public static function canEdit($r): bool   { return true; }
     public static function canDelete($r): bool { return true; }
@@ -67,6 +68,7 @@ class SiteResource extends BaseSiteResource
             'index'  => Pages\ListSites::route('/'),
             'create' => Pages\CreateSite::route('/create'),
             'edit'   => Pages\EditSite::route('/{record}/edit'),
+            'view'   => Pages\ViewSite::route('/{record}'),
         ];
     }
 }

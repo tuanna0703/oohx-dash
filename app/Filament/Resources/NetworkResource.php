@@ -16,9 +16,12 @@ class NetworkResource extends BaseNetworkResource
     // ── Phân quyền: admin luôn có toàn quyền ─────────────────────────────────
 
     public static function canViewAny(): bool  { return true; }
+    public static function canView($r): bool   { return true; }
     public static function canCreate(): bool   { return true; }
     public static function canEdit($r): bool   { return true; }
     public static function canDelete($r): bool { return true; }
+
+    protected static function hasViewPage(): bool { return true; }
 
     // getEloquentQuery() không override → admin thấy toàn bộ networks
 
@@ -59,9 +62,6 @@ class NetworkResource extends BaseNetworkResource
         ];
     }
 
-    // ── Admin không có trang View riêng cho Network ───────────────────────────
-    // hasViewPage() trả false theo default của base class
-
     // ── Pages ─────────────────────────────────────────────────────────────────
 
     public static function getPages(): array
@@ -70,6 +70,7 @@ class NetworkResource extends BaseNetworkResource
             'index'  => Pages\ListNetworks::route('/'),
             'create' => Pages\CreateNetwork::route('/create'),
             'edit'   => Pages\EditNetwork::route('/{record}/edit'),
+            'view'   => Pages\ViewNetwork::route('/{record}'),
         ];
     }
 }

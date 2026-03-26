@@ -325,7 +325,9 @@ abstract class BaseSiteResource extends Resource
                 ...static::additionalFilters(),
             ])
             ->filtersFormColumns(3)
+            ->recordUrl(fn(Site $record) => static::getUrl('view', ['record' => $record]))
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
