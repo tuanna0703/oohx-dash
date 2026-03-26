@@ -19,7 +19,7 @@ Route::get('/geocode/search', function () {
         'Accept-Language' => 'vi,en',
     ])->get('https://nominatim.openstreetmap.org/search', [
         'format' => 'json',
-        'limit'  => 1,
+        'limit'  => 5,
         'q'      => $q,
     ]);
 

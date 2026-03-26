@@ -3,7 +3,7 @@
      Cập nhật data.lat / data.lon trong Livewire form state khi:
        - Click trên map
        - Kéo marker
-       - Tìm địa điểm qua search
+       - Chọn từ suggestion dropdown khi gõ
 --}}
 
 @once
@@ -18,7 +18,10 @@
         searchQuery: '',
         searching: false,
         searchError: '',
+        suggestions: [],
+        showSuggestions: false,
         _skipWatch: false,
+        _debounceTimer: null,
 
         get latVal() { return parseFloat(this.$wire.data?.lat) || null },
         get lonVal() { return parseFloat(this.$wire.data?.lon) || null },
@@ -31,7 +34,6 @@
                 }
                 this.initMap();
 
-                // Khi người dùng nhập lat/lon trực tiếp → update marker
                 this.$watch('$wire.data.lat', () => {
                     if (this._skipWatch) { this._skipWatch = false; return; }
                     this.syncMarkerFromForm();
@@ -44,7 +46,6 @@
         },
 
         initMap() {
-            // Fix default marker icon path khi serve từ local
             delete L.Icon.Default.prototype._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconUrl:       '/vendor/leaflet/images/marker-icon.png',
@@ -103,49 +104,54 @@
             this.map.setView([lat, lon], Math.max(this.map.getZoom(), 14));
         },
 
-        async searchLocation() {
+        onSearchInput() {
+            clearTimeout(this._debounceTimer);
             const q = this.searchQuery.trim();
-            if (!q) return;
+            if (q.length < 3) {
+                this.suggestions = [];
+                this.showSuggestions = false;
+                return;
+            }
+            this._debounceTimer = setTimeout(() => this.fetchSuggestions(q), 400);
+        },
 
+        async fetchSuggestions(q) {
             this.searching = true;
             this.searchError = '';
-
             try {
-                const url = '/geocode/search?q=' + encodeURIComponent(q);
-
-                const resp = await fetch(url, {
+                const resp = await fetch('/geocode/search?q=' + encodeURIComponent(q), {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-
                 if (!resp.ok) {
                     this.searchError = 'Lỗi server: HTTP ' + resp.status;
                     return;
                 }
-
-                const results = await resp.json();
-
-                if (!results.length) {
-                    this.searchError = 'Không tìm thấy địa điểm.';
-                    return;
-                }
-
-                const { lat, lon, display_name } = results[0];
-                const parsedLat = parseFloat(parseFloat(lat).toFixed(7));
-                const parsedLon = parseFloat(parseFloat(lon).toFixed(7));
-
-                this._placeMarker(parsedLat, parsedLon);
-                this._updateForm(parsedLat, parsedLon);
-                this.map.setView([parsedLat, parsedLon], 16);
-
-                if (this.marker) {
-                    this.marker.bindPopup(display_name).openPopup();
-                }
+                this.suggestions = await resp.json();
+                this.showSuggestions = this.suggestions.length > 0;
             } catch (err) {
                 this.searchError = 'Lỗi: ' + err.message;
                 console.error('Map search error:', err);
             } finally {
                 this.searching = false;
             }
+        },
+
+        selectSuggestion(item) {
+            const lat = parseFloat(parseFloat(item.lat).toFixed(7));
+            const lon = parseFloat(parseFloat(item.lon).toFixed(7));
+            this.searchQuery = item.display_name;
+            this.suggestions = [];
+            this.showSuggestions = false;
+            this._placeMarker(lat, lon);
+            this._updateForm(lat, lon);
+            this.map.setView([lat, lon], 16);
+            if (this.marker) {
+                this.marker.bindPopup(item.display_name).openPopup();
+            }
+        },
+
+        closeSuggestions() {
+            setTimeout(() => { this.showSuggestions = false; }, 150);
         },
     }"
     x-init="init()"
@@ -161,21 +167,47 @@
         </span>
     </div>
 
-    {{-- Search Box --}}
-    <div class="mb-2 flex gap-2">
-        <input
-            x-model="searchQuery"
-            @keydown.enter.prevent="searchLocation()"
-            type="text"
-            placeholder="Tìm địa điểm... (ví dụ: AEON Mall Hà Đông, Hà Nội)"
-            class="w-full flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm
-                   placeholder-gray-400
-                   focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
-                   dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-        />
+    {{-- Search Box with Suggestions --}}
+    <div class="relative mb-2 flex gap-2">
+        <div class="relative flex-1">
+            <input
+                x-model="searchQuery"
+                @input="onSearchInput()"
+                @keydown.enter.prevent="fetchSuggestions(searchQuery.trim())"
+                @keydown.escape="showSuggestions = false"
+                @blur="closeSuggestions()"
+                type="text"
+                placeholder="Gõ địa chỉ để tìm... (ví dụ: 105 Lạc Long Quân, Hà Nội)"
+                autocomplete="off"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm
+                       placeholder-gray-400
+                       focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+                       dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+            />
+
+            {{-- Suggestions Dropdown --}}
+            <ul
+                x-show="showSuggestions"
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                class="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border
+                       border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+            >
+                <template x-for="(item, index) in suggestions" :key="index">
+                    <li
+                        @mousedown.prevent="selectSuggestion(item)"
+                        class="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700
+                               dark:text-gray-200 dark:hover:bg-gray-700"
+                        x-text="item.display_name"
+                    ></li>
+                </template>
+            </ul>
+        </div>
+
         <button
             type="button"
-            @click="searchLocation()"
+            @click="fetchSuggestions(searchQuery.trim())"
             :disabled="searching"
             class="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium
                    text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60
@@ -188,7 +220,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
-            <span x-text="searching ? 'Đang tìm...' : 'Tìm'"></span>
+            <span x-text="searching ? '...' : 'Tìm'"></span>
         </button>
     </div>
 
