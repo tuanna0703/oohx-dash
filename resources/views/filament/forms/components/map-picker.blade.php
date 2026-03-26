@@ -60,7 +60,7 @@
             this.map = L.map(this.$refs.mapEl, { zoomControl: true }).setView([lat, lon], zoom);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>',
+                attribution: '&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a>',
                 maxZoom: 19,
             }).addTo(this.map);
 
