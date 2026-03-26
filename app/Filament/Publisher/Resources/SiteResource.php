@@ -140,8 +140,19 @@ class SiteResource extends Resource
                     ->options(['active' => 'Active', 'paused' => 'Paused', 'closed' => 'Closed'])
                     ->default('active'),
 
-                Forms\Components\TextInput::make('lat')->label('Latitude')->numeric(),
-                Forms\Components\TextInput::make('lon')->label('Longitude')->numeric(),
+                Forms\Components\TextInput::make('lat')
+                    ->label('Latitude')
+                    ->numeric()
+                    ->live(debounce: 800),
+
+                Forms\Components\TextInput::make('lon')
+                    ->label('Longitude')
+                    ->numeric()
+                    ->live(debounce: 800),
+
+                // ── Map Preview ────────────────────────────────────────────
+                Forms\Components\View::make('filament.forms.components.map-picker')
+                    ->columnSpan(2),
             ]),
         ]);
     }
