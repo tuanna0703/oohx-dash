@@ -8,14 +8,17 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('sites', function (Blueprint $table) {
-            $table->unsignedBigInteger('province_id')->nullable()->after('country');
-            $table->unsignedBigInteger('commune_id')->nullable()->after('province_id');
-
-            $table->foreign('province_id')->references('id')->on('vietnam_provinces')->nullOnDelete();
-            $table->foreign('commune_id')->references('id')->on('vietnam_communes')->nullOnDelete();
-
-            $table->index('province_id');
-            $table->index('commune_id');
+            $cols = Schema::getColumnListing('sites');
+            if (! in_array('province_id', $cols)) {
+                $table->unsignedBigInteger('province_id')->nullable()->after('country');
+                $table->foreign('province_id')->references('id')->on('vietnam_provinces')->nullOnDelete();
+                $table->index('province_id');
+            }
+            if (! in_array('commune_id', $cols)) {
+                $table->unsignedBigInteger('commune_id')->nullable()->after('province_id');
+                $table->foreign('commune_id')->references('id')->on('vietnam_communes')->nullOnDelete();
+                $table->index('commune_id');
+            }
         });
     }
 

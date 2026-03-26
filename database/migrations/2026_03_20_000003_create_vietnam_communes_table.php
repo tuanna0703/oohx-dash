@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('vietnam_communes', function (Blueprint $table) {
+        Schema::createOrFirst('vietnam_communes', function (Blueprint $table) {
             $table->id();
             $table->string('code', 20)->unique();   // Mã xã/phường (VD: 00001)
             $table->string('name', 150);             // Tên ngắn (VD: Phúc Xá)

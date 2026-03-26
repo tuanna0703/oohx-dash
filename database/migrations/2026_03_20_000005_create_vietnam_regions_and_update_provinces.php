@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         // Bảng 8 vùng kinh tế-xã hội
-        Schema::create('vietnam_regions', function (Blueprint $table) {
+        Schema::createOrFirst('vietnam_regions', function (Blueprint $table) {
             $table->id();
             $table->string('code', 10)->unique();   // VD: TAY_BAC, DBSH
             $table->string('name', 100);             // VD: Tây Bắc
@@ -22,9 +22,11 @@ return new class extends Migration {
 
         // Thêm region_id vào vietnam_provinces
         Schema::table('vietnam_provinces', function (Blueprint $table) {
-            $table->unsignedBigInteger('region_id')->nullable()->after('region');
-            $table->foreign('region_id')->references('id')->on('vietnam_regions')->nullOnDelete();
-            $table->index('region_id');
+            if (! Schema::hasColumn('vietnam_provinces', 'region_id')) {
+                $table->unsignedBigInteger('region_id')->nullable()->after('region');
+                $table->foreign('region_id')->references('id')->on('vietnam_regions')->nullOnDelete();
+                $table->index('region_id');
+            }
         });
     }
 
