@@ -7,17 +7,8 @@
 --}}
 
 @once
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
-    />
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs="
-        crossorigin=""
-    ></script>
+    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
+    <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
 @endonce
 
 <div
@@ -112,11 +103,10 @@
             this.searchError = '';
 
             try {
-                const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='
-                    + encodeURIComponent(q);
+                const url = '/geocode/search?q=' + encodeURIComponent(q);
 
                 const resp = await fetch(url, {
-                    headers: { 'Accept-Language': 'vi,en', 'User-Agent': 'AdTRUE-SSP/1.0' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
