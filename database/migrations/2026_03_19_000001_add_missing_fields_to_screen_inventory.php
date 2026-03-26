@@ -16,32 +16,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('screen_inventory', function (Blueprint $table) {
-
-            // Số màn hình vật lý tại location này (dùng để nhân impression).
-            // NULL = không override, dùng mặc định 1.
-            $table->unsignedSmallInteger('screen_count_override')
-                  ->nullable()
-                  ->default(null)
-                  ->after('share_of_voice_max_pct')
-                  ->comment('Override số màn hình tại location — NULL = 1 (mặc định)');
-
-            // Advertiser frequency cap (0 = không giới hạn, đơn vị: giây)
-            $table->unsignedInteger('frequency_cap')
-                  ->default(0)
-                  ->after('screen_count_override')
-                  ->comment('Advertiser frequency cap tính bằng giây (0 = unlimited)');
-
-            // Category-level frequency cap
-            $table->unsignedInteger('category_frequency_cap')
-                  ->default(0)
-                  ->after('frequency_cap')
-                  ->comment('Category frequency cap tính bằng giây (0 = unlimited)');
-
-            // Strict frequency capping flag
-            $table->boolean('strict_frequency_capping')
-                  ->default(false)
-                  ->after('category_frequency_cap')
-                  ->comment('Bật strict frequency capping — từ chối ad nếu đạt cap');
+            if (! Schema::hasColumn('screen_inventory', 'screen_count_override')) {
+                $table->unsignedSmallInteger('screen_count_override')
+                      ->nullable()
+                      ->default(null)
+                      ->after('share_of_voice_max_pct')
+                      ->comment('Override số màn hình tại location — NULL = 1 (mặc định)');
+            }
+            if (! Schema::hasColumn('screen_inventory', 'frequency_cap')) {
+                $table->unsignedInteger('frequency_cap')
+                      ->default(0)
+                      ->after('screen_count_override')
+                      ->comment('Advertiser frequency cap tính bằng giây (0 = unlimited)');
+            }
+            if (! Schema::hasColumn('screen_inventory', 'category_frequency_cap')) {
+                $table->unsignedInteger('category_frequency_cap')
+                      ->default(0)
+                      ->after('frequency_cap')
+                      ->comment('Category frequency cap tính bằng giây (0 = unlimited)');
+            }
+            if (! Schema::hasColumn('screen_inventory', 'strict_frequency_capping')) {
+                $table->boolean('strict_frequency_capping')
+                      ->default(false)
+                      ->after('category_frequency_cap')
+                      ->comment('Bật strict frequency capping — từ chối ad nếu đạt cap');
+            }
         });
     }
 
