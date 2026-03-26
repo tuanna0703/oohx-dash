@@ -53,8 +53,11 @@
     };
 </script>
 
-@once
+@pushOnce('styles')
     <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
+@endPushOnce
+
+@once
     <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
 
     <script>
