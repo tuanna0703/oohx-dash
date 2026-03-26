@@ -8,16 +8,18 @@ return new class extends Migration {
     public function up(): void
     {
         // Bảng 8 vùng kinh tế-xã hội
-        Schema::createOrFirst('vietnam_regions', function (Blueprint $table) {
-            $table->id();
-            $table->string('code', 10)->unique();   // VD: TAY_BAC, DBSH
-            $table->string('name', 100);             // VD: Tây Bắc
-            $table->string('full_name', 150);        // VD: Vùng Tây Bắc
-            $table->unsignedSmallInteger('sort')->default(0);
-            $table->timestamps();
-        });
-        if (\DB::getDriverName() === 'mysql') {
-            \DB::statement("ALTER TABLE vietnam_regions CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        if (! Schema::hasTable('vietnam_regions')) {
+            Schema::create('vietnam_regions', function (Blueprint $table) {
+                $table->id();
+                $table->string('code', 10)->unique();
+                $table->string('name', 100);
+                $table->string('full_name', 150);
+                $table->unsignedSmallInteger('sort')->default(0);
+                $table->timestamps();
+            });
+            if (\DB::getDriverName() === 'mysql') {
+                \DB::statement("ALTER TABLE vietnam_regions CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            }
         }
 
         // Thêm region_id vào vietnam_provinces

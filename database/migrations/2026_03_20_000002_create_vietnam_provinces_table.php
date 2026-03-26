@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::createOrFirst('vietnam_provinces', function (Blueprint $table) {
+        if (Schema::hasTable('vietnam_provinces')) return;
+        Schema::create('vietnam_provinces', function (Blueprint $table) {
             $table->id();
             $table->string('code', 10)->unique();   // Mã tỉnh/thành (VD: 01, 79)
             $table->string('name', 100);             // Tên ngắn (VD: Hà Nội)
