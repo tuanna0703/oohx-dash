@@ -24,46 +24,5 @@ jobs:
           script_stop: true
           script: |
             set -e
-
-            APP_DIR="/www/wwwroot/dash.oohx.net"
-            BRANCH="main"
-
-            echo "==== START DEPLOY ===="
-            cd $APP_DIR
-
-            echo "==== WHO AM I ===="
-            whoami
-            pwd
-
-            echo "==== ENABLE MAINTENANCE MODE ===="
-            php artisan down || true
-
-            echo "==== SAVE CURRENT COMMIT ===="
-            git rev-parse HEAD > .previous_deploy_commit || true
-
-            echo "==== GIT PULL ===="
-            git fetch origin
-            git reset --hard origin/$BRANCH
-
-            echo "==== COMPOSER INSTALL ===="
-            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-            echo "==== LARAVEL COMMANDS ===="
-            php artisan migrate --force
-            php artisan optimize:clear
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan event:cache || true
-
-            echo "==== FIX PERMISSIONS ===="
-            chown -R www:www storage bootstrap/cache || true
-            chmod -R 775 storage bootstrap/cache || true
-
-            echo "==== RESTART QUEUE ===="
-            php artisan queue:restart || true
-
-            echo "==== DISABLE MAINTENANCE MODE ===="
-            php artisan up || true
-
-            echo "==== DEPLOY DONE ===="
+            cd /www/wwwroot/dash.oohx.net
+            bash deploy.sh
