@@ -8,8 +8,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('screen_specs', function (Blueprint $table) {
-            $table->string('width_unit', 5)->default('cm')->after('width_cm');
-            $table->string('height_unit', 5)->default('cm')->after('height_cm');
+            if (! Schema::hasColumn('screen_specs', 'width_unit')) {
+                $table->string('width_unit', 5)->default('cm')->after('width_cm');
+            }
+            if (! Schema::hasColumn('screen_specs', 'height_unit')) {
+                $table->string('height_unit', 5)->default('cm')->after('height_cm');
+            }
         });
     }
 

@@ -7,17 +7,27 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // screens: compound index for sorting by name per owner
-        Schema::table('screens', function (Blueprint $table) {
-            $table->index(['owner_id', 'name'], 'screens_owner_name_idx');
-            $table->index(['owner_id', 'site_id'], 'screens_owner_site_idx');
-            $table->index(['owner_id', 'deleted_at'], 'screens_owner_deleted_idx');
+        $screenIndexes = collect(\DB::select("SHOW INDEX FROM screens"))->pluck('Key_name');
+        Schema::table('screens', function (Blueprint $table) use ($screenIndexes) {
+            if (! $screenIndexes->contains('screens_owner_name_idx')) {
+                $table->index(['owner_id', 'name'], 'screens_owner_name_idx');
+            }
+            if (! $screenIndexes->contains('screens_owner_site_idx')) {
+                $table->index(['owner_id', 'site_id'], 'screens_owner_site_idx');
+            }
+            if (! $screenIndexes->contains('screens_owner_deleted_idx')) {
+                $table->index(['owner_id', 'deleted_at'], 'screens_owner_deleted_idx');
+            }
         });
 
-        // screen_inventory: index for filter queries using whereIn
-        Schema::table('screen_inventory', function (Blueprint $table) {
-            $table->index('network_id', 'screen_inventory_network_idx');
-            $table->index('venue_type', 'screen_inventory_venue_type_idx');
+        $inventoryIndexes = collect(\DB::select("SHOW INDEX FROM screen_inventory"))->pluck('Key_name');
+        Schema::table('screen_inventory', function (Blueprint $table) use ($inventoryIndexes) {
+            if (! $inventoryIndexes->contains('screen_inventory_network_idx')) {
+                $table->index('network_id', 'screen_inventory_network_idx');
+            }
+            if (! $inventoryIndexes->contains('screen_inventory_venue_type_idx')) {
+                $table->index('venue_type', 'screen_inventory_venue_type_idx');
+            }
         });
     }
 

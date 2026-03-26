@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void {
         Schema::table('networks', function (Blueprint $table) {
-            $table->string('code', 100)->nullable()->unique()->after('id');
+            if (! Schema::hasColumn('networks', 'code')) {
+                $table->string('code', 100)->nullable()->unique()->after('id');
+            }
         });
     }
     public function down(): void {

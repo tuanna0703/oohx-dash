@@ -8,14 +8,18 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('screen_inventory', function (Blueprint $table) {
-            $table->boolean('ad_server_enabled')
-                  ->default(true)
-                  ->after('pmp_only')
-                  ->comment('Cho phép phục vụ direct/ad server campaigns');
-            $table->boolean('deals_enabled')
-                  ->default(true)
-                  ->after('ad_server_enabled')
-                  ->comment('Cho phép phục vụ PMP deals');
+            if (! Schema::hasColumn('screen_inventory', 'ad_server_enabled')) {
+                $table->boolean('ad_server_enabled')
+                      ->default(true)
+                      ->after('pmp_only')
+                      ->comment('Cho phép phục vụ direct/ad server campaigns');
+            }
+            if (! Schema::hasColumn('screen_inventory', 'deals_enabled')) {
+                $table->boolean('deals_enabled')
+                      ->default(true)
+                      ->after('ad_server_enabled')
+                      ->comment('Cho phép phục vụ PMP deals');
+            }
         });
     }
 
