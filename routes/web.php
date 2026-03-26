@@ -24,4 +24,4 @@ Route::get('/geocode/search', function () {
     ]);
 
     return response()->json($response->json());
-})->middleware('auth');
+});

@@ -44,6 +44,14 @@
         },
 
         initMap() {
+            // Fix default marker icon path khi serve từ local
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconUrl:       '/vendor/leaflet/images/marker-icon.png',
+                iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
+                shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
+            });
+
             const lat = this.latVal || 10.7769;
             const lon = this.lonVal || 106.7009;
             const zoom = (this.latVal && this.lonVal) ? 15 : 6;
@@ -109,7 +117,10 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                if (!resp.ok) {
+                    this.searchError = 'Lỗi server: HTTP ' + resp.status;
+                    return;
+                }
 
                 const results = await resp.json();
 
@@ -130,7 +141,7 @@
                     this.marker.bindPopup(display_name).openPopup();
                 }
             } catch (err) {
-                this.searchError = 'Lỗi kết nối. Thử lại sau.';
+                this.searchError = 'Lỗi: ' + err.message;
                 console.error('Map search error:', err);
             } finally {
                 this.searching = false;
