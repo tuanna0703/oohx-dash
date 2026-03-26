@@ -22,6 +22,7 @@
             ? number_format((float) $s->inventory->floor_cpm, 2) . ' ' . ($s->inventory->floor_cpm_currency ?? 'VND')
             : '—',
         'active'        => (bool) $s->active,
+        'view_url'      => \App\Filament\Resources\ScreenResource::getUrl('view', ['record' => $s->id]),
     ])->values()->toArray();
 
     $siteOpts = $screens
@@ -162,21 +163,24 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                    <template x-for="s in filtered" :key="s.id">
+                    <template x-for="s in paginated" :key="s.id">
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
                             <td class="px-3 py-2.5">
-                                <span class="font-mono text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded"
-                                      x-text="s.external_id"></span>
+                                <a :href="s.view_url"
+                                   class="font-mono text-xs text-primary-600 dark:text-primary-400 hover:underline bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded"
+                                   x-text="s.external_id"></a>
                             </td>
-                            <td class="px-3 py-2.5 text-gray-800 dark:text-gray-200 font-medium" x-text="s.name"></td>
+                            <td class="px-3 py-2.5">
+                                <a :href="s.view_url" class="text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 hover:underline" x-text="s.name"></a>
+                            </td>
                             <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400" x-text="s.site_name"></td>
                             <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400" x-text="s.province_name || '—'"></td>
                             <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 text-xs" x-text="s.commune_name || '—'"></td>
                             <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 font-mono text-xs" x-text="s.floor_cpm"></td>
                             <td class="px-3 py-2.5">
                                 <span :class="s.active
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                                        : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'"
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-800'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'"
                                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                                       x-text="s.active ? 'Active' : 'Inactive'">
                                 </span>
@@ -193,6 +197,25 @@
                     </template>
                 </tbody>
             </table>
+        </div>
+
+        {{-- Pagination --}}
+        <div x-show="totalPages > 1"
+             class="flex items-center justify-between px-3 py-2 border border-t-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-xl text-sm">
+            <button @click="page = Math.max(1, page - 1)" :disabled="page === 1"
+                    class="px-3 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                ← Trước
+            </button>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">
+                Trang <span x-text="page" class="font-semibold text-gray-700 dark:text-gray-200"></span>
+                / <span x-text="totalPages"></span>
+                &nbsp;·&nbsp;
+                <span x-text="filtered.length" class="font-semibold text-gray-700 dark:text-gray-200"></span> màn hình
+            </span>
+            <button @click="page = Math.min(totalPages, page + 1)" :disabled="page >= totalPages"
+                    class="px-3 py-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                Sau →
+            </button>
         </div>
     </div>
 

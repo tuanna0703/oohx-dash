@@ -10,6 +10,8 @@ document.addEventListener('alpine:init', () => {
         filterCommune:   '',
         mapInstance:     null,
         markerLayer:     null,
+        page:            1,
+        perPage:         20,
 
         init() {
             const d = window[dataKey] || {};
@@ -20,6 +22,7 @@ document.addEventListener('alpine:init', () => {
 
             this.$watch('filterProvince', () => { this.filterCommune = ''; });
             this.$watch('filtered', () => {
+                this.page = 1;
                 if (this.tab === 'map' && this.mapInstance) this.refreshMarkers();
             });
         },
@@ -31,6 +34,15 @@ document.addEventListener('alpine:init', () => {
                 if (this.filterCommune  && s.commune_id  !== this.filterCommune)  return false;
                 return true;
             });
+        },
+
+        get paginated() {
+            const start = (this.page - 1) * this.perPage;
+            return this.filtered.slice(start, start + this.perPage);
+        },
+
+        get totalPages() {
+            return Math.max(1, Math.ceil(this.filtered.length / this.perPage));
         },
 
         get availableCommunes() {

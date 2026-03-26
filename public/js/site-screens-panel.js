@@ -7,6 +7,8 @@ document.addEventListener('alpine:init', () => {
         tab:          'list',
         filterActive: '',   // '' | 'active' | 'inactive'
         mapInstance:  null,
+        page:         1,
+        perPage:      20,
 
         init() {
             const d = window[dataKey] || {};
@@ -16,6 +18,7 @@ document.addEventListener('alpine:init', () => {
             this.siteName   = d.name || '';
 
             this.$watch('filtered', () => {
+                this.page = 1;
                 if (this.tab === 'map' && this.mapInstance) this.refreshMarker();
             });
         },
@@ -26,6 +29,15 @@ document.addEventListener('alpine:init', () => {
                 if (this.filterActive === 'inactive' &&  s.active)  return false;
                 return true;
             });
+        },
+
+        get paginated() {
+            const start = (this.page - 1) * this.perPage;
+            return this.filtered.slice(start, start + this.perPage);
+        },
+
+        get totalPages() {
+            return Math.max(1, Math.ceil(this.filtered.length / this.perPage));
         },
 
         switchTab(t) {
