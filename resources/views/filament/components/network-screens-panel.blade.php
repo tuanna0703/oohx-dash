@@ -40,6 +40,9 @@
         ->filter()->sortBy(fn($v) => $v)->toArray();
 @endphp
 
+{{-- Single root wrapper required by Livewire --}}
+<div>
+
 {{-- Pass data via window variable keyed by network --}}
 <script>
     window['{{ $networkKey }}'] = {
@@ -344,3 +347,5 @@
         </p>
     </div>
 </div>
+
+</div>{{-- /single root wrapper --}}

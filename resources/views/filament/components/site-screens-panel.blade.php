@@ -20,6 +20,9 @@
     $siteName = e($site->name ?? 'Site');
 @endphp
 
+{{-- Single root wrapper required by Livewire --}}
+<div>
+
 <script>
     window['{{ $siteKey }}'] = {
         screens: @json($screensData),
@@ -274,3 +277,5 @@
         </p>
     </div>
 </div>
+
+</div>{{-- /single root wrapper --}}
