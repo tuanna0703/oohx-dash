@@ -19,25 +19,39 @@
         ->filter()
         ->sortBy(fn($v) => $v)
         ->all();
+
+    // commune_id => ['name' => ..., 'province_id' => ...] for client-side chained filtering
+    $communeOpts = collect($screensData)
+        ->filter(fn($s) => $s['commune_id'] !== '')
+        ->mapWithKeys(fn($s) => [$s['commune_id'] => [
+            'name'        => $s['commune_name'],
+            'province_id' => $s['province_id'],
+        ]])
+        ->filter(fn($v) => $v['name'] !== '')
+        ->sortBy(fn($v) => $v['name'])
+        ->all();
 @endphp
 
 @script
 <script>
 (function () {
-    var SCREENS   = @json($screensData);
-    var SITE_OPTS = @json($siteOpts);
-    var PROV_OPTS = @json($provinceOpts);
+    var SCREENS      = @json($screensData);
+    var SITE_OPTS    = @json($siteOpts);
+    var PROV_OPTS    = @json($provinceOpts);
+    var COMMUNE_OPTS = @json($communeOpts);  // { id: { name, province_id } }
 
-    var filterSite = '';
-    var filterProv = '';
-    var mapInst    = null;
-    var markerLyr  = null;
-    var initialized = false;
+    var filterSite    = '';
+    var filterProv    = '';
+    var filterCommune = '';
+    var mapInst       = null;
+    var markerLyr     = null;
+    var initialized   = false;
 
     function filtered() {
         return SCREENS.filter(function (s) {
-            if (filterSite && s.site_id !== filterSite) return false;
-            if (filterProv && s.province_id !== filterProv) return false;
+            if (filterSite    && s.site_id    !== filterSite)    return false;
+            if (filterProv    && s.province_id !== filterProv)   return false;
+            if (filterCommune && s.commune_id  !== filterCommune) return false;
             return true;
         });
     }
@@ -51,7 +65,26 @@
 
     function updateClearBtn() {
         var btn = document.getElementById('nvm_clear');
-        if (btn) btn.style.display = (filterSite || filterProv) ? '' : 'none';
+        if (btn) btn.style.display = (filterSite || filterProv || filterCommune) ? '' : 'none';
+    }
+
+    // Rebuild commune dropdown, optionally scoped to a province
+    function rebuildCommuneSel(scopeProvId) {
+        var communeSel = document.getElementById('nvm_commune');
+        if (!communeSel) return;
+        var current = communeSel.value;
+        // Remove all options except the first placeholder
+        while (communeSel.options.length > 1) communeSel.remove(1);
+        Object.entries(COMMUNE_OPTS).forEach(function (pair) {
+            var id = pair[0], data = pair[1];
+            if (scopeProvId && data.province_id !== scopeProvId) return;
+            var opt = document.createElement('option');
+            opt.value = id; opt.textContent = data.name;
+            communeSel.appendChild(opt);
+        });
+        // Restore selection only if still valid in new list
+        communeSel.value = current;
+        if (communeSel.value !== current) { communeSel.value = ''; filterCommune = ''; }
     }
 
     function refreshMarkers() {
@@ -143,8 +176,23 @@
                 provSel.appendChild(opt);
             });
             provSel.addEventListener('change', function () {
-                filterProv = this.value;
-                filterSite = '';
+                filterProv    = this.value;
+                filterSite    = '';
+                filterCommune = '';
+                var s = document.getElementById('nvm_site');    if (s) s.value = '';
+                var c = document.getElementById('nvm_commune'); if (c) c.value = '';
+                rebuildCommuneSel(filterProv || null);
+                refreshMarkers(); updateClearBtn();
+            });
+        }
+
+        var communeSel = document.getElementById('nvm_commune');
+        if (communeSel && !communeSel.dataset.ready) {
+            communeSel.dataset.ready = '1';
+            rebuildCommuneSel(null);
+            communeSel.addEventListener('change', function () {
+                filterCommune = this.value;
+                filterSite    = '';
                 var s = document.getElementById('nvm_site'); if (s) s.value = '';
                 refreshMarkers(); updateClearBtn();
             });
@@ -168,9 +216,11 @@
         if (clearBtn && !clearBtn.dataset.ready) {
             clearBtn.dataset.ready = '1';
             clearBtn.addEventListener('click', function () {
-                filterSite = ''; filterProv = '';
-                var s = document.getElementById('nvm_site'); if (s) s.value = '';
-                var p = document.getElementById('nvm_prov'); if (p) p.value = '';
+                filterSite = ''; filterProv = ''; filterCommune = '';
+                var s = document.getElementById('nvm_site');    if (s) s.value = '';
+                var p = document.getElementById('nvm_prov');    if (p) p.value = '';
+                var c = document.getElementById('nvm_commune'); if (c) c.value = '';
+                rebuildCommuneSel(null);
                 refreshMarkers(); updateClearBtn();
             });
         }
@@ -200,7 +250,7 @@
         'fi-resource-record-' . $record->getKey(),
     ])
 >
-    {{-- Network info --}}
+    {{-- Network info (tabs: Network Info / Media Owner) --}}
     @if ($this->hasInfolist())
         {{ $this->infolist }}
     @endif
@@ -208,16 +258,11 @@
     {{-- Tabbed screens section --}}
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
-    {{--
-        Contained-tabs pattern — mirrors fi-fo-tabs fi-contained from filament/forms:
-        one card, tabs nav with border-bottom at top, content below.
-    --}}
     <div
         x-data="{ tab: 'list' }"
         x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
         class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
-        {{-- Tab bar (contained style: bottom border, no own card) --}}
         <x-filament::tabs :contained="true">
             <x-filament::tabs.item
                 icon="heroicon-o-list-bullet"
@@ -235,7 +280,7 @@
             </x-filament::tabs.item>
         </x-filament::tabs>
 
-        {{-- Tab: List (no extra padding — table renders edge-to-edge inside the card) --}}
+        {{-- Tab: List --}}
         <div x-show="tab === 'list'" x-cloak class="nvm-list-tab">
             @if (count($relationManagers))
                 <x-filament-panels::resources.relation-managers
@@ -257,6 +302,7 @@
             {{-- Filter bar --}}
             <div class="flex flex-wrap items-center gap-3">
 
+                {{-- Province --}}
                 <div class="flex items-center gap-2">
                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
                     <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
@@ -269,6 +315,20 @@
                     </div>
                 </div>
 
+                {{-- Commune --}}
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Phường/Xã:</label>
+                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                        <select
+                            id="nvm_commune"
+                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
+                        >
+                            <option value="">Tất cả phường/xã</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Site --}}
                 <div class="flex items-center gap-2">
                     <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
                     <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">

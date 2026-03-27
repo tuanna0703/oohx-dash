@@ -4,11 +4,14 @@ namespace App\Filament\Resources\NetworkResource\RelationManagers;
 
 use App\Models\Screen;
 use App\Models\Site;
+use App\Models\VietnamCommune;
+use App\Models\VietnamProvince;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ScreensRelationManager extends RelationManager
 {
@@ -56,6 +59,26 @@ class ScreensRelationManager extends RelationManager
                     ->formatStateUsing(fn($state) => ucfirst($state ?? 'unknown')),
             ])
             ->filters([
+                SelectFilter::make('province_id')
+                    ->label('Tỉnh/Thành')
+                    ->options(fn() => VietnamProvince::toSelectOptions())
+                    ->query(fn(Builder $query, array $data) =>
+                        $data['value']
+                            ? $query->whereHas('site', fn($q) => $q->where('province_id', $data['value']))
+                            : $query
+                    )
+                    ->searchable(),
+
+                SelectFilter::make('commune_id')
+                    ->label('Phường/Xã')
+                    ->options(fn() => VietnamCommune::orderBy('full_name')->pluck('full_name', 'id')->toArray())
+                    ->query(fn(Builder $query, array $data) =>
+                        $data['value']
+                            ? $query->whereHas('site', fn($q) => $q->where('commune_id', $data['value']))
+                            : $query
+                    )
+                    ->searchable(),
+
                 SelectFilter::make('site_id')
                     ->label('Site')
                     ->options(fn() => Site::orderBy('name')->pluck('name', 'id')->toArray())
