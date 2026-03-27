@@ -29,6 +29,10 @@
     a double-quoted HTML attribute (x-data="..."). Js::from() outputs raw JSON with unescaped "
     which would prematurely close the HTML attribute. @json() uses JSON_HEX_QUOT to encode " as
     \u0022 — safe in HTML attributes, correctly parsed by JavaScript as the " character.
+
+    Popup HTML uses backtick template literals with single-quoted HTML attributes.
+    Backticks are safe inside double-quoted HTML attributes (no conflict with HTML parser).
+    Single-quoted HTML attributes avoid any " character that would close the x-data attribute.
 --}}
 <div
     x-data="{
@@ -106,24 +110,24 @@
             const bounds = [];
             Object.values(sites).forEach(site => {
                 const rows = site.screens.map(s =>
-                    '<tr>' +
-                    '<td style=\'padding:2px 6px;font-family:monospace;font-size:11px\'>' + s.external_id + '</td>' +
-                    '<td style=\'padding:2px 6px;font-size:12px\'><a href=\'' + s.view_url + '\' target=\'_blank\' style=\'color:#3b82f6\'>' + s.name + '</a></td>' +
-                    '<td style=\'padding:2px 6px\'><span style=\'padding:1px 6px;border-radius:9999px;font-size:11px;background:' + (s.active ? '#dcfce7' : '#fee2e2') + ';color:' + (s.active ? '#166534' : '#991b1b') + '\'>' + (s.active ? 'Active' : 'Inactive') + '</span></td>' +
-                    '</tr>'
+                    `<tr>` +
+                    `<td style='padding:2px 6px;font-family:monospace;font-size:11px'>${s.external_id}</td>` +
+                    `<td style='padding:2px 6px;font-size:12px'><a href='${s.view_url}' target='_blank' style='color:#3b82f6'>${s.name}</a></td>` +
+                    `<td style='padding:2px 6px'><span style='padding:1px 6px;border-radius:9999px;font-size:11px;background:${s.active ? '#dcfce7' : '#fee2e2'};color:${s.active ? '#166534' : '#991b1b'}'>${s.active ? 'Active' : 'Inactive'}</span></td>` +
+                    `</tr>`
                 ).join('');
                 const popup =
-                    '<div style=\'min-width:280px\'>' +
-                    '<b style=\'font-size:13px\'>' + site.name + '</b>' +
-                    '<div style=\'font-size:11px;color:#6b7280;margin-bottom:6px\'>' + site.screens.length + ' màn hình</div>' +
-                    '<table style=\'width:100%;border-collapse:collapse\'>' +
-                    '<thead><tr style=\'background:#f3f4f6\'>' +
-                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>ID</th>' +
-                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>Tên</th>' +
-                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>Trạng thái</th>' +
-                    '</tr></thead>' +
-                    '<tbody>' + rows + '</tbody>' +
-                    '</table></div>';
+                    `<div style='min-width:280px'>` +
+                    `<b style='font-size:13px'>${site.name}</b>` +
+                    `<div style='font-size:11px;color:#6b7280;margin-bottom:6px'>${site.screens.length} màn hình</div>` +
+                    `<table style='width:100%;border-collapse:collapse'>` +
+                    `<thead><tr style='background:#f3f4f6'>` +
+                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>ID</th>` +
+                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>Tên</th>` +
+                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>Trạng thái</th>` +
+                    `</tr></thead>` +
+                    `<tbody>${rows}</tbody>` +
+                    `</table></div>`;
                 L.marker([site.lat, site.lon]).addTo(this.markerLayer).bindPopup(popup, { maxWidth: 360 });
                 bounds.push([site.lat, site.lon]);
             });
