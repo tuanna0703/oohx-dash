@@ -202,13 +202,17 @@
     {{-- Tabbed screens section --}}
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
-    <x-filament::section>
+    {{--
+        Contained-tabs pattern — mirrors fi-fo-tabs fi-contained from filament/forms:
+        one card, tabs nav with border-bottom at top, content below.
+    --}}
     <div
         x-data="{ tab: 'list' }"
         x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
+        class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
-        {{-- Tab bar --}}
-        <x-filament::tabs class="mb-4">
+        {{-- Tab bar (contained style: bottom border, no own card) --}}
+        <x-filament::tabs :contained="true">
             <x-filament::tabs.item
                 icon="heroicon-o-list-bullet"
                 alpineActive="tab === 'list'"
@@ -225,7 +229,7 @@
             </x-filament::tabs.item>
         </x-filament::tabs>
 
-        {{-- Tab: List --}}
+        {{-- Tab: List (no extra padding — table renders edge-to-edge inside the card) --}}
         <div x-show="tab === 'list'" x-cloak>
             @if (count($relationManagers))
                 <x-filament-panels::resources.relation-managers
@@ -242,56 +246,57 @@
         </div>
 
         {{-- Tab: Map --}}
-        <div x-show="tab === 'map'" x-cloak>
-                {{-- Filter bar --}}
-                <div class="flex flex-wrap items-center gap-3 mb-4">
+        <div x-show="tab === 'map'" x-cloak class="p-6 flex flex-col gap-4">
 
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
-                        <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                            <select
-                                id="nvm_prov"
-                                class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                            >
-                                <option value="">Tất cả tỉnh</option>
-                            </select>
-                        </div>
+            {{-- Filter bar --}}
+            <div class="flex flex-wrap items-center gap-3">
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
+                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                        <select
+                            id="nvm_prov"
+                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
+                        >
+                            <option value="">Tất cả tỉnh</option>
+                        </select>
                     </div>
-
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
-                        <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                            <select
-                                id="nvm_site"
-                                class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                            >
-                                <option value="">Tất cả site</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button
-                        id="nvm_clear"
-                        type="button"
-                        style="display:none"
-                        class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75"
-                    >Xoá bộ lọc</button>
-
-                    <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
-                        <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
-                    </span>
                 </div>
 
-                {{-- Map container --}}
-                <div wire:ignore>
-                    <div id="nvm_map" style="height:580px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
+                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                        <select
+                            id="nvm_site"
+                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
+                        >
+                            <option value="">Tất cả site</option>
+                        </select>
+                    </div>
                 </div>
 
-                <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
-                    Nhấn vào marker để xem danh sách màn hình tại site đó.
-                </p>
+                <button
+                    id="nvm_clear"
+                    type="button"
+                    style="display:none"
+                    class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75"
+                >Xoá bộ lọc</button>
+
+                <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
+                    <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
+                </span>
+            </div>
+
+            {{-- Map --}}
+            <div wire:ignore>
+                <div id="nvm_map" style="height:580px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
+            </div>
+
+            <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
+                Nhấn vào marker để xem danh sách màn hình tại site đó.
+            </p>
         </div>
+
     </div>
-    </x-filament::section>
 
 </x-filament-panels::page>
