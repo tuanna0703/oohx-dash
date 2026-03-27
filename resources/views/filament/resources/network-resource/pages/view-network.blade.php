@@ -230,7 +230,7 @@
         </x-filament::tabs>
 
         {{-- Tab: List (no extra padding — table renders edge-to-edge inside the card) --}}
-        <div x-show="tab === 'list'" x-cloak>
+        <div x-show="tab === 'list'" x-cloak class="[&_.fi-ta-ctn]:rounded-none [&_.fi-ta-header-toolbar]:rounded-none">
             @if (count($relationManagers))
                 <x-filament-panels::resources.relation-managers
                     :active-locale="isset($activeLocale) ? $activeLocale : null"
