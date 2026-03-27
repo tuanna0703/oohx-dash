@@ -379,146 +379,146 @@
         };
     @endphp
 
-    {{-- ── Single 4-tab card: Network Info / Media Owner / Chiến dịch / Performance ── --}}
+    {{-- ── Single 4-tab card: General / Media Owner / Campaigns / Performance ── --}}
     <div
         x-data="{ activeTab: 'network' }"
         x-init="$watch('activeTab', function(v) { if (v === 'chart') window.dispatchEvent(new CustomEvent('nvm-chart-activate')); })"
         class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
         <x-filament::tabs :contained="true">
-            <x-filament::tabs.item icon="heroicon-o-signal"             alpineActive="activeTab === 'network'"   @click="activeTab = 'network'">Network Info</x-filament::tabs.item>
+            <x-filament::tabs.item icon="heroicon-o-signal"             alpineActive="activeTab === 'network'"   @click="activeTab = 'network'">General</x-filament::tabs.item>
             <x-filament::tabs.item icon="heroicon-o-building-office-2"  alpineActive="activeTab === 'owner'"     @click="activeTab = 'owner'">Media Owner</x-filament::tabs.item>
-            <x-filament::tabs.item icon="heroicon-o-megaphone"          alpineActive="activeTab === 'campaigns'" @click="activeTab = 'campaigns'">Chiến dịch</x-filament::tabs.item>
+            <x-filament::tabs.item icon="heroicon-o-megaphone"          alpineActive="activeTab === 'campaigns'" @click="activeTab = 'campaigns'">Campaigns</x-filament::tabs.item>
             <x-filament::tabs.item icon="heroicon-o-chart-bar"          alpineActive="activeTab === 'chart'"     @click="activeTab = 'chart'">Performance</x-filament::tabs.item>
         </x-filament::tabs>
 
-        {{-- Tab: Network Info --}}
-        <div x-show="activeTab === 'network'" x-cloak class="p-6">
+        {{-- Tab: General --}}
+        <div x-show="activeTab === 'network'" x-cloak style="padding:1.5rem;">
             <dl style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Network Name</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $network->name ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Network Name</dt>
+                    <dd style="margin-top:4px;font-size:14px;font-weight:600;color:#111827;">{{ $network->name ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Status</dt>
-                    <dd class="mt-1">
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Status</dt>
+                    <dd style="margin-top:4px;">
                         <span style="padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:{{ $statusBadgeColor['bg'] }};color:{{ $statusBadgeColor['text'] }}">
                             {{ ucfirst($network->status ?? 'unknown') }}
                         </span>
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Default Floor CPM</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Default Floor CPM</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">
                         {{ $network->default_floor_cpm ? number_format((float)$network->default_floor_cpm, 2) . ' ' . ($network->default_floor_cpm_currency ?? 'VND') : '—' }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tổng số Screens</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $this->totalScreens }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Total Screens</dt>
+                    <dd style="margin-top:4px;font-size:14px;font-weight:600;color:#111827;">{{ $this->totalScreens }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tổng số Sites</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $this->totalSites }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Total Sites</dt>
+                    <dd style="margin-top:4px;font-size:14px;font-weight:600;color:#111827;">{{ $this->totalSites }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Last modified on</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $network->updated_at?->format('M j, Y, g:i A') ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Last Modified</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $network->updated_at?->format('M j, Y, g:i A') ?? '—' }}</dd>
                 </div>
             </dl>
         </div>
 
         {{-- Tab: Media Owner --}}
-        <div x-show="activeTab === 'owner'" x-cloak class="p-6">
+        <div x-show="activeTab === 'owner'" x-cloak style="padding:1.5rem;">
             @if ($owner?->logo_url)
                 <img src="{{ $owner->logo_url }}" alt="Logo" style="height:56px;object-fit:contain;margin-bottom:1.25rem;">
             @endif
             <dl style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tên</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $owner?->name ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Name</dt>
+                    <dd style="margin-top:4px;font-size:14px;font-weight:600;color:#111827;">{{ $owner?->name ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Status</dt>
-                    <dd class="mt-1">
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Status</dt>
+                    <dd style="margin-top:4px;">
                         @if ($owner?->status)
                             <span style="padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:{{ $ownerStatusColor['bg'] }};color:{{ $ownerStatusColor['text'] }}">
                                 {{ ucfirst($owner->status) }}
                             </span>
                         @else
-                            <span class="text-sm text-gray-400">—</span>
+                            <span style="font-size:14px;color:#9ca3af;">—</span>
                         @endif
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Founded</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->founded ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Founded</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $owner?->founded ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Website</dt>
-                    <dd class="mt-1 text-sm">
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Website</dt>
+                    <dd style="margin-top:4px;font-size:14px;">
                         @if ($owner?->website)
-                            <a href="{{ $owner->website }}" target="_blank" class="text-primary-600 hover:underline dark:text-primary-400">{{ $owner->website }}</a>
+                            <a href="{{ $owner->website }}" target="_blank" style="color:#6366f1;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $owner->website }}</a>
                         @else
-                            <span class="text-gray-400">—</span>
+                            <span style="color:#9ca3af;">—</span>
                         @endif
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->email ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Email</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $owner?->email ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->phone ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Phone</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $owner?->phone ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Ngày tham gia</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->created_at?->format('M j, Y') ?? '—' }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Member Since</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $owner?->created_at?->format('M j, Y') ?? '—' }}</dd>
                 </div>
                 @if ($owner?->tagline)
                 <div style="grid-column:1/-1;">
-                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tagline</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner->tagline }}</dd>
+                    <dt style="font-size:12px;font-weight:500;color:#6b7280;">Tagline</dt>
+                    <dd style="margin-top:4px;font-size:14px;color:#111827;">{{ $owner->tagline }}</dd>
                 </div>
                 @endif
             </dl>
         </div>
 
-        {{-- Tab: Chiến dịch --}}
+        {{-- Tab: Campaigns --}}
         <div x-show="activeTab === 'campaigns'" x-cloak>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;">
                     <thead>
-                        <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
-                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Chiến dịch</th>
-                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Advertiser</th>
-                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Thời gian</th>
-                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Budget</th>
-                            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                        <tr style="border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+                            <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;">Campaign</th>
+                            <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;">Advertiser</th>
+                            <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;">Period</th>
+                            <th style="padding:10px 16px;text-align:right;font-size:12px;font-weight:600;color:#6b7280;">Budget</th>
+                            <th style="padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    <tbody>
                         @foreach ($mockCampaigns as $c)
                             @php
-                                $statusColors = [
-                                    'active'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                    'completed' => 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
-                                    'paused'    => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                $statusStyles = [
+                                    'active'    => 'background:#dcfce7;color:#166534;',
+                                    'completed' => 'background:#f3f4f6;color:#374151;',
+                                    'paused'    => 'background:#fef9c3;color:#854d0e;',
                                 ];
                                 $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'paused' => 'Paused'];
                             @endphp
-                            <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition duration-75">
-                                <td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-xs">{{ $c['name'] }}</td>
-                                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400 text-xs">{{ $c['advertiser'] }}</td>
-                                <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                            <tr style="border-bottom:1px solid #f3f4f6;">
+                                <td style="padding:10px 16px;font-size:14px;font-weight:500;color:#111827;">{{ $c['name'] }}</td>
+                                <td style="padding:10px 16px;font-size:14px;color:#6b7280;">{{ $c['advertiser'] }}</td>
+                                <td style="padding:10px 16px;font-size:14px;color:#6b7280;white-space:nowrap;">
                                     {{ \Carbon\Carbon::parse($c['start'])->format('d/m/y') }} – {{ \Carbon\Carbon::parse($c['end'])->format('d/m/y') }}
                                 </td>
-                                <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
+                                <td style="padding:10px 16px;font-size:14px;color:#374151;text-align:right;font-variant-numeric:tabular-nums;">
                                     {{ number_format($c['budget'] / 1_000_000, 0) }}M
                                 </td>
-                                <td class="px-4 py-2.5 text-center">
-                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$c['status']] ?? '' }}">
+                                <td style="padding:10px 16px;text-align:center;">
+                                    <span style="padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;{{ $statusStyles[$c['status']] ?? '' }}">
                                         {{ $statusLabels[$c['status']] ?? $c['status'] }}
                                     </span>
                                 </td>
@@ -527,20 +527,20 @@
                     </tbody>
                 </table>
             </div>
-            <p class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-white/5">
-                * Dữ liệu demo — sẽ được thay bằng dữ liệu thực khi module Campaign sẵn sàng.
+            <p style="padding:8px 16px;font-size:12px;color:#9ca3af;font-style:italic;border-top:1px solid #f3f4f6;">
+                * Demo data — will be replaced with real data when the Campaign module is ready.
             </p>
         </div>
 
         {{-- Tab: Performance chart --}}
-        <div x-show="activeTab === 'chart'" x-cloak style="min-width:0;padding:1.25rem;">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
-                Doanh thu &amp; Impressions — 12 tháng gần nhất
+        <div x-show="activeTab === 'chart'" x-cloak style="min-width:0;padding:1.5rem;">
+            <p style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:12px;">
+                Revenue &amp; Impressions — Last 12 months
             </p>
             <div wire:ignore style="position:relative;width:100%;height:320px;overflow:hidden;">
                 <canvas id="nvm_perf_chart" style="display:block;width:100%!important;height:100%!important;"></canvas>
             </div>
-            <p class="mt-3 text-xs text-gray-400 dark:text-gray-500 italic text-center">* Dữ liệu demo</p>
+            <p style="margin-top:12px;font-size:12px;color:#9ca3af;font-style:italic;text-align:center;">* Demo data</p>
         </div>
 
     </div>
@@ -557,14 +557,14 @@
                         alpineActive="tab === 'list'"
                         @click="tab = 'list'"
                     >
-                        Danh sách màn hình
+                        Screens
                     </x-filament::tabs.item>
                     <x-filament::tabs.item
                         icon="heroicon-o-map-pin"
                         alpineActive="tab === 'map'"
                         @click="tab = 'map'"
                     >
-                        Bản đồ
+                        Map
                     </x-filament::tabs.item>
                 </x-filament::tabs>
 
@@ -591,19 +591,19 @@
                     <div class="flex flex-wrap items-center gap-3">
 
                         <div class="flex items-center gap-2">
-                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Province:</label>
                             <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
                                 <select id="nvm_prov" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
-                                    <option value="">Tất cả tỉnh</option>
+                                    <option value="">All provinces</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Phường/Xã:</label>
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">District:</label>
                             <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
                                 <select id="nvm_commune" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
-                                    <option value="">Tất cả phường/xã</option>
+                                    <option value="">All districts</option>
                                 </select>
                             </div>
                         </div>
@@ -612,18 +612,18 @@
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
                             <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
                                 <select id="nvm_site" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
-                                    <option value="">Tất cả site</option>
+                                    <option value="">All sites</option>
                                 </select>
                             </div>
                         </div>
 
                         <button id="nvm_clear" type="button" style="display:none"
                             class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75">
-                            Xoá bộ lọc
+                            Clear filters
                         </button>
 
                         <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
-                            <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
+                            <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> screens with GPS coordinates
                         </span>
                     </div>
 
@@ -633,7 +633,7 @@
                     </div>
 
                     <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
-                        Nhấn vào marker để xem danh sách màn hình tại site đó.
+                        Click a marker to view screens at that site.
                     </p>
                 </div>
 

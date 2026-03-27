@@ -17,7 +17,7 @@ class ScreensRelationManager extends RelationManager
 {
     protected static string $relationship = 'inventoryScreens';
 
-    protected static ?string $title = 'Màn hình';
+    protected static ?string $title = 'Screens';
 
     public function table(Table $table): Table
     {
@@ -25,7 +25,7 @@ class ScreensRelationManager extends RelationManager
             ->heading(null)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Tên màn hình')
+                    ->label('Screen Name')
                     ->searchable()
                     ->sortable()
                     ->wrap(),
@@ -36,12 +36,12 @@ class ScreensRelationManager extends RelationManager
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('site.province.name')
-                    ->label('Tỉnh / Thành')
+                    ->label('Province')
                     ->placeholder('—')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('site.commune.full_name')
-                    ->label('Phường / Xã')
+                    ->label('District')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -60,7 +60,7 @@ class ScreensRelationManager extends RelationManager
             ])
             ->filters([
                 SelectFilter::make('province_id')
-                    ->label('Tỉnh/Thành')
+                    ->label('Province')
                     ->options(fn() => VietnamProvince::toSelectOptions())
                     ->query(fn(Builder $query, array $data) =>
                         $data['value']
@@ -70,7 +70,7 @@ class ScreensRelationManager extends RelationManager
                     ->searchable(),
 
                 SelectFilter::make('commune_id')
-                    ->label('Phường/Xã')
+                    ->label('District')
                     ->options(fn() => VietnamCommune::orderBy('full_name')->pluck('full_name', 'id')->toArray())
                     ->query(fn(Builder $query, array $data) =>
                         $data['value']
@@ -113,7 +113,7 @@ class ScreensRelationManager extends RelationManager
                         ),
                 ]),
             ])
-            ->emptyStateHeading('Chưa có màn hình nào trong network này')
+            ->emptyStateHeading('No screens in this network yet')
             ->emptyStateIcon('heroicon-o-device-tablet');
     }
 }
