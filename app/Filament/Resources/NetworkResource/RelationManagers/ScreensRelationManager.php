@@ -9,7 +9,6 @@ use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Contracts\View\View;
 
 class ScreensRelationManager extends RelationManager
 {
@@ -20,16 +19,7 @@ class ScreensRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordUrl(fn(Screen $record) =>
-                \App\Filament\Resources\ScreenResource::getUrl('view', ['record' => $record])
-            )
             ->columns([
-                Tables\Columns\TextColumn::make('external_id')
-                    ->label('Screen ID')
-                    ->searchable()
-                    ->copyable()
-                    ->fontFamily('mono'),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên màn hình')
                     ->searchable()
@@ -50,14 +40,6 @@ class ScreensRelationManager extends RelationManager
                     ->label('Phường / Xã')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('inventory.floor_cpm')
-                    ->label('Floor CPM')
-                    ->formatStateUsing(fn($state, Screen $record) => $state
-                        ? number_format((float) $state, 0, '.', ',')
-                          . ' ' . ($record->inventory?->floor_cpm_currency ?? 'VND')
-                        : '—')
-                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('active')
                     ->label('Enabled')
@@ -90,30 +72,22 @@ class ScreensRelationManager extends RelationManager
                     ]),
             ])
             ->filtersFormColumns(3)
-            ->headerActions([
-                Tables\Actions\Action::make('viewMap')
-                    ->label('Xem bản đồ')
-                    ->icon('heroicon-o-map-pin')
-                    ->color('gray')
-                    ->slideOver()
-                    ->modalWidth('7xl')
-                    ->modalHeading(fn($livewire) => 'Bản đồ màn hình — ' . $livewire->getOwnerRecord()->name)
-                    ->modalContent(function ($livewire): View {
-                        $network = $livewire->getOwnerRecord();
-                        $screens = \App\Models\Screen::whereHas('inventory', fn($q) => $q->where('network_id', $network->id))
-                            ->with(['site.province', 'site.commune', 'inventory'])
-                            ->get();
-                        $mapKey = 'nmap_' . preg_replace('/[^a-z0-9]/i', '_', $network->id);
-                        return view('filament.modals.network-screens-map', compact('screens', 'mapKey'));
-                    })
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Đóng'),
-            ])
+            ->headerActions([])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->url(fn(Screen $record) =>
-                        \App\Filament\Resources\ScreenResource::getUrl('view', ['record' => $record])
-                    ),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn(Screen $record) =>
+                            \App\Filament\Resources\ScreenResource::getUrl('view', ['record' => $record])
+                        ),
+                    Tables\Actions\Action::make('edit')
+                        ->label('Edit')
+                        ->icon('heroicon-o-pencil')
+                        ->url(fn(Screen $record) =>
+                            \App\Filament\Resources\ScreenResource::getUrl('edit', ['record' => $record])
+                        ),
+                ]),
             ])
             ->emptyStateHeading('Chưa có màn hình nào trong network này')
             ->emptyStateIcon('heroicon-o-device-tablet');
