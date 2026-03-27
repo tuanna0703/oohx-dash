@@ -182,16 +182,18 @@
         updateCount();
         updateClearBtn();
 
-        // 350ms delay lets the Filament slide-over animation finish before
-        // Leaflet reads container dimensions (offsetWidth=0 during animation)
-        loadLeaflet(function () { setTimeout(initMap, 350); });
+        // Already waited for offsetWidth > 0; a short extra tick lets the
+        // slide-over finish any remaining CSS transition before Leaflet measures.
+        loadLeaflet(function () { setTimeout(initMap, 100); });
     }
 
-    // The <script> runs before DOM is fully patched in some Livewire scenarios.
-    // Poll until the map element is available, then start.
+    // Poll until the map element is in the DOM AND visible (offsetWidth > 0).
+    // Filament pre-renders modal content hidden; we must wait for the slide-over
+    // animation to make the container measurable before Leaflet can init.
     (function waitAndStart() {
-        if (el('_map')) { start(); }
-        else             { setTimeout(waitAndStart, 30); }
+        var mapEl = el('_map');
+        if (mapEl && mapEl.offsetWidth > 0) { start(); }
+        else                                { setTimeout(waitAndStart, 50); }
     }());
 }());
 </script>
