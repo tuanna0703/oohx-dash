@@ -354,17 +354,19 @@
         'fi-resource-record-' . $record->getKey(),
     ])
 >
-    {{-- Network info (tabs: Network Info / Media Owner) --}}
-    @if ($this->hasInfolist())
-        {{ $this->infolist }}
-    @endif
-
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
-    {{-- Two-column section: Campaigns (left) + Screens (right) ──────────────────────────────── --}}
+    {{-- Top row: Overview (left) + Campaigns (right) ──────────────────────────────────────── --}}
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
 
-        {{-- ── LEFT: Campaigns ─────────────────────────────────────────────── --}}
+        {{-- ── LEFT: Network Info / Media Owner infolist ───────────────────── --}}
+        <div class="xl:col-span-3">
+            @if ($this->hasInfolist())
+                {{ $this->infolist }}
+            @endif
+        </div>
+
+        {{-- ── RIGHT: Campaigns ────────────────────────────────────────────── --}}
         <div class="xl:col-span-2">
             <div
                 x-data="{ camTab: 'list' }"
@@ -457,13 +459,14 @@
             </div>
         </div>
 
-        {{-- ── RIGHT: Screens (list + map) ────────────────────────────────── --}}
-        <div class="xl:col-span-3">
-            <div
-                x-data="{ tab: 'list' }"
-                x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
-                class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
-            >
+    </div>
+
+    {{-- Bottom row: Screens (full width) ───────────────────────────────────────────────────── --}}
+    <div
+        x-data="{ tab: 'list' }"
+        x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
+        class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+    >
                 <x-filament::tabs :contained="true">
                     <x-filament::tabs.item
                         icon="heroicon-o-list-bullet"
@@ -549,9 +552,6 @@
                         Nhấn vào marker để xem danh sách màn hình tại site đó.
                     </p>
                 </div>
-
-            </div>
-        </div>
 
     </div>
 
