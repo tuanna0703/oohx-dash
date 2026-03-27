@@ -25,212 +25,230 @@
 @endphp
 
 {{--
-    JavaScript lives in a <script> tag — NOT in x-data="..." — to avoid all HTML attribute
-    escaping issues. Alpine.data() registers the component by name; the div references it
-    via x-data="{{ $mapKey }}". @json() inside <script> is safe (Blade processes directives
-    regardless of HTML context; JSON_HEX_TAG prevents any </script> injection via data).
+    Pure vanilla JS — no Alpine for the map component.
+    Avoids Alpine.data() timing race with Livewire's script injection order.
+    All DOM references use IDs scoped by $mapKey.
 --}}
 <script>
 (function () {
-    var _allScreens  = @json($screensData);
-    var _siteOpts    = @json($siteOpts);
-    var _provinceOpts = @json($provinceOpts);
+    var KEY       = @json($mapKey);
+    var SCREENS   = @json($screensData);
+    var SITE_OPTS = @json($siteOpts);
+    var PROV_OPTS = @json($provinceOpts);
 
-    function mapFactory() {
-        return {
-            allScreens:    _allScreens,
-            siteOpts:      _siteOpts,
-            provinceOpts:  _provinceOpts,
-            filterSite:    '',
-            filterProvince:'',
-            mapInstance:   null,
-            markerLayer:   null,
+    var filterSite = '';
+    var filterProv = '';
+    var mapInst    = null;
+    var markerLyr  = null;
 
-            get filteredScreens() {
-                return this.allScreens.filter(s => {
-                    if (this.filterSite     && s.site_id     !== this.filterSite)     return false;
-                    if (this.filterProvince && s.province_id !== this.filterProvince) return false;
-                    return true;
-                });
-            },
-
-            get withCoordsCount() {
-                return this.filteredScreens.filter(s => s.site_lat && s.site_lon).length;
-            },
-
-            init() {
-                this.$watch('filterSite',     () => this.refreshMarkers());
-                this.$watch('filterProvince', () => { this.filterSite = ''; this.refreshMarkers(); });
-                // Delay 350ms to let the Filament slide-over CSS animation finish before
-                // Leaflet reads container dimensions. Without this, offsetWidth=0 and breaks.
-                this.loadLeaflet(() => setTimeout(() => this.$nextTick(() => this.initMap()), 350));
-            },
-
-            loadLeaflet(cb) {
-                if (window.L) { cb(); return; }
-                const link = document.createElement('link');
-                link.rel  = 'stylesheet';
-                link.href = '/vendor/leaflet/leaflet.css';
-                document.head.appendChild(link);
-                const s = document.createElement('script');
-                s.src    = '/vendor/leaflet/leaflet.js';
-                s.onload = cb;
-                document.head.appendChild(s);
-            },
-
-            initMap() {
-                const el = this.$refs.mapEl;
-                if (!el || !window.L) return;
-                if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; }
-                delete L.Icon.Default.prototype._getIconUrl;
-                L.Icon.Default.mergeOptions({
-                    iconUrl:       '/vendor/leaflet/images/marker-icon.png',
-                    iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
-                    shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
-                });
-                const map = L.map(el).setView([16.0, 106.0], 6);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '\u00a9 OpenStreetMap contributors',
-                    maxZoom: 19,
-                }).addTo(map);
-                this.mapInstance = map;
-                this.markerLayer = L.layerGroup().addTo(map);
-                this.refreshMarkers();
-                // Extra invalidateSize to catch residual layout shift after slide-over
-                setTimeout(() => map.invalidateSize(), 50);
-            },
-
-            refreshMarkers() {
-                if (!this.mapInstance || !this.markerLayer) return;
-                this.markerLayer.clearLayers();
-                const sites = {};
-                this.filteredScreens.forEach(s => {
-                    if (!s.site_lat || !s.site_lon) return;
-                    if (!sites[s.site_id]) {
-                        sites[s.site_id] = { lat: s.site_lat, lon: s.site_lon, name: s.site_name, screens: [] };
-                    }
-                    sites[s.site_id].screens.push(s);
-                });
-                const bounds = [];
-                Object.values(sites).forEach(site => {
-                    const rows = site.screens.map(s => `
-                        <tr>
-                            <td style="padding:2px 6px;font-family:monospace;font-size:11px">${s.external_id}</td>
-                            <td style="padding:2px 6px;font-size:12px">
-                                <a href="${s.view_url}" target="_blank" style="color:#3b82f6">${s.name}</a>
-                            </td>
-                            <td style="padding:2px 6px">
-                                <span style="padding:1px 6px;border-radius:9999px;font-size:11px;background:${s.active ? '#dcfce7' : '#fee2e2'};color:${s.active ? '#166534' : '#991b1b'}">
-                                    ${s.active ? 'Active' : 'Inactive'}
-                                </span>
-                            </td>
-                        </tr>
-                    `).join('');
-                    const popup = `
-                        <div style="min-width:280px">
-                            <b style="font-size:13px">${site.name}</b>
-                            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${site.screens.length} màn hình</div>
-                            <table style="width:100%;border-collapse:collapse">
-                                <thead>
-                                    <tr style="background:#f3f4f6">
-                                        <th style="padding:2px 6px;text-align:left;font-size:11px">ID</th>
-                                        <th style="padding:2px 6px;text-align:left;font-size:11px">Tên</th>
-                                        <th style="padding:2px 6px;text-align:left;font-size:11px">Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>
-                    `;
-                    L.marker([site.lat, site.lon])
-                        .addTo(this.markerLayer)
-                        .bindPopup(popup, { maxWidth: 360 });
-                    bounds.push([site.lat, site.lon]);
-                });
-                if (bounds.length === 1)    this.mapInstance.setView(bounds[0], 15);
-                else if (bounds.length > 1) this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
-                this.mapInstance.invalidateSize();
-            },
-        };
-    }
-
-    // Register Alpine component. Alpine is already initialized in Filament pages,
-    // so Alpine.data() is available immediately. The fallback handles edge cases.
-    if (window.Alpine && Alpine.data) {
-        Alpine.data(@json($mapKey), mapFactory);
-    } else {
-        document.addEventListener('alpine:init', function () {
-            Alpine.data(@json($mapKey), mapFactory);
+    function filtered() {
+        return SCREENS.filter(function (s) {
+            if (filterSite && s.site_id !== filterSite) return false;
+            if (filterProv && s.province_id !== filterProv) return false;
+            return true;
         });
     }
+
+    function el(suffix) { return document.getElementById(KEY + suffix); }
+
+    function updateCount() {
+        var list = filtered();
+        var withCoords = list.filter(function (s) { return s.site_lat && s.site_lon; }).length;
+        var cw = el('_gw'); if (cw) cw.textContent = withCoords;
+        var ct = el('_gt'); if (ct) ct.textContent = list.length;
+    }
+
+    function updateClearBtn() {
+        var btn = el('_clear');
+        if (btn) btn.style.display = (filterSite || filterProv) ? '' : 'none';
+    }
+
+    function refreshMarkers() {
+        if (!mapInst || !markerLyr) return;
+        markerLyr.clearLayers();
+        var sites = {};
+        filtered().forEach(function (s) {
+            if (!s.site_lat || !s.site_lon) return;
+            if (!sites[s.site_id]) {
+                sites[s.site_id] = { lat: s.site_lat, lon: s.site_lon, name: s.site_name, screens: [] };
+            }
+            sites[s.site_id].screens.push(s);
+        });
+        var bounds = [];
+        Object.values(sites).forEach(function (site) {
+            var rows = site.screens.map(function (s) {
+                var bg    = s.active ? '#dcfce7' : '#fee2e2';
+                var color = s.active ? '#166534' : '#991b1b';
+                var label = s.active ? 'Active' : 'Inactive';
+                return '<tr>' +
+                    '<td style="padding:2px 6px;font-family:monospace;font-size:11px">' + s.external_id + '</td>' +
+                    '<td style="padding:2px 6px;font-size:12px"><a href="' + s.view_url + '" target="_blank" style="color:#3b82f6">' + s.name + '</a></td>' +
+                    '<td style="padding:2px 6px"><span style="padding:1px 6px;border-radius:9999px;font-size:11px;background:' + bg + ';color:' + color + '">' + label + '</span></td>' +
+                    '</tr>';
+            }).join('');
+            var popup = '<div style="min-width:280px">' +
+                '<b style="font-size:13px">' + site.name + '</b>' +
+                '<div style="font-size:11px;color:#6b7280;margin-bottom:6px">' + site.screens.length + ' màn hình</div>' +
+                '<table style="width:100%;border-collapse:collapse">' +
+                '<thead><tr style="background:#f3f4f6">' +
+                '<th style="padding:2px 6px;text-align:left;font-size:11px">ID</th>' +
+                '<th style="padding:2px 6px;text-align:left;font-size:11px">Tên</th>' +
+                '<th style="padding:2px 6px;text-align:left;font-size:11px">Trạng thái</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+            L.marker([site.lat, site.lon]).addTo(markerLyr).bindPopup(popup, { maxWidth: 360 });
+            bounds.push([site.lat, site.lon]);
+        });
+        if (bounds.length === 1)    mapInst.setView(bounds[0], 15);
+        else if (bounds.length > 1) mapInst.fitBounds(bounds, { padding: [40, 40] });
+        mapInst.invalidateSize();
+        updateCount();
+    }
+
+    function initMap() {
+        var mapEl = el('_map');
+        if (!mapEl || !window.L) return;
+        if (mapInst) { mapInst.remove(); mapInst = null; }
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconUrl:       '/vendor/leaflet/images/marker-icon.png',
+            iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
+            shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
+        });
+        var map = L.map(mapEl).setView([16.0, 106.0], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '\u00a9 OpenStreetMap contributors',
+            maxZoom: 19,
+        }).addTo(map);
+        mapInst   = map;
+        markerLyr = L.layerGroup().addTo(map);
+        refreshMarkers();
+        setTimeout(function () { map.invalidateSize(); }, 100);
+    }
+
+    function loadLeaflet(cb) {
+        if (window.L) { cb(); return; }
+        var link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = '/vendor/leaflet/leaflet.css';
+        document.head.appendChild(link);
+        var js = document.createElement('script');
+        js.src    = '/vendor/leaflet/leaflet.js';
+        js.onload = cb;
+        document.head.appendChild(js);
+    }
+
+    function start() {
+        // Populate province filter
+        var provSel = el('_prov');
+        if (provSel) {
+            Object.entries(PROV_OPTS).forEach(function (pair) {
+                var opt = document.createElement('option');
+                opt.value = pair[0]; opt.textContent = pair[1];
+                provSel.appendChild(opt);
+            });
+            provSel.addEventListener('change', function () {
+                filterProv = this.value;
+                filterSite = '';
+                var s = el('_site'); if (s) s.value = '';
+                refreshMarkers(); updateClearBtn();
+            });
+        }
+
+        // Populate site filter
+        var siteSel = el('_site');
+        if (siteSel) {
+            Object.entries(SITE_OPTS).forEach(function (pair) {
+                var opt = document.createElement('option');
+                opt.value = pair[0]; opt.textContent = pair[1];
+                siteSel.appendChild(opt);
+            });
+            siteSel.addEventListener('change', function () {
+                filterSite = this.value;
+                refreshMarkers(); updateClearBtn();
+            });
+        }
+
+        // Clear button
+        var clearBtn = el('_clear');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                filterSite = ''; filterProv = '';
+                if (siteSel) siteSel.value = '';
+                if (provSel) provSel.value = '';
+                refreshMarkers(); updateClearBtn();
+            });
+        }
+
+        updateCount();
+        updateClearBtn();
+
+        // 350ms delay lets the Filament slide-over animation finish before
+        // Leaflet reads container dimensions (offsetWidth=0 during animation)
+        loadLeaflet(function () { setTimeout(initMap, 350); });
+    }
+
+    // The <script> runs before DOM is fully patched in some Livewire scenarios.
+    // Poll until the map element is available, then start.
+    (function waitAndStart() {
+        if (el('_map')) { start(); }
+        else             { setTimeout(waitAndStart, 30); }
+    }());
 }());
 </script>
 
-<div
-    x-data="{{ $mapKey }}"
-    class="space-y-3 -mx-6 -mb-6"
->
+<div class="space-y-3 -mx-6 -mb-6">
+
     {{-- Filter bar --}}
     <div class="flex flex-wrap items-center gap-3 px-6 pt-1">
-
-        {{-- Site filter --}}
-        <div class="flex items-center gap-2">
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
-            <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                <select
-                    x-model="filterSite"
-                    class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                >
-                    <option value="">Tất cả site</option>
-                    <template x-for="[id, name] in Object.entries(siteOpts)" :key="id">
-                        <option :value="id" x-text="name"></option>
-                    </template>
-                </select>
-            </div>
-        </div>
 
         {{-- Province filter --}}
         <div class="flex items-center gap-2">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
             <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
                 <select
-                    x-model="filterProvince"
+                    id="{{ $mapKey }}_prov"
                     class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
                 >
                     <option value="">Tất cả tỉnh</option>
-                    <template x-for="[id, name] in Object.entries(provinceOpts)" :key="id">
-                        <option :value="id" x-text="name"></option>
-                    </template>
+                </select>
+            </div>
+        </div>
+
+        {{-- Site filter --}}
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
+            <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                <select
+                    id="{{ $mapKey }}_site"
+                    class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
+                >
+                    <option value="">Tất cả site</option>
                 </select>
             </div>
         </div>
 
         {{-- Clear button --}}
         <button
-            x-show="filterSite || filterProvince"
-            x-cloak
-            @click="filterSite = ''; filterProvince = ''"
+            id="{{ $mapKey }}_clear"
             type="button"
+            style="display:none"
             class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75"
         >
             Xoá bộ lọc
         </button>
 
-        {{-- GPS status --}}
+        {{-- GPS count --}}
         <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
-            <span x-text="withCoordsCount"></span> / <span x-text="filteredScreens.length"></span> màn hình có tọa độ GPS
+            <span id="{{ $mapKey }}_gw">0</span> / <span id="{{ $mapKey }}_gt">0</span> màn hình có tọa độ GPS
         </span>
     </div>
 
-    {{-- Map container — wire:ignore prevents Livewire from clobbering the Leaflet DOM --}}
+    {{-- Map container — wire:ignore prevents Livewire from clobbering Leaflet DOM --}}
     <div wire:ignore>
-        <div
-            x-ref="mapEl"
-            style="height:560px;width:100%;z-index:0;"
-        ></div>
+        <div id="{{ $mapKey }}_map" style="height:560px;width:100%;z-index:0;"></div>
     </div>
 
-    {{-- Footer note --}}
+    {{-- Footer --}}
     <p class="px-6 pb-3 text-xs text-gray-400 dark:text-gray-500 text-center">
         Nhấn vào marker để xem danh sách màn hình tại site đó.
     </p>
