@@ -26,6 +26,7 @@
     var filterProv = '';
     var mapInst    = null;
     var markerLyr  = null;
+    var initialized = false;
 
     function filtered() {
         return SCREENS.filter(function (s) {
@@ -126,10 +127,10 @@
         document.head.appendChild(js);
     }
 
-    function start() {
-        // Province filter
+    function setupFilters() {
         var provSel = document.getElementById('nvm_prov');
-        if (provSel) {
+        if (provSel && !provSel.dataset.ready) {
+            provSel.dataset.ready = '1';
             Object.entries(PROV_OPTS).forEach(function (pair) {
                 var opt = document.createElement('option');
                 opt.value = pair[0]; opt.textContent = pair[1];
@@ -143,9 +144,9 @@
             });
         }
 
-        // Site filter
         var siteSel = document.getElementById('nvm_site');
-        if (siteSel) {
+        if (siteSel && !siteSel.dataset.ready) {
+            siteSel.dataset.ready = '1';
             Object.entries(SITE_OPTS).forEach(function (pair) {
                 var opt = document.createElement('option');
                 opt.value = pair[0]; opt.textContent = pair[1];
@@ -157,28 +158,31 @@
             });
         }
 
-        // Clear button
         var clearBtn = document.getElementById('nvm_clear');
-        if (clearBtn) {
+        if (clearBtn && !clearBtn.dataset.ready) {
+            clearBtn.dataset.ready = '1';
             clearBtn.addEventListener('click', function () {
                 filterSite = ''; filterProv = '';
-                if (siteSel) siteSel.value = '';
-                if (provSel) provSel.value = '';
+                var s = document.getElementById('nvm_site'); if (s) s.value = '';
+                var p = document.getElementById('nvm_prov'); if (p) p.value = '';
                 refreshMarkers(); updateClearBtn();
             });
         }
 
         updateCount();
         updateClearBtn();
-        loadLeaflet(function () { setTimeout(initMap, 100); });
     }
 
-    // Map is visible on page load — no polling needed, just wait for DOM ready.
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', start);
-    } else {
-        start();
-    }
+    // Triggered by Alpine $watch when map tab becomes active
+    window.addEventListener('nvm-map-activate', function () {
+        setupFilters();
+        if (!initialized) {
+            initialized = true;
+            loadLeaflet(function () { setTimeout(initMap, 80); });
+        } else if (mapInst) {
+            setTimeout(function () { mapInst.invalidateSize(); }, 80);
+        }
+    });
 }());
 </script>
 @endscript
@@ -190,18 +194,38 @@
         'fi-resource-record-' . $record->getKey(),
     ])
 >
-    {{-- Network info (full width) --}}
+    {{-- Network info --}}
     @if ($this->hasInfolist())
         {{ $this->infolist }}
     @endif
 
-    {{-- 2-column section: table (left) + map (right) --}}
+    {{-- Tabbed screens section --}}
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+    <div
+        x-data="{ tab: 'list' }"
+        x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
+    >
+        {{-- Tab bar --}}
+        <x-filament::tabs>
+            <x-filament::tabs.item
+                icon="heroicon-o-list-bullet"
+                alpineActive="tab === 'list'"
+                @click="tab = 'list'"
+            >
+                Danh sách màn hình
+            </x-filament::tabs.item>
+            <x-filament::tabs.item
+                icon="heroicon-o-map-pin"
+                alpineActive="tab === 'map'"
+                @click="tab = 'map'"
+            >
+                Bản đồ
+            </x-filament::tabs.item>
+        </x-filament::tabs>
 
-        {{-- Screens table — 3/5 width --}}
-        <div class="xl:col-span-3">
+        {{-- Tab: List --}}
+        <div x-show="tab === 'list'" x-cloak>
             @if (count($relationManagers))
                 <x-filament-panels::resources.relation-managers
                     :active-locale="isset($activeLocale) ? $activeLocale : null"
@@ -216,13 +240,11 @@
             @endif
         </div>
 
-        {{-- Map — 2/5 width, sticky --}}
-        <div class="xl:col-span-2 xl:sticky xl:top-4 self-start">
+        {{-- Tab: Map --}}
+        <div x-show="tab === 'map'" x-cloak>
             <x-filament::section>
-                <x-slot name="heading">Bản đồ màn hình</x-slot>
-
                 {{-- Filter bar --}}
-                <div class="flex flex-wrap items-center gap-3 mb-3">
+                <div class="flex flex-wrap items-center gap-3 mb-4">
 
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
@@ -256,13 +278,13 @@
                     >Xoá bộ lọc</button>
 
                     <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
-                        <span id="nvm_gw">0</span>/<span id="nvm_gt">0</span> có GPS
+                        <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
                     </span>
                 </div>
 
                 {{-- Map container --}}
                 <div wire:ignore>
-                    <div id="nvm_map" style="height:520px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
+                    <div id="nvm_map" style="height:580px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
                 </div>
 
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
@@ -270,6 +292,6 @@
                 </p>
             </x-filament::section>
         </div>
-
     </div>
+
 </x-filament-panels::page>
