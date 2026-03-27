@@ -25,117 +25,149 @@
 @endphp
 
 {{--
-    NOTE: Data is injected via @json() (not Js::from()) because this component lives inside
-    a double-quoted HTML attribute (x-data="..."). Js::from() outputs raw JSON with unescaped "
-    which would prematurely close the HTML attribute. @json() uses JSON_HEX_QUOT to encode " as
-    \u0022 — safe in HTML attributes, correctly parsed by JavaScript as the " character.
-
-    Popup HTML uses backtick template literals with single-quoted HTML attributes.
-    Backticks are safe inside double-quoted HTML attributes (no conflict with HTML parser).
-    Single-quoted HTML attributes avoid any " character that would close the x-data attribute.
+    JavaScript lives in a <script> tag — NOT in x-data="..." — to avoid all HTML attribute
+    escaping issues. Alpine.data() registers the component by name; the div references it
+    via x-data="{{ $mapKey }}". @json() inside <script> is safe (Blade processes directives
+    regardless of HTML context; JSON_HEX_TAG prevents any </script> injection via data).
 --}}
+<script>
+(function () {
+    var _allScreens  = @json($screensData);
+    var _siteOpts    = @json($siteOpts);
+    var _provinceOpts = @json($provinceOpts);
+
+    function mapFactory() {
+        return {
+            allScreens:    _allScreens,
+            siteOpts:      _siteOpts,
+            provinceOpts:  _provinceOpts,
+            filterSite:    '',
+            filterProvince:'',
+            mapInstance:   null,
+            markerLayer:   null,
+
+            get filteredScreens() {
+                return this.allScreens.filter(s => {
+                    if (this.filterSite     && s.site_id     !== this.filterSite)     return false;
+                    if (this.filterProvince && s.province_id !== this.filterProvince) return false;
+                    return true;
+                });
+            },
+
+            get withCoordsCount() {
+                return this.filteredScreens.filter(s => s.site_lat && s.site_lon).length;
+            },
+
+            init() {
+                this.$watch('filterSite',     () => this.refreshMarkers());
+                this.$watch('filterProvince', () => { this.filterSite = ''; this.refreshMarkers(); });
+                // Delay 350ms to let the Filament slide-over CSS animation finish before
+                // Leaflet reads container dimensions. Without this, offsetWidth=0 and breaks.
+                this.loadLeaflet(() => setTimeout(() => this.$nextTick(() => this.initMap()), 350));
+            },
+
+            loadLeaflet(cb) {
+                if (window.L) { cb(); return; }
+                const link = document.createElement('link');
+                link.rel  = 'stylesheet';
+                link.href = '/vendor/leaflet/leaflet.css';
+                document.head.appendChild(link);
+                const s = document.createElement('script');
+                s.src    = '/vendor/leaflet/leaflet.js';
+                s.onload = cb;
+                document.head.appendChild(s);
+            },
+
+            initMap() {
+                const el = this.$refs.mapEl;
+                if (!el || !window.L) return;
+                if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; }
+                delete L.Icon.Default.prototype._getIconUrl;
+                L.Icon.Default.mergeOptions({
+                    iconUrl:       '/vendor/leaflet/images/marker-icon.png',
+                    iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
+                    shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
+                });
+                const map = L.map(el).setView([16.0, 106.0], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '\u00a9 OpenStreetMap contributors',
+                    maxZoom: 19,
+                }).addTo(map);
+                this.mapInstance = map;
+                this.markerLayer = L.layerGroup().addTo(map);
+                this.refreshMarkers();
+                // Extra invalidateSize to catch residual layout shift after slide-over
+                setTimeout(() => map.invalidateSize(), 50);
+            },
+
+            refreshMarkers() {
+                if (!this.mapInstance || !this.markerLayer) return;
+                this.markerLayer.clearLayers();
+                const sites = {};
+                this.filteredScreens.forEach(s => {
+                    if (!s.site_lat || !s.site_lon) return;
+                    if (!sites[s.site_id]) {
+                        sites[s.site_id] = { lat: s.site_lat, lon: s.site_lon, name: s.site_name, screens: [] };
+                    }
+                    sites[s.site_id].screens.push(s);
+                });
+                const bounds = [];
+                Object.values(sites).forEach(site => {
+                    const rows = site.screens.map(s => `
+                        <tr>
+                            <td style="padding:2px 6px;font-family:monospace;font-size:11px">${s.external_id}</td>
+                            <td style="padding:2px 6px;font-size:12px">
+                                <a href="${s.view_url}" target="_blank" style="color:#3b82f6">${s.name}</a>
+                            </td>
+                            <td style="padding:2px 6px">
+                                <span style="padding:1px 6px;border-radius:9999px;font-size:11px;background:${s.active ? '#dcfce7' : '#fee2e2'};color:${s.active ? '#166534' : '#991b1b'}">
+                                    ${s.active ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                    const popup = `
+                        <div style="min-width:280px">
+                            <b style="font-size:13px">${site.name}</b>
+                            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${site.screens.length} màn hình</div>
+                            <table style="width:100%;border-collapse:collapse">
+                                <thead>
+                                    <tr style="background:#f3f4f6">
+                                        <th style="padding:2px 6px;text-align:left;font-size:11px">ID</th>
+                                        <th style="padding:2px 6px;text-align:left;font-size:11px">Tên</th>
+                                        <th style="padding:2px 6px;text-align:left;font-size:11px">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    `;
+                    L.marker([site.lat, site.lon])
+                        .addTo(this.markerLayer)
+                        .bindPopup(popup, { maxWidth: 360 });
+                    bounds.push([site.lat, site.lon]);
+                });
+                if (bounds.length === 1)    this.mapInstance.setView(bounds[0], 15);
+                else if (bounds.length > 1) this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
+                this.mapInstance.invalidateSize();
+            },
+        };
+    }
+
+    // Register Alpine component. Alpine is already initialized in Filament pages,
+    // so Alpine.data() is available immediately. The fallback handles edge cases.
+    if (window.Alpine && Alpine.data) {
+        Alpine.data(@json($mapKey), mapFactory);
+    } else {
+        document.addEventListener('alpine:init', function () {
+            Alpine.data(@json($mapKey), mapFactory);
+        });
+    }
+}());
+</script>
+
 <div
-    x-data="{
-        allScreens:   @json($screensData),
-        siteOpts:     @json($siteOpts),
-        provinceOpts: @json($provinceOpts),
-        filterSite:      '',
-        filterProvince:  '',
-        mapInstance:     null,
-        markerLayer:     null,
-
-        get filteredScreens() {
-            return this.allScreens.filter(s => {
-                if (this.filterSite     && s.site_id     !== this.filterSite)     return false;
-                if (this.filterProvince && s.province_id !== this.filterProvince) return false;
-                return true;
-            });
-        },
-
-        get withCoordsCount() {
-            return this.filteredScreens.filter(s => s.site_lat && s.site_lon).length;
-        },
-
-        init() {
-            this.\$watch('filterSite',     () => this.refreshMarkers());
-            this.\$watch('filterProvince', () => { this.filterSite = ''; this.refreshMarkers(); });
-            // Delay 350ms to let the Filament slide-over CSS animation finish before Leaflet
-            // reads container dimensions. Without this, Leaflet sees offsetWidth=0 and breaks.
-            this.loadLeaflet(() => setTimeout(() => this.\$nextTick(() => this.initMap()), 350));
-        },
-
-        loadLeaflet(cb) {
-            if (window.L) { cb(); return; }
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '/vendor/leaflet/leaflet.css';
-            document.head.appendChild(link);
-            const js = document.createElement('script');
-            js.src = '/vendor/leaflet/leaflet.js';
-            js.onload = cb;
-            document.head.appendChild(js);
-        },
-
-        initMap() {
-            const el = this.\$refs.mapEl;
-            if (!el || !window.L) return;
-            if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; }
-            delete L.Icon.Default.prototype._getIconUrl;
-            L.Icon.Default.mergeOptions({
-                iconUrl:       '/vendor/leaflet/images/marker-icon.png',
-                iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
-                shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
-            });
-            const map = L.map(el).setView([16.0, 106.0], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '\u00a9 OpenStreetMap contributors',
-                maxZoom: 19,
-            }).addTo(map);
-            this.mapInstance = map;
-            this.markerLayer = L.layerGroup().addTo(map);
-            this.refreshMarkers();
-            // Extra invalidateSize after a tick to catch any residual layout shift
-            setTimeout(() => map.invalidateSize(), 50);
-        },
-
-        refreshMarkers() {
-            if (!this.mapInstance || !this.markerLayer) return;
-            this.markerLayer.clearLayers();
-            const sites = {};
-            this.filteredScreens.forEach(s => {
-                if (!s.site_lat || !s.site_lon) return;
-                if (!sites[s.site_id]) sites[s.site_id] = { lat: s.site_lat, lon: s.site_lon, name: s.site_name, screens: [] };
-                sites[s.site_id].screens.push(s);
-            });
-            const bounds = [];
-            Object.values(sites).forEach(site => {
-                const rows = site.screens.map(s =>
-                    `<tr>` +
-                    `<td style='padding:2px 6px;font-family:monospace;font-size:11px'>${s.external_id}</td>` +
-                    `<td style='padding:2px 6px;font-size:12px'><a href='${s.view_url}' target='_blank' style='color:#3b82f6'>${s.name}</a></td>` +
-                    `<td style='padding:2px 6px'><span style='padding:1px 6px;border-radius:9999px;font-size:11px;background:${s.active ? '#dcfce7' : '#fee2e2'};color:${s.active ? '#166534' : '#991b1b'}'>${s.active ? 'Active' : 'Inactive'}</span></td>` +
-                    `</tr>`
-                ).join('');
-                const popup =
-                    `<div style='min-width:280px'>` +
-                    `<b style='font-size:13px'>${site.name}</b>` +
-                    `<div style='font-size:11px;color:#6b7280;margin-bottom:6px'>${site.screens.length} màn hình</div>` +
-                    `<table style='width:100%;border-collapse:collapse'>` +
-                    `<thead><tr style='background:#f3f4f6'>` +
-                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>ID</th>` +
-                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>Tên</th>` +
-                    `<th style='padding:2px 6px;text-align:left;font-size:11px'>Trạng thái</th>` +
-                    `</tr></thead>` +
-                    `<tbody>${rows}</tbody>` +
-                    `</table></div>`;
-                L.marker([site.lat, site.lon]).addTo(this.markerLayer).bindPopup(popup, { maxWidth: 360 });
-                bounds.push([site.lat, site.lon]);
-            });
-            if (bounds.length === 1)    this.mapInstance.setView(bounds[0], 15);
-            else if (bounds.length > 1) this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
-            this.mapInstance.invalidateSize();
-        },
-    }"
+    x-data="{{ $mapKey }}"
     class="space-y-3 -mx-6 -mb-6"
 >
     {{-- Filter bar --}}
