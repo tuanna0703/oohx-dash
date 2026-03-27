@@ -202,12 +202,13 @@
     {{-- Tabbed screens section --}}
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
+    <x-filament::section>
     <div
         x-data="{ tab: 'list' }"
         x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
     >
         {{-- Tab bar --}}
-        <x-filament::tabs>
+        <x-filament::tabs class="mb-4">
             <x-filament::tabs.item
                 icon="heroicon-o-list-bullet"
                 alpineActive="tab === 'list'"
@@ -242,7 +243,6 @@
 
         {{-- Tab: Map --}}
         <div x-show="tab === 'map'" x-cloak>
-            <x-filament::section>
                 {{-- Filter bar --}}
                 <div class="flex flex-wrap items-center gap-3 mb-4">
 
@@ -290,8 +290,8 @@
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
                     Nhấn vào marker để xem danh sách màn hình tại site đó.
                 </p>
-            </x-filament::section>
         </div>
     </div>
+    </x-filament::section>
 
 </x-filament-panels::page>
