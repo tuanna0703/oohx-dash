@@ -1,3 +1,9 @@
+@once
+<style>
+.nvm-list-tab .fi-ta-ctn { border-radius: 0 !important; box-shadow: none !important; ring: none; }
+</style>
+@endonce
+
 @php
     $screensData = $this->screensMapData;
 
@@ -230,7 +236,7 @@
         </x-filament::tabs>
 
         {{-- Tab: List (no extra padding — table renders edge-to-edge inside the card) --}}
-        <div x-show="tab === 'list'" x-cloak class="[&_.fi-ta-ctn]:rounded-none [&_.fi-ta-header-toolbar]:rounded-none">
+        <div x-show="tab === 'list'" x-cloak class="nvm-list-tab">
             @if (count($relationManagers))
                 <x-filament-panels::resources.relation-managers
                     :active-locale="isset($activeLocale) ? $activeLocale : null"
