@@ -28,7 +28,10 @@
     Pure vanilla JS — no Alpine for the map component.
     Avoids Alpine.data() timing race with Livewire's script injection order.
     All DOM references use IDs scoped by $mapKey.
+    @script ensures Livewire re-evaluates this on every morphdom update,
+    which is needed because Filament pre-renders modal content hidden on page load.
 --}}
+@script
 <script>
 (function () {
     var KEY       = @json($mapKey);
@@ -197,6 +200,7 @@
     }());
 }());
 </script>
+@endscript
 
 <div class="space-y-3 -mx-6 -mb-6">
 
