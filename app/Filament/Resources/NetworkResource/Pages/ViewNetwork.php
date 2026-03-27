@@ -18,6 +18,11 @@ class ViewNetwork extends ViewRecord
 
     public array $screensMapData = [];
 
+    public function getTitle(): string
+    {
+        return 'Overview';
+    }
+
     public function getView(): string
     {
         return 'filament.resources.network-resource.pages.view-network';

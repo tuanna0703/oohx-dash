@@ -1,6 +1,6 @@
 @once
 <style>
-.nvm-list-tab .fi-ta-ctn { border-radius: 0 !important; box-shadow: none !important; ring: none; }
+.nvm-list-tab .fi-ta-ctn { border-radius: 0 !important; box-shadow: none !important; }
 </style>
 @endonce
 
@@ -20,7 +20,6 @@
         ->sortBy(fn($v) => $v)
         ->all();
 
-    // commune_id => ['name' => ..., 'province_id' => ...] for client-side chained filtering
     $communeOpts = collect($screensData)
         ->filter(fn($s) => $s['commune_id'] !== '')
         ->mapWithKeys(fn($s) => [$s['commune_id'] => [
@@ -30,27 +29,43 @@
         ->filter(fn($v) => $v['name'] !== '')
         ->sortBy(fn($v) => $v['name'])
         ->all();
+
+    // ── Mock campaign data (replace with real query when model is ready) ───────
+    $mockCampaigns = [
+        ['name' => 'Tết Sale 2025',         'advertiser' => 'Vinamilk',      'start' => '2025-01-10', 'end' => '2025-02-10', 'budget' => 120_000_000, 'impressions' => 485_000, 'status' => 'completed'],
+        ['name' => 'Brand Awareness Q1',    'advertiser' => 'Samsung VN',    'start' => '2025-01-01', 'end' => '2025-03-31', 'budget' => 200_000_000, 'impressions' => 750_000, 'status' => 'completed'],
+        ['name' => 'Summer Blast',          'advertiser' => 'Pepsi Vietnam', 'start' => '2025-04-01', 'end' => '2025-05-31', 'budget' => 85_000_000,  'impressions' => 320_000, 'status' => 'active'],
+        ['name' => 'Mid-Year Promo',        'advertiser' => 'Shopee',        'start' => '2025-06-01', 'end' => '2025-06-30', 'budget' => 60_000_000,  'impressions' => 180_000, 'status' => 'paused'],
+        ['name' => 'Back to School',        'advertiser' => 'Bitis',         'start' => '2025-08-01', 'end' => '2025-09-15', 'budget' => 45_000_000,  'impressions' => 95_000,  'status' => 'active'],
+        ['name' => 'Year-End Grand Sale',   'advertiser' => 'Lazada VN',     'start' => '2024-11-01', 'end' => '2024-12-31', 'budget' => 175_000_000, 'impressions' => 620_000, 'status' => 'completed'],
+    ];
+
+    // Chart: last 12 months performance (revenue triệu VND, impressions nghìn)
+    $mockChartLabels      = ['T4/24','T5/24','T6/24','T7/24','T8/24','T9/24','T10/24','T11/24','T12/24','T1/25','T2/25','T3/25'];
+    $mockChartRevenue     = [42, 58, 74, 51, 80, 88, 105, 122, 175, 128, 95, 112];
+    $mockChartImpressions = [168, 232, 296, 204, 320, 352, 420, 488, 620, 495, 375, 448];
 @endphp
 
 @script
 <script>
 (function () {
+    // ── Map ──────────────────────────────────────────────────────────────────
     var SCREENS      = @json($screensData);
     var SITE_OPTS    = @json($siteOpts);
     var PROV_OPTS    = @json($provinceOpts);
-    var COMMUNE_OPTS = @json($communeOpts);  // { id: { name, province_id } }
+    var COMMUNE_OPTS = @json($communeOpts);
 
     var filterSite    = '';
     var filterProv    = '';
     var filterCommune = '';
     var mapInst       = null;
     var markerLyr     = null;
-    var initialized   = false;
+    var mapInitialized = false;
 
     function filtered() {
         return SCREENS.filter(function (s) {
-            if (filterSite    && s.site_id    !== filterSite)    return false;
-            if (filterProv    && s.province_id !== filterProv)   return false;
+            if (filterSite    && s.site_id     !== filterSite)    return false;
+            if (filterProv    && s.province_id !== filterProv)    return false;
             if (filterCommune && s.commune_id  !== filterCommune) return false;
             return true;
         });
@@ -68,12 +83,10 @@
         if (btn) btn.style.display = (filterSite || filterProv || filterCommune) ? '' : 'none';
     }
 
-    // Rebuild commune dropdown, optionally scoped to a province
     function rebuildCommuneSel(scopeProvId) {
         var communeSel = document.getElementById('nvm_commune');
         if (!communeSel) return;
         var current = communeSel.value;
-        // Remove all options except the first placeholder
         while (communeSel.options.length > 1) communeSel.remove(1);
         Object.entries(COMMUNE_OPTS).forEach(function (pair) {
             var id = pair[0], data = pair[1];
@@ -82,7 +95,6 @@
             opt.value = id; opt.textContent = data.name;
             communeSel.appendChild(opt);
         });
-        // Restore selection only if still valid in new list
         communeSel.value = current;
         if (communeSel.value !== current) { communeSel.value = ''; filterCommune = ''; }
     }
@@ -166,7 +178,7 @@
         document.head.appendChild(js);
     }
 
-    function setupFilters() {
+    function setupMapFilters() {
         var provSel = document.getElementById('nvm_prov');
         if (provSel && !provSel.dataset.ready) {
             provSel.dataset.ready = '1';
@@ -229,14 +241,106 @@
         updateClearBtn();
     }
 
-    // Triggered by Alpine $watch when map tab becomes active
     window.addEventListener('nvm-map-activate', function () {
-        setupFilters();
-        if (!initialized) {
-            initialized = true;
+        setupMapFilters();
+        if (!mapInitialized) {
+            mapInitialized = true;
             loadLeaflet(function () { setTimeout(initMap, 80); });
         } else if (mapInst) {
             setTimeout(function () { mapInst.invalidateSize(); }, 80);
+        }
+    });
+
+    // ── Campaign Performance Chart ────────────────────────────────────────────
+    var CHART_LABELS      = @json($mockChartLabels);
+    var CHART_REVENUE     = @json($mockChartRevenue);
+    var CHART_IMPRESSIONS = @json($mockChartImpressions);
+    var chartInst         = null;
+    var chartInitialized  = false;
+
+    function loadChartJs(cb) {
+        if (window.Chart) { cb(); return; }
+        var js = document.createElement('script');
+        js.src    = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+        js.onload = cb;
+        document.head.appendChild(js);
+    }
+
+    function initCampaignChart() {
+        var canvas = document.getElementById('nvm_perf_chart');
+        if (!canvas || !window.Chart) return;
+        if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+        var isDark = document.documentElement.classList.contains('dark');
+        var gridColor  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+        var labelColor = isDark ? '#9ca3af' : '#6b7280';
+
+        chartInst = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: CHART_LABELS,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Doanh thu (triệu VND)',
+                        data: CHART_REVENUE,
+                        backgroundColor: 'rgba(99,102,241,0.75)',
+                        borderRadius: 4,
+                        yAxisID: 'yRev',
+                        order: 2,
+                    },
+                    {
+                        type: 'line',
+                        label: 'Impressions (nghìn)',
+                        data: CHART_IMPRESSIONS,
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249,115,22,0.12)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        tension: 0.35,
+                        fill: true,
+                        yAxisID: 'yImp',
+                        order: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: labelColor, font: { size: 11 }, boxWidth: 14 },
+                    },
+                    tooltip: { padding: 10 },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: labelColor, font: { size: 11 } },
+                        grid:  { color: gridColor },
+                    },
+                    yRev: {
+                        position: 'left',
+                        title: { display: true, text: 'Triệu VND', color: '#6366f1', font: { size: 10 } },
+                        ticks: { color: labelColor, font: { size: 11 } },
+                        grid:  { color: gridColor },
+                    },
+                    yImp: {
+                        position: 'right',
+                        title: { display: true, text: 'Impressions (K)', color: '#f97316', font: { size: 10 } },
+                        ticks: { color: labelColor, font: { size: 11 } },
+                        grid:  { drawOnChartArea: false },
+                    },
+                },
+            },
+        });
+    }
+
+    window.addEventListener('nvm-chart-activate', function () {
+        if (!chartInitialized) {
+            chartInitialized = true;
+            loadChartJs(function () { setTimeout(initCampaignChart, 60); });
         }
     });
 }());
@@ -255,112 +359,198 @@
         {{ $this->infolist }}
     @endif
 
-    {{-- Tabbed screens section --}}
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
-    <div
-        x-data="{ tab: 'list' }"
-        x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
-        class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
-    >
-        <x-filament::tabs :contained="true">
-            <x-filament::tabs.item
-                icon="heroicon-o-list-bullet"
-                alpineActive="tab === 'list'"
-                @click="tab = 'list'"
-            >
-                Danh sách màn hình
-            </x-filament::tabs.item>
-            <x-filament::tabs.item
-                icon="heroicon-o-map-pin"
-                alpineActive="tab === 'map'"
-                @click="tab = 'map'"
-            >
-                Bản đồ
-            </x-filament::tabs.item>
-        </x-filament::tabs>
+    {{-- Two-column section: Campaigns (left) + Screens (right) ──────────────────────────────── --}}
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
 
-        {{-- Tab: List --}}
-        <div x-show="tab === 'list'" x-cloak class="nvm-list-tab">
-            @if (count($relationManagers))
-                <x-filament-panels::resources.relation-managers
-                    :active-locale="isset($activeLocale) ? $activeLocale : null"
-                    :active-manager="array_key_first($relationManagers)"
-                    :content-tab-label="$this->getContentTabLabel()"
-                    :content-tab-icon="$this->getContentTabIcon()"
-                    :content-tab-position="$this->getContentTabPosition()"
-                    :managers="$relationManagers"
-                    :owner-record="$record"
-                    :page-class="static::class"
-                />
-            @endif
+        {{-- ── LEFT: Campaigns ─────────────────────────────────────────────── --}}
+        <div class="xl:col-span-2">
+            <div
+                x-data="{ camTab: 'list' }"
+                x-init="$watch('camTab', function(v) { if (v === 'chart') window.dispatchEvent(new CustomEvent('nvm-chart-activate')); })"
+                class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+            >
+                <x-filament::tabs :contained="true">
+                    <x-filament::tabs.item
+                        icon="heroicon-o-megaphone"
+                        alpineActive="camTab === 'list'"
+                        @click="camTab = 'list'"
+                    >
+                        Chiến dịch
+                    </x-filament::tabs.item>
+                    <x-filament::tabs.item
+                        icon="heroicon-o-chart-bar"
+                        alpineActive="camTab === 'chart'"
+                        @click="camTab = 'chart'"
+                    >
+                        Performance
+                    </x-filament::tabs.item>
+                </x-filament::tabs>
+
+                {{-- Tab: Campaign list --}}
+                <div x-show="camTab === 'list'" x-cloak>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Chiến dịch</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Advertiser</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Thời gian</th>
+                                    <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Budget</th>
+                                    <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Impressions</th>
+                                    <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                                @foreach ($mockCampaigns as $c)
+                                    @php
+                                        $statusColors = [
+                                            'active'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                            'completed' => 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+                                            'paused'    => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                        ];
+                                        $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'paused' => 'Paused'];
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition duration-75">
+                                        <td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-xs">{{ $c['name'] }}</td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400 text-xs">{{ $c['advertiser'] }}</td>
+                                        <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                                            {{ \Carbon\Carbon::parse($c['start'])->format('d/m/y') }}
+                                            –
+                                            {{ \Carbon\Carbon::parse($c['end'])->format('d/m/y') }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
+                                            {{ number_format($c['budget'] / 1_000_000, 0) }}M
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
+                                            {{ number_format($c['impressions']) }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-center">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$c['status']] ?? '' }}">
+                                                {{ $statusLabels[$c['status']] ?? $c['status'] }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-white/5">
+                        * Dữ liệu demo — sẽ được thay bằng dữ liệu thực khi module Campaign sẵn sàng.
+                    </p>
+                </div>
+
+                {{-- Tab: Performance chart --}}
+                <div x-show="camTab === 'chart'" x-cloak class="p-5">
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
+                        Doanh thu &amp; Impressions — 12 tháng gần nhất
+                    </p>
+                    <div wire:ignore style="position:relative;height:320px;">
+                        <canvas id="nvm_perf_chart"></canvas>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-400 dark:text-gray-500 italic text-center">
+                        * Dữ liệu demo
+                    </p>
+                </div>
+
+            </div>
         </div>
 
-        {{-- Tab: Map --}}
-        <div x-show="tab === 'map'" x-cloak class="p-6 flex flex-col gap-4">
+        {{-- ── RIGHT: Screens (list + map) ────────────────────────────────── --}}
+        <div class="xl:col-span-3">
+            <div
+                x-data="{ tab: 'list' }"
+                x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
+                class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+            >
+                <x-filament::tabs :contained="true">
+                    <x-filament::tabs.item
+                        icon="heroicon-o-list-bullet"
+                        alpineActive="tab === 'list'"
+                        @click="tab = 'list'"
+                    >
+                        Danh sách màn hình
+                    </x-filament::tabs.item>
+                    <x-filament::tabs.item
+                        icon="heroicon-o-map-pin"
+                        alpineActive="tab === 'map'"
+                        @click="tab = 'map'"
+                    >
+                        Bản đồ
+                    </x-filament::tabs.item>
+                </x-filament::tabs>
 
-            {{-- Filter bar --}}
-            <div class="flex flex-wrap items-center gap-3">
-
-                {{-- Province --}}
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
-                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                        <select
-                            id="nvm_prov"
-                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                        >
-                            <option value="">Tất cả tỉnh</option>
-                        </select>
-                    </div>
+                {{-- Tab: List --}}
+                <div x-show="tab === 'list'" x-cloak class="nvm-list-tab">
+                    @if (count($relationManagers))
+                        <x-filament-panels::resources.relation-managers
+                            :active-locale="isset($activeLocale) ? $activeLocale : null"
+                            :active-manager="array_key_first($relationManagers)"
+                            :content-tab-label="$this->getContentTabLabel()"
+                            :content-tab-icon="$this->getContentTabIcon()"
+                            :content-tab-position="$this->getContentTabPosition()"
+                            :managers="$relationManagers"
+                            :owner-record="$record"
+                            :page-class="static::class"
+                        />
+                    @endif
                 </div>
 
-                {{-- Commune --}}
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Phường/Xã:</label>
-                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                        <select
-                            id="nvm_commune"
-                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                        >
-                            <option value="">Tất cả phường/xã</option>
-                        </select>
+                {{-- Tab: Map --}}
+                <div x-show="tab === 'map'" x-cloak class="p-6 flex flex-col gap-4">
+
+                    {{-- Filter bar --}}
+                    <div class="flex flex-wrap items-center gap-3">
+
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tỉnh/Thành:</label>
+                            <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                                <select id="nvm_prov" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
+                                    <option value="">Tất cả tỉnh</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Phường/Xã:</label>
+                            <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                                <select id="nvm_commune" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
+                                    <option value="">Tất cả phường/xã</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
+                            <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
+                                <select id="nvm_site" class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900">
+                                    <option value="">Tất cả site</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="nvm_clear" type="button" style="display:none"
+                            class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75">
+                            Xoá bộ lọc
+                        </button>
+
+                        <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
+                            <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
+                        </span>
                     </div>
+
+                    {{-- Map --}}
+                    <div wire:ignore>
+                        <div id="nvm_map" style="height:480px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
+                    </div>
+
+                    <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
+                        Nhấn vào marker để xem danh sách màn hình tại site đó.
+                    </p>
                 </div>
 
-                {{-- Site --}}
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Site:</label>
-                    <div class="fi-input-wrp flex rounded-lg shadow-sm ring-1 transition duration-75 bg-white dark:bg-white/5 ring-gray-950/10 dark:ring-white/20">
-                        <select
-                            id="nvm_site"
-                            class="fi-select-input block border-none bg-transparent py-1 ps-2.5 pe-7 text-sm text-gray-950 transition duration-75 focus:ring-0 dark:text-white [&_option]:bg-white [&_option]:dark:bg-gray-900"
-                        >
-                            <option value="">Tất cả site</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button
-                    id="nvm_clear"
-                    type="button"
-                    style="display:none"
-                    class="text-xs font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 transition duration-75"
-                >Xoá bộ lọc</button>
-
-                <span class="ms-auto text-xs text-gray-400 dark:text-gray-500">
-                    <span id="nvm_gw">0</span> / <span id="nvm_gt">0</span> màn hình có tọa độ GPS
-                </span>
             </div>
-
-            {{-- Map --}}
-            <div wire:ignore>
-                <div id="nvm_map" style="height:580px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;"></div>
-            </div>
-
-            <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
-                Nhấn vào marker để xem danh sách màn hình tại site đó.
-            </p>
         </div>
 
     </div>
