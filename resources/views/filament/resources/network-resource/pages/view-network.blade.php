@@ -357,17 +357,17 @@
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
     {{-- Top row: Overview (left) + Campaigns (right) ──────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
         {{-- ── LEFT: Network Info / Media Owner infolist ───────────────────── --}}
-        <div class="xl:col-span-3">
+        <div class="lg:col-span-3">
             @if ($this->hasInfolist())
                 {{ $this->infolist }}
             @endif
         </div>
 
         {{-- ── RIGHT: Campaigns ────────────────────────────────────────────── --}}
-        <div class="xl:col-span-2">
+        <div class="lg:col-span-2">
             <div
                 x-data="{ camTab: 'list' }"
                 x-init="$watch('camTab', function(v) { if (v === 'chart') window.dispatchEvent(new CustomEvent('nvm-chart-activate')); })"
