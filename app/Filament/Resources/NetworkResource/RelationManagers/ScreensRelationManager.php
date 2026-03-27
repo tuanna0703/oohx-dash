@@ -9,6 +9,7 @@ use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 
 class ScreensRelationManager extends RelationManager
 {
@@ -89,6 +90,25 @@ class ScreensRelationManager extends RelationManager
                     ]),
             ])
             ->filtersFormColumns(3)
+            ->headerActions([
+                Tables\Actions\Action::make('viewMap')
+                    ->label('Xem bản đồ')
+                    ->icon('heroicon-o-map-pin')
+                    ->color('gray')
+                    ->slideOver()
+                    ->modalWidth('7xl')
+                    ->modalHeading(fn($livewire) => 'Bản đồ màn hình — ' . $livewire->getOwnerRecord()->name)
+                    ->modalContent(function ($livewire): View {
+                        $network = $livewire->getOwnerRecord();
+                        $screens = \App\Models\Screen::whereHas('inventory', fn($q) => $q->where('network_id', $network->id))
+                            ->with(['site.province', 'site.commune', 'inventory'])
+                            ->get();
+                        $mapKey = 'nmap_' . preg_replace('/[^a-z0-9]/i', '_', $network->id);
+                        return view('filament.modals.network-screens-map', compact('screens', 'mapKey'));
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Đóng'),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->url(fn(Screen $record) =>
