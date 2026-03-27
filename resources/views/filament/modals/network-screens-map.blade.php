@@ -1,6 +1,4 @@
 @php
-    use Illuminate\Support\Js;
-
     $screensData = $screens->map(fn($s) => [
         'id'            => $s->id,
         'external_id'   => $s->external_id ?? '—',
@@ -24,15 +22,19 @@
         ->filter(fn($s) => $s->site?->province_id)
         ->mapWithKeys(fn($s) => [(string) $s->site->province_id => $s->site->province?->name ?? '?'])
         ->filter()->sortBy(fn($v) => $v)->all();
-
-    $withCoords = collect($screensData)->filter(fn($s) => $s['site_lat'] && $s['site_lon'])->count();
 @endphp
 
+{{--
+    NOTE: Data is injected via @json() (not Js::from()) because this component lives inside
+    a double-quoted HTML attribute (x-data="..."). Js::from() outputs raw JSON with unescaped "
+    which would prematurely close the HTML attribute. @json() uses JSON_HEX_QUOT to encode " as
+    \u0022 — safe in HTML attributes, correctly parsed by JavaScript as the " character.
+--}}
 <div
     x-data="{
-        allScreens:   {!! Js::from($screensData) !!},
-        siteOpts:     {!! Js::from($siteOpts) !!},
-        provinceOpts: {!! Js::from($provinceOpts) !!},
+        allScreens:   @json($screensData),
+        siteOpts:     @json($siteOpts),
+        provinceOpts: @json($provinceOpts),
         filterSite:      '',
         filterProvince:  '',
         mapInstance:     null,
@@ -53,7 +55,9 @@
         init() {
             this.\$watch('filterSite',     () => this.refreshMarkers());
             this.\$watch('filterProvince', () => { this.filterSite = ''; this.refreshMarkers(); });
-            this.loadLeaflet(() => this.\$nextTick(() => this.initMap()));
+            // Delay 350ms to let the Filament slide-over CSS animation finish before Leaflet
+            // reads container dimensions. Without this, Leaflet sees offsetWidth=0 and breaks.
+            this.loadLeaflet(() => setTimeout(() => this.\$nextTick(() => this.initMap()), 350));
         },
 
         loadLeaflet(cb) {
@@ -86,6 +90,8 @@
             this.mapInstance = map;
             this.markerLayer = L.layerGroup().addTo(map);
             this.refreshMarkers();
+            // Extra invalidateSize after a tick to catch any residual layout shift
+            setTimeout(() => map.invalidateSize(), 50);
         },
 
         refreshMarkers() {
@@ -100,33 +106,29 @@
             const bounds = [];
             Object.values(sites).forEach(site => {
                 const rows = site.screens.map(s =>
-                    `<tr>
-                        <td style='padding:2px 6px;font-family:monospace;font-size:11px'>${s.external_id}</td>
-                        <td style='padding:2px 6px;font-size:12px'><a href='${s.view_url}' target='_blank' style='color:#3b82f6'>${s.name}</a></td>
-                        <td style='padding:2px 6px'>
-                            <span style='padding:1px 6px;border-radius:9999px;font-size:11px;background:${s.active ? '#dcfce7' : '#fee2e2'};color:${s.active ? '#166534' : '#991b1b'}'>
-                                ${s.active ? 'Active' : 'Inactive'}
-                            </span>
-                        </td>
-                    </tr>`
+                    '<tr>' +
+                    '<td style=\'padding:2px 6px;font-family:monospace;font-size:11px\'>' + s.external_id + '</td>' +
+                    '<td style=\'padding:2px 6px;font-size:12px\'><a href=\'' + s.view_url + '\' target=\'_blank\' style=\'color:#3b82f6\'>' + s.name + '</a></td>' +
+                    '<td style=\'padding:2px 6px\'><span style=\'padding:1px 6px;border-radius:9999px;font-size:11px;background:' + (s.active ? '#dcfce7' : '#fee2e2') + ';color:' + (s.active ? '#166534' : '#991b1b') + '\'>' + (s.active ? 'Active' : 'Inactive') + '</span></td>' +
+                    '</tr>'
                 ).join('');
-                const popup = `<div style='min-width:280px'>
-                    <b style='font-size:13px'>${site.name}</b>
-                    <div style='font-size:11px;color:#6b7280;margin-bottom:6px'>${site.screens.length} màn hình</div>
-                    <table style='width:100%;border-collapse:collapse'>
-                        <thead><tr style='background:#f3f4f6'>
-                            <th style='padding:2px 6px;text-align:left;font-size:11px'>ID</th>
-                            <th style='padding:2px 6px;text-align:left;font-size:11px'>Tên</th>
-                            <th style='padding:2px 6px;text-align:left;font-size:11px'>Trạng thái</th>
-                        </tr></thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>`;
+                const popup =
+                    '<div style=\'min-width:280px\'>' +
+                    '<b style=\'font-size:13px\'>' + site.name + '</b>' +
+                    '<div style=\'font-size:11px;color:#6b7280;margin-bottom:6px\'>' + site.screens.length + ' màn hình</div>' +
+                    '<table style=\'width:100%;border-collapse:collapse\'>' +
+                    '<thead><tr style=\'background:#f3f4f6\'>' +
+                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>ID</th>' +
+                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>Tên</th>' +
+                    '<th style=\'padding:2px 6px;text-align:left;font-size:11px\'>Trạng thái</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                    '</table></div>';
                 L.marker([site.lat, site.lon]).addTo(this.markerLayer).bindPopup(popup, { maxWidth: 360 });
                 bounds.push([site.lat, site.lon]);
             });
-            if (bounds.length === 1)      this.mapInstance.setView(bounds[0], 15);
-            else if (bounds.length > 1)   this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
+            if (bounds.length === 1)    this.mapInstance.setView(bounds[0], 15);
+            else if (bounds.length > 1) this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
             this.mapInstance.invalidateSize();
         },
     }"
@@ -184,7 +186,7 @@
         </span>
     </div>
 
-    {{-- Map --}}
+    {{-- Map container — wire:ignore prevents Livewire from clobbering the Leaflet DOM --}}
     <div wire:ignore>
         <div
             x-ref="mapEl"
