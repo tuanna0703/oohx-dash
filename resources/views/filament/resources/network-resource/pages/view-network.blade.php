@@ -354,110 +354,190 @@
         'fi-resource-record-' . $record->getKey(),
     ])
 >
-    @php $relationManagers = $this->getRelationManagers(); @endphp
+    @php
+        $relationManagers = $this->getRelationManagers();
+        $network = $this->record;
+        $owner   = $network->owner;
 
-    {{-- Top row: Overview (left) + Campaigns (right) ──────────────────────────────────────── --}}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+        $statusBadgeColor = match($network->status) {
+            'active' => ['bg' => '#dcfce7', 'text' => '#166534'],
+            'paused' => ['bg' => '#fef9c3', 'text' => '#854d0e'],
+            default  => ['bg' => '#f3f4f6', 'text' => '#374151'],
+        };
+        $ownerStatusColor = match($owner?->status) {
+            'active'    => ['bg' => '#dcfce7', 'text' => '#166534'],
+            'suspended' => ['bg' => '#fee2e2', 'text' => '#991b1b'],
+            default     => ['bg' => '#fef9c3', 'text' => '#854d0e'],
+        };
+    @endphp
 
-        {{-- ── LEFT: Network Info / Media Owner infolist ───────────────────── --}}
-        <div>
-            @if ($this->hasInfolist())
-                {{ $this->infolist }}
-            @endif
+    {{-- ── Single 4-tab card: Network Info / Media Owner / Chiến dịch / Performance ── --}}
+    <div
+        x-data="{ activeTab: 'network' }"
+        x-init="$watch('activeTab', function(v) { if (v === 'chart') window.dispatchEvent(new CustomEvent('nvm-chart-activate')); })"
+        class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+    >
+        <x-filament::tabs :contained="true">
+            <x-filament::tabs.item icon="heroicon-o-signal"             alpineActive="activeTab === 'network'"   @click="activeTab = 'network'">Network Info</x-filament::tabs.item>
+            <x-filament::tabs.item icon="heroicon-o-building-office-2"  alpineActive="activeTab === 'owner'"     @click="activeTab = 'owner'">Media Owner</x-filament::tabs.item>
+            <x-filament::tabs.item icon="heroicon-o-megaphone"          alpineActive="activeTab === 'campaigns'" @click="activeTab = 'campaigns'">Chiến dịch</x-filament::tabs.item>
+            <x-filament::tabs.item icon="heroicon-o-chart-bar"          alpineActive="activeTab === 'chart'"     @click="activeTab = 'chart'">Performance</x-filament::tabs.item>
+        </x-filament::tabs>
+
+        {{-- Tab: Network Info --}}
+        <div x-show="activeTab === 'network'" x-cloak class="p-6">
+            <dl style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Network Name</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $network->name ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                    <dd class="mt-1">
+                        <span style="padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:{{ $statusBadgeColor['bg'] }};color:{{ $statusBadgeColor['text'] }}">
+                            {{ ucfirst($network->status ?? 'unknown') }}
+                        </span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Default Floor CPM</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {{ $network->default_floor_cpm ? number_format((float)$network->default_floor_cpm, 2) . ' ' . ($network->default_floor_cpm_currency ?? 'VND') : '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tổng số Screens</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $this->totalScreens }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tổng số Sites</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $this->totalSites }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Last modified on</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $network->updated_at?->format('M j, Y, g:i A') ?? '—' }}</dd>
+                </div>
+            </dl>
         </div>
 
-        {{-- ── RIGHT: Campaigns ────────────────────────────────────────────── --}}
-        <div>
-            <div
-                x-data="{ camTab: 'list' }"
-                x-init="$watch('camTab', function(v) { if (v === 'chart') window.dispatchEvent(new CustomEvent('nvm-chart-activate')); })"
-                class="fi-fo-tabs fi-contained flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
-            >
-                <x-filament::tabs :contained="true">
-                    <x-filament::tabs.item
-                        icon="heroicon-o-megaphone"
-                        alpineActive="camTab === 'list'"
-                        @click="camTab = 'list'"
-                    >
-                        Chiến dịch
-                    </x-filament::tabs.item>
-                    <x-filament::tabs.item
-                        icon="heroicon-o-chart-bar"
-                        alpineActive="camTab === 'chart'"
-                        @click="camTab = 'chart'"
-                    >
-                        Performance
-                    </x-filament::tabs.item>
-                </x-filament::tabs>
-
-                {{-- Tab: Campaign list --}}
-                <div x-show="camTab === 'list'" x-cloak>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
-                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Chiến dịch</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Advertiser</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Thời gian</th>
-                                    <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Budget</th>
-                                    <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                                @foreach ($mockCampaigns as $c)
-                                    @php
-                                        $statusColors = [
-                                            'active'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                            'completed' => 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
-                                            'paused'    => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                                        ];
-                                        $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'paused' => 'Paused'];
-                                    @endphp
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition duration-75">
-                                        <td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-xs">{{ $c['name'] }}</td>
-                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400 text-xs">{{ $c['advertiser'] }}</td>
-                                        <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-                                            {{ \Carbon\Carbon::parse($c['start'])->format('d/m/y') }}
-                                            –
-                                            {{ \Carbon\Carbon::parse($c['end'])->format('d/m/y') }}
-                                        </td>
-                                        <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
-                                            {{ number_format($c['budget'] / 1_000_000, 0) }}M
-                                        </td>
-                                        <td class="px-4 py-2.5 text-center">
-                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$c['status']] ?? '' }}">
-                                                {{ $statusLabels[$c['status']] ?? $c['status'] }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-white/5">
-                        * Dữ liệu demo — sẽ được thay bằng dữ liệu thực khi module Campaign sẵn sàng.
-                    </p>
+        {{-- Tab: Media Owner --}}
+        <div x-show="activeTab === 'owner'" x-cloak class="p-6">
+            @if ($owner?->logo_url)
+                <img src="{{ $owner->logo_url }}" alt="Logo" style="height:56px;object-fit:contain;margin-bottom:1.25rem;">
+            @endif
+            <dl style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tên</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $owner?->name ?? '—' }}</dd>
                 </div>
-
-                {{-- Tab: Performance chart --}}
-                <div x-show="camTab === 'chart'" x-cloak class="p-5">
-                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
-                        Doanh thu &amp; Impressions — 12 tháng gần nhất
-                    </p>
-                    <div wire:ignore style="position:relative;height:320px;">
-                        <canvas id="nvm_perf_chart"></canvas>
-                    </div>
-                    <p class="mt-3 text-xs text-gray-400 dark:text-gray-500 italic text-center">
-                        * Dữ liệu demo
-                    </p>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                    <dd class="mt-1">
+                        @if ($owner?->status)
+                            <span style="padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:{{ $ownerStatusColor['bg'] }};color:{{ $ownerStatusColor['text'] }}">
+                                {{ ucfirst($owner->status) }}
+                            </span>
+                        @else
+                            <span class="text-sm text-gray-400">—</span>
+                        @endif
+                    </dd>
                 </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Founded</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->founded ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Website</dt>
+                    <dd class="mt-1 text-sm">
+                        @if ($owner?->website)
+                            <a href="{{ $owner->website }}" target="_blank" class="text-primary-600 hover:underline dark:text-primary-400">{{ $owner->website }}</a>
+                        @else
+                            <span class="text-gray-400">—</span>
+                        @endif
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Email</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->email ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->phone ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Ngày tham gia</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner?->created_at?->format('M j, Y') ?? '—' }}</dd>
+                </div>
+                @if ($owner?->tagline)
+                <div style="grid-column:1/-1;">
+                    <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Tagline</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $owner->tagline }}</dd>
+                </div>
+                @endif
+            </dl>
+        </div>
 
+        {{-- Tab: Chiến dịch --}}
+        <div x-show="activeTab === 'campaigns'" x-cloak>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Chiến dịch</th>
+                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Advertiser</th>
+                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Thời gian</th>
+                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Budget</th>
+                            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                        @foreach ($mockCampaigns as $c)
+                            @php
+                                $statusColors = [
+                                    'active'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                    'completed' => 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+                                    'paused'    => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                ];
+                                $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'paused' => 'Paused'];
+                            @endphp
+                            <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition duration-75">
+                                <td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-xs">{{ $c['name'] }}</td>
+                                <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400 text-xs">{{ $c['advertiser'] }}</td>
+                                <td class="px-4 py-2.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                                    {{ \Carbon\Carbon::parse($c['start'])->format('d/m/y') }} – {{ \Carbon\Carbon::parse($c['end'])->format('d/m/y') }}
+                                </td>
+                                <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
+                                    {{ number_format($c['budget'] / 1_000_000, 0) }}M
+                                </td>
+                                <td class="px-4 py-2.5 text-center">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$c['status']] ?? '' }}">
+                                        {{ $statusLabels[$c['status']] ?? $c['status'] }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
+            <p class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic border-t border-gray-100 dark:border-white/5">
+                * Dữ liệu demo — sẽ được thay bằng dữ liệu thực khi module Campaign sẵn sàng.
+            </p>
+        </div>
+
+        {{-- Tab: Performance chart --}}
+        <div x-show="activeTab === 'chart'" x-cloak class="p-5">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
+                Doanh thu &amp; Impressions — 12 tháng gần nhất
+            </p>
+            <div wire:ignore style="position:relative;height:320px;">
+                <canvas id="nvm_perf_chart"></canvas>
+            </div>
+            <p class="mt-3 text-xs text-gray-400 dark:text-gray-500 italic text-center">* Dữ liệu demo</p>
         </div>
 
     </div>
 
-    {{-- Bottom row: Screens (full width) ───────────────────────────────────────────────────── --}}
+    {{-- ── Screens (list + map) — full width below ────────────────────────────── --}}
     <div
         x-data="{ tab: 'list' }"
         x-init="$watch('tab', function(val) { if (val === 'map') window.dispatchEvent(new CustomEvent('nvm-map-activate')); })"
