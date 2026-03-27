@@ -19,6 +19,7 @@ class ScreensRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading(null)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên màn hình')
