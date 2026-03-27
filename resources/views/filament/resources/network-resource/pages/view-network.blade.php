@@ -533,7 +533,7 @@
         </div>
 
         {{-- Tab: Performance chart --}}
-        <div x-show="activeTab === 'chart'" x-cloak class="p-5" style="min-width:0;">
+        <div x-show="activeTab === 'chart'" x-cloak style="min-width:0;padding:1.25rem;">
             <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
                 Doanh thu &amp; Impressions — 12 tháng gần nhất
             </p>
