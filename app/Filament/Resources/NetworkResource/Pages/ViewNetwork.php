@@ -4,7 +4,8 @@ namespace App\Filament\Resources\NetworkResource\Pages;
 
 use App\Filament\Resources\NetworkResource;
 use Filament\Actions;
-use Filament\Infolists;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -24,15 +25,15 @@ class ViewNetwork extends ViewRecord
 
         return $infolist->schema([
 
-            Infolists\Components\Section::make('Network Info')->columns(3)->schema([
+            Section::make('Network Info')->columns(3)->schema([
 
-                Infolists\Components\TextEntry::make('owner.name')
+                TextEntry::make('owner.name')
                     ->label('Media Owner')->placeholder('—'),
 
-                Infolists\Components\TextEntry::make('name')
+                TextEntry::make('name')
                     ->label('Network Name'),
 
-                Infolists\Components\TextEntry::make('status')
+                TextEntry::make('status')
                     ->badge()
                     ->color(fn($state) => match($state) {
                         'active' => 'success',
@@ -40,26 +41,23 @@ class ViewNetwork extends ViewRecord
                         default  => 'gray',
                     }),
 
-                Infolists\Components\TextEntry::make('description')
+                TextEntry::make('description')
                     ->label('Description')->placeholder('—')->columnSpanFull(),
 
-                Infolists\Components\TextEntry::make('default_floor_cpm')
+                TextEntry::make('default_floor_cpm')
                     ->label('Default Floor CPM')
                     ->getStateUsing(fn() => $network->default_floor_cpm
                         ? number_format((float) $network->default_floor_cpm, 2)
                           . ' ' . ($network->default_floor_cpm_currency ?? 'VND')
                         : '—'),
 
-            ]),
+                TextEntry::make('created_at')
+                    ->label('Created on')->dateTime('M j, Y, g:i A'),
 
-            Infolists\Components\Section::make('Màn hình trong network')
-                ->description('Lọc và xem màn hình theo danh sách hoặc bản đồ')
-                ->schema([
-                    Infolists\Components\ViewEntry::make('screens_panel')
-                        ->label('')
-                        ->view('filament.components.network-screens-panel')
-                        ->columnSpanFull(),
-                ]),
+                TextEntry::make('updated_at')
+                    ->label('Last modified on')->dateTime('M j, Y, g:i A'),
+
+            ]),
 
         ]);
     }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
@@ -31,6 +32,22 @@ class Network extends Model
     public function screens(): HasMany
     {
         return $this->hasMany(Screen::class, 'network_code', 'code');
+    }
+
+    /**
+     * Screens linked via screen_inventory.network_id — source of truth for SSP inventory.
+     * Used by admin RelationManager on the Network detail page.
+     */
+    public function inventoryScreens(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Screen::class,
+            ScreenInventory::class,
+            'network_id',  // FK on screen_inventory → networks.id
+            'id',          // FK on screens referenced by screen_inventory.screen_id
+            'id',          // PK on networks
+            'screen_id',   // FK on screen_inventory → screens.id
+        );
     }
 
     public function scopeActive($query)

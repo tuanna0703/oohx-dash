@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\NetworkResource\Pages;
+use App\Filament\Resources\NetworkResource\RelationManagers\ScreensRelationManager;
 use App\Filament\Shared\Resources\BaseNetworkResource;
 use Filament\Forms;
 use Filament\Tables;
@@ -59,6 +60,15 @@ class NetworkResource extends BaseNetworkResource
                 ->label('Media Owner')
                 ->relationship('owner', 'name')
                 ->searchable(),
+        ];
+    }
+
+    // ── Relations ─────────────────────────────────────────────────────────────
+
+    public static function getRelations(): array
+    {
+        return [
+            ScreensRelationManager::class,
         ];
     }
 
