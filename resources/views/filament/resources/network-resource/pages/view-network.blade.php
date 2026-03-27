@@ -340,7 +340,15 @@
     window.addEventListener('nvm-chart-activate', function () {
         if (!chartInitialized) {
             chartInitialized = true;
-            loadChartJs(function () { setTimeout(initCampaignChart, 60); });
+            loadChartJs(function () {
+                setTimeout(function () {
+                    initCampaignChart();
+                    // Force Chart.js to re-measure after tab CSS transition settles
+                    setTimeout(function () { if (chartInst) chartInst.resize(); }, 150);
+                }, 60);
+            });
+        } else if (chartInst) {
+            setTimeout(function () { chartInst.resize(); }, 60);
         }
     });
 }());
@@ -525,12 +533,12 @@
         </div>
 
         {{-- Tab: Performance chart --}}
-        <div x-show="activeTab === 'chart'" x-cloak class="p-5">
+        <div x-show="activeTab === 'chart'" x-cloak class="p-5" style="min-width:0;">
             <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
                 Doanh thu &amp; Impressions — 12 tháng gần nhất
             </p>
-            <div wire:ignore style="position:relative;height:320px;">
-                <canvas id="nvm_perf_chart"></canvas>
+            <div wire:ignore style="position:relative;width:100%;height:320px;overflow:hidden;">
+                <canvas id="nvm_perf_chart" style="display:block;width:100%!important;height:100%!important;"></canvas>
             </div>
             <p class="mt-3 text-xs text-gray-400 dark:text-gray-500 italic text-center">* Dữ liệu demo</p>
         </div>
