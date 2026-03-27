@@ -110,7 +110,14 @@
     function initMap() {
         var mapEl = el('_map');
         if (!mapEl || !window.L) return;
-        if (mapInst) { mapInst.remove(); mapInst = null; }
+        // Remove any Leaflet instance left by a previous IIFE (modal close → reopen).
+        // mapInst is local to this IIFE scope so it won't catch the prior run's instance;
+        // we persist the reference on the DOM element instead.
+        if (mapEl._mapInstance) {
+            try { mapEl._mapInstance.remove(); } catch (e) {}
+            mapEl._mapInstance = null;
+        }
+        if (mapInst) { try { mapInst.remove(); } catch (e) {} mapInst = null; }
         delete L.Icon.Default.prototype._getIconUrl;
         L.Icon.Default.mergeOptions({
             iconUrl:       '/vendor/leaflet/images/marker-icon.png',
@@ -122,7 +129,8 @@
             attribution: '\u00a9 OpenStreetMap contributors',
             maxZoom: 19,
         }).addTo(map);
-        mapInst   = map;
+        mapInst        = map;
+        mapEl._mapInstance = map;   // persist for cross-IIFE cleanup on next open
         markerLyr = L.layerGroup().addTo(map);
         refreshMarkers();
         setTimeout(function () { map.invalidateSize(); }, 100);
