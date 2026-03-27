@@ -357,7 +357,7 @@
     @php $relationManagers = $this->getRelationManagers(); @endphp
 
     {{-- Top row: Overview (left) + Campaigns (right) ──────────────────────────────────────── --}}
-    <div style="display:grid;grid-template-columns:3fr 2fr;gap:1.5rem;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
 
         {{-- ── LEFT: Network Info / Media Owner infolist ───────────────────── --}}
         <div>
@@ -400,7 +400,6 @@
                                     <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Advertiser</th>
                                     <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Thời gian</th>
                                     <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Budget</th>
-                                    <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Impressions</th>
                                     <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
                                 </tr>
                             </thead>
@@ -424,9 +423,6 @@
                                         </td>
                                         <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
                                             {{ number_format($c['budget'] / 1_000_000, 0) }}M
-                                        </td>
-                                        <td class="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300 text-xs tabular-nums">
-                                            {{ number_format($c['impressions']) }}
                                         </td>
                                         <td class="px-4 py-2.5 text-center">
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$c['status']] ?? '' }}">
