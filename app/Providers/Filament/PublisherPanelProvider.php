@@ -52,6 +52,10 @@ class PublisherPanelProvider extends PanelProvider
                 in: app_path('Filament/Publisher/Widgets'),
                 for: 'App\\Filament\\Publisher\\Widgets'
             )
+            ->discoverWidgets(
+                in: app_path('Filament/Shared/Widgets'),
+                for: 'App\\Filament\\Shared\\Widgets'
+            )
             ->pages([Dashboard::class])
             ->middleware([
                 EncryptCookies::class,
