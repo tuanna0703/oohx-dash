@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SiteResource\Pages;
+use App\Filament\Resources\SiteResource\RelationManagers\ScreensRelationManager;
 use App\Filament\Shared\Resources\BaseSiteResource;
 use Filament\Forms;
 use Filament\Tables;
@@ -57,6 +58,15 @@ class SiteResource extends BaseSiteResource
                 ->label('Media Owner')
                 ->relationship('owner', 'name')
                 ->searchable(),
+        ];
+    }
+
+    // ── Relation managers ─────────────────────────────────────────────────────
+
+    public static function getRelations(): array
+    {
+        return [
+            ScreensRelationManager::class,
         ];
     }
 

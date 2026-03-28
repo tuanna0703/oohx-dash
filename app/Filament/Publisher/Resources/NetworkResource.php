@@ -3,6 +3,7 @@
 namespace App\Filament\Publisher\Resources;
 
 use App\Filament\Publisher\Resources\NetworkResource\Pages;
+use App\Filament\Publisher\Resources\NetworkResource\RelationManagers\ScreensRelationManager;
 use App\Filament\Shared\Resources\BaseNetworkResource;
 use App\Services\TenantPermission;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +32,15 @@ class NetworkResource extends BaseNetworkResource
     protected static function hasViewPage(): bool
     {
         return true;
+    }
+
+    // ── Relations ─────────────────────────────────────────────────────────────
+
+    public static function getRelations(): array
+    {
+        return [
+            ScreensRelationManager::class,
+        ];
     }
 
     // ── Pages ─────────────────────────────────────────────────────────────────
