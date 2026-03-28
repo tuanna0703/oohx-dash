@@ -3,6 +3,7 @@
 namespace App\Filament\Publisher\Resources;
 
 use App\Filament\Publisher\Resources\SiteResource\Pages;
+use App\Filament\Publisher\Resources\SiteResource\RelationManagers\ScreensRelationManager;
 use App\Filament\Shared\Resources\BaseSiteResource;
 use App\Services\TenantPermission;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,15 @@ class SiteResource extends BaseSiteResource
 
         return parent::getEloquentQuery()
             ->when($ownerId, fn($q) => $q->where('owner_id', $ownerId));
+    }
+
+    // ── Relation managers ─────────────────────────────────────────────────────
+
+    public static function getRelations(): array
+    {
+        return [
+            ScreensRelationManager::class,
+        ];
     }
 
     // ── Pages ─────────────────────────────────────────────────────────────────
