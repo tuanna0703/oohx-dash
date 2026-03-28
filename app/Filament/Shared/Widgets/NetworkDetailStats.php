@@ -4,7 +4,6 @@ namespace App\Filament\Shared\Widgets;
 
 use App\Models\Network;
 use App\Models\Screen;
-use App\Models\Site;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -27,10 +26,6 @@ class NetworkDetailStats extends BaseWidget
         $online  = $base()->where('status', 'online')->count();
         $offline = $base()->where('status', 'offline')->count();
         $sites   = $base()->distinct('site_id')->count('site_id');
-
-        $provs = Site::whereHas('screens', fn($q) =>
-            $q->whereHas('inventory', fn($q2) => $q2->where('network_id', $networkId))
-        )->whereNotNull('province_id')->distinct('province_id')->count('province_id');
 
         $onlineColor  = $online  > 0 ? 'success' : 'gray';
         $offlineColor = $offline > 0 ? 'danger'  : 'gray';
@@ -58,12 +53,6 @@ class NetworkDetailStats extends BaseWidget
                 ->description('Physical locations')
                 ->descriptionIcon('heroicon-s-map-pin')
                 ->icon('heroicon-o-map-pin')
-                ->color('info'),
-
-            Stat::make('Provinces', number_format($provs))
-                ->description('Geographic coverage')
-                ->descriptionIcon('heroicon-s-building-office-2')
-                ->icon('heroicon-o-building-office-2')
                 ->color('info'),
         ];
     }
