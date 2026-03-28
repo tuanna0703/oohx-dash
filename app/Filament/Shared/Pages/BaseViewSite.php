@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Pages;
 
+use App\Filament\Shared\Widgets\SiteDetailStats;
 use App\Models\Screen;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -61,5 +62,15 @@ abstract class BaseViewSite extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [Actions\EditAction::make()];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [SiteDetailStats::class];
+    }
+
+    protected function getHeaderWidgetsData(): array
+    {
+        return ['record' => $this->record];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Pages;
 
+use App\Filament\Shared\Widgets\NetworkDetailStats;
 use App\Models\Screen;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -75,5 +76,15 @@ abstract class BaseViewNetwork extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [Actions\EditAction::make()];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [NetworkDetailStats::class];
+    }
+
+    protected function getHeaderWidgetsData(): array
+    {
+        return ['record' => $this->record];
     }
 }
