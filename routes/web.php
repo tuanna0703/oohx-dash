@@ -4,8 +4,17 @@ use App\Http\Controllers\FrontpageController;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
+$fpDomain   = config('domains.frontpage', 'oohx.net');
+$dashDomain = config('domains.dash', 'dash.oohx.net');
+
+// ── Dashboard: dash.oohx.net ───────────────────────────
+Route::domain($dashDomain)->group(function () {
+    Route::get('/', fn () => redirect('/admin'));
+});
+
 // ── Frontpage: oohx.net ────────────────────────────────
-Route::domain(config('domains.frontpage'))->group(function () {
+// Đặt sau dash để frontpage là fallback cho mọi domain khác
+Route::domain($fpDomain)->group(function () {
     Route::get('/',                   [FrontpageController::class, 'index'])->name('fp.index');
     Route::get('/explore',            [FrontpageController::class, 'listing'])->name('fp.listing');
     Route::get('/explore/{screen}',   [FrontpageController::class, 'detail'])->name('fp.detail');
@@ -35,7 +44,7 @@ Route::domain(config('domains.frontpage'))->group(function () {
     });
 });
 
-// ── Dashboard: dash.oohx.net ───────────────────────────
-Route::domain(config('domains.dash'))->group(function () {
-    Route::get('/', fn () => redirect('/admin'));
+// ── Fallback: nếu không match domain nào (www.oohx.net, IP, etc.)
+Route::fallback(function () {
+    return redirect('https://' . config('domains.frontpage', 'oohx.net'));
 });
