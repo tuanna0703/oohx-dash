@@ -13,10 +13,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
  */
 class SiteDetailStats extends BaseWidget
 {
-    public Site $record;
+    public ?Site $record = null;
 
     protected function getStats(): array
     {
+        if (! $this->record) {
+            return [];
+        }
+
         $siteId = $this->record->id;
 
         $total    = Screen::where('site_id', $siteId)->count();
