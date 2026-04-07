@@ -28,7 +28,14 @@
       "Bash(mv ListNetwork.php Pages/)",
       "Read(//d/Projects/2026/AdTRUE Platform/**)",
       "Bash(npx tsc:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(grep -n \"class=\\\\\"hdr\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(grep -n \"class=\\\\\"footer\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(grep -n \"class=\\\\\"bnav\\\\|class=\\\\\"nav\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(grep -n \"class=\\\\\"hdr-nav\\\\|<nav\\\\|Navigation\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(grep -n \"bnav\\\\|nav class=\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(grep -n \"class=\\\\\"ac\\\\\"\" /d/Code-Project/oohx-frontpage/*.html)",
+      "Bash(wc -l d:/Code-Project/oohx-dash/public/oohx-frontpage/*.html)"
     ],
     "additionalDirectories": [
       "D:\\Projects\\2026\\AdTRUE Platform\\oohx\\app\\api\\venue-types",

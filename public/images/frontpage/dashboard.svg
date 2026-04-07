@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="dash-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F5F5F7"/>
+      <stop offset="100%" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#dash-bg)"/>
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1D1D1F"/>
+  <!-- Sidebar logo area -->
+  <rect x="16" y="16" width="148" height="36" rx="8" fill="#2C2C2E"/>
+  <rect x="28" y="25" width="60" height="16" rx="4" fill="#2A4FF6"/>
+  <rect x="96" y="28" width="50" height="10" rx="3" fill="rgba(255,255,255,0.5)"/>
+  <!-- Sidebar nav items -->
+  <g>
+    <rect x="10" y="68" width="160" height="36" rx="8" fill="#2A4FF6"/>
+    <rect x="28" y="79" width="80" height="12" rx="3" fill="rgba(255,255,255,0.9)"/>
+    <rect x="10" y="112" width="160" height="36" rx="8" fill="transparent"/>
+    <rect x="28" y="123" width="70" height="12" rx="3" fill="rgba(255,255,255,0.4)"/>
+    <rect x="10" y="156" width="160" height="36" rx="8" fill="transparent"/>
+    <rect x="28" y="167" width="80" height="12" rx="3" fill="rgba(255,255,255,0.4)"/>
+    <rect x="10" y="200" width="160" height="36" rx="8" fill="transparent"/>
+    <rect x="28" y="211" width="65" height="12" rx="3" fill="rgba(255,255,255,0.4)"/>
+    <rect x="10" y="244" width="160" height="36" rx="8" fill="transparent"/>
+    <rect x="28" y="255" width="75" height="12" rx="3" fill="rgba(255,255,255,0.4)"/>
+  </g>
+  <!-- User avatar bottom -->
+  <circle cx="28" cy="472" r="16" fill="#2A4FF6"/>
+  <rect x="54" y="464" width="80" height="8" rx="3" fill="rgba(255,255,255,0.6)"/>
+  <rect x="54" y="476" width="55" height="7" rx="3" fill="rgba(255,255,255,0.3)"/>
+  <!-- Main content -->
+  <!-- Header -->
+  <rect x="180" y="0" width="620" height="56" fill="#fff" />
+  <rect x="180" y="56" width="620" height="1" fill="#E8E8ED"/>
+  <rect x="200" y="16" width="150" height="12" rx="4" fill="#1D1D1F"/>
+  <rect x="200" y="34" width="100" height="9" rx="3" fill="#AEAEB2"/>
+  <!-- Header right actions -->
+  <circle cx="730" cy="28" r="16" fill="#F5F5F7"/>
+  <rect x="720" y="23" width="20" height="10" rx="3" fill="#AEAEB2"/>
+  <circle cx="768" cy="28" r="16" fill="#2A4FF6"/>
+  <rect x="758" y="23" width="20" height="10" rx="3" fill="rgba(255,255,255,0.8)"/>
+  <!-- Metric cards row -->
+  <g>
+    <!-- Card 1 -->
+    <rect x="196" y="72" width="135" height="90" rx="12" fill="#fff" stroke="#E8E8ED"/>
+    <rect x="210" y="86" width="60" height="8" rx="3" fill="#AEAEB2"/>
+    <rect x="210" y="102" width="90" height="18" rx="4" fill="#1D1D1F"/>
+    <rect x="210" y="128" width="50" height="7" rx="3" fill="#34C759"/>
+    <!-- Card 2 -->
+    <rect x="339" y="72" width="135" height="90" rx="12" fill="#fff" stroke="#E8E8ED"/>
+    <rect x="353" y="86" width="65" height="8" rx="3" fill="#AEAEB2"/>
+    <rect x="353" y="102" width="85" height="18" rx="4" fill="#1D1D1F"/>
+    <rect x="353" y="128" width="55" height="7" rx="3" fill="#2A4FF6"/>
+    <!-- Card 3 -->
+    <rect x="482" y="72" width="135" height="90" rx="12" fill="#fff" stroke="#E8E8ED"/>
+    <rect x="496" y="86" width="55" height="8" rx="3" fill="#AEAEB2"/>
+    <rect x="496" y="102" width="95" height="18" rx="4" fill="#1D1D1F"/>
+    <rect x="496" y="128" width="45" height="7" rx="3" fill="#FF9F0A"/>
+    <!-- Card 4 -->
+    <rect x="625" y="72" width="135" height="90" rx="12" fill="#2A4FF6"/>
+    <rect x="639" y="86" width="60" height="8" rx="3" fill="rgba(255,255,255,0.7)"/>
+    <rect x="639" y="102" width="88" height="18" rx="4" fill="rgba(255,255,255,0.95)"/>
+    <rect x="639" y="128" width="52" height="7" rx="3" fill="rgba(255,255,255,0.7)"/>
+  </g>
+  <!-- Chart area -->
+  <rect x="196" y="174" width="420" height="200" rx="12" fill="#fff" stroke="#E8E8ED"/>
+  <rect x="214" y="188" width="100" height="10" rx="4" fill="#1D1D1F"/>
+  <rect x="214" y="204" width="70" height="8" rx="3" fill="#AEAEB2"/>
+  <!-- Bar chart -->
+  <g>
+    <rect x="225" y="310" width="28" height="55" rx="4" fill="#E8F0FD"/>
+    <rect x="265" y="290" width="28" height="75" rx="4" fill="#E8F0FD"/>
+    <rect x="305" y="275" width="28" height="90" rx="4" fill="#2A4FF6" opacity="0.6"/>
+    <rect x="345" y="260" width="28" height="105" rx="4" fill="#2A4FF6" opacity="0.75"/>
+    <rect x="385" y="245" width="28" height="120" rx="4" fill="#2A4FF6"/>
+    <rect x="425" y="255" width="28" height="110" rx="4" fill="#2A4FF6" opacity="0.85"/>
+    <rect x="465" y="270" width="28" height="95" rx="4" fill="#2A4FF6" opacity="0.7"/>
+    <rect x="505" y="258" width="28" height="107" rx="4" fill="#2A4FF6" opacity="0.8"/>
+    <rect x="545" y="242" width="28" height="123" rx="4" fill="#34C759"/>
+  </g>
+  <!-- X axis labels -->
+  <g fill="#AEAEB2" font-family="system-ui" font-size="9">
+    <text x="232" y="380">T1</text><text x="272" y="380">T2</text><text x="312" y="380">T3</text>
+    <text x="352" y="380">T4</text><text x="392" y="380">T5</text><text x="432" y="380">T6</text>
+    <text x="472" y="380">T7</text><text x="512" y="380">T8</text><text x="552" y="380">T9</text>
+  </g>
+  <!-- Right panel: inventory list -->
+  <rect x="625" y="174" width="135" height="200" rx="12" fill="#fff" stroke="#E8E8ED"/>
+  <rect x="639" y="188" width="90" height="9" rx="3" fill="#1D1D1F"/>
+  <g>
+    <rect x="639" y="210" width="107" height="30" rx="6" fill="#F5F5F7"/>
+    <rect x="647" y="218" width="60" height="7" rx="2" fill="#3A3A3C"/>
+    <rect x="647" y="229" width="40" height="5" rx="2" fill="#AEAEB2"/>
+    <rect x="710" y="218" width="28" height="14" rx="4" fill="rgba(52,199,89,0.15)"/>
+    <rect x="714" y="222" width="20" height="6" rx="2" fill="#34C759"/>
+    
+    <rect x="639" y="248" width="107" height="30" rx="6" fill="#F5F5F7"/>
+    <rect x="647" y="256" width="55" height="7" rx="2" fill="#3A3A3C"/>
+    <rect x="647" y="267" width="45" height="5" rx="2" fill="#AEAEB2"/>
+    <rect x="710" y="256" width="28" height="14" rx="4" fill="rgba(255,159,10,0.15)"/>
+    <rect x="714" y="260" width="20" height="6" rx="2" fill="#FF9F0A"/>
+    
+    <rect x="639" y="286" width="107" height="30" rx="6" fill="#F5F5F7"/>
+    <rect x="647" y="294" width="65" height="7" rx="2" fill="#3A3A3C"/>
+    <rect x="647" y="305" width="35" height="5" rx="2" fill="#AEAEB2"/>
+    <rect x="710" y="294" width="28" height="14" rx="4" fill="rgba(52,199,89,0.15)"/>
+    <rect x="714" y="298" width="20" height="6" rx="2" fill="#34C759"/>
+    
+    <rect x="639" y="324" width="107" height="30" rx="6" fill="#F5F5F7"/>
+    <rect x="647" y="332" width="50" height="7" rx="2" fill="#3A3A3C"/>
+    <rect x="647" y="343" width="42" height="5" rx="2" fill="#AEAEB2"/>
+    <rect x="710" y="332" width="28" height="14" rx="4" fill="rgba(255,59,48,0.12)"/>
+    <rect x="714" y="336" width="20" height="6" rx="2" fill="#FF3B30"/>
+  </g>
+  <!-- Bottom table -->
+  <rect x="196" y="384" width="564" height="100" rx="12" fill="#fff" stroke="#E8E8ED"/>
+  <rect x="214" y="396" width="80" height="9" rx="3" fill="#1D1D1F"/>
+  <!-- Table rows -->
+  <g>
+    <rect x="214" y="418" width="528" height="1" fill="#E8E8ED"/>
+    <rect x="214" y="418" width="160" height="25" fill="transparent"/>
+    <rect x="220" y="425" width="100" height="7" rx="3" fill="#3A3A3C"/>
+    <rect x="420" y="425" width="60" height="7" rx="3" fill="#34C759"/>
+    <rect x="560" y="425" width="70" height="7" rx="3" fill="#AEAEB2"/>
+    
+    <rect x="214" y="443" width="528" height="1" fill="#E8E8ED"/>
+    <rect x="220" y="450" width="85" height="7" rx="3" fill="#3A3A3C"/>
+    <rect x="420" y="450" width="55" height="7" rx="3" fill="#FF9F0A"/>
+    <rect x="560" y="450" width="65" height="7" rx="3" fill="#AEAEB2"/>
+    
+    <rect x="220" y="475" width="95" height="7" rx="3" fill="#3A3A3C"/>
+    <rect x="420" y="475" width="65" height="7" rx="3" fill="#34C759"/>
+    <rect x="560" y="475" width="75" height="7" rx="3" fill="#AEAEB2"/>
+  </g>
+  <text x="200" y="497" font-family="system-ui,sans-serif" font-size="11" fill="rgba(0,0,0,0.2)" font-weight="600">OOHX · Agency Dashboard</text>
+</svg>

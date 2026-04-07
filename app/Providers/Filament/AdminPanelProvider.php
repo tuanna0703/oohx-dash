@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->domain(config('domains.dash'))
             ->login(\Filament\Pages\Auth\Login::class)
             ->loginRouteSlug('login')
             ->colors(['primary' => Color::hex('#E5007D')]) // AdTRUE brand pink
