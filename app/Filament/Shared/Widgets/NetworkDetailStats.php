@@ -13,10 +13,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
  */
 class NetworkDetailStats extends BaseWidget
 {
-    public Network $record;
+    public ?Network $record = null;
 
     protected function getStats(): array
     {
+        if (! $this->record) {
+            return [];
+        }
+
         $networkId = $this->record->id;
 
         $base = fn() => Screen::whereHas('inventory', fn($q) => $q->where('network_id', $networkId));
