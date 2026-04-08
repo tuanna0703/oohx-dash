@@ -447,11 +447,11 @@ ul{list-style:none}
 .hmc-dd-list{max-height:240px;overflow-y:auto;padding:4px 6px 8px}
 .hmc-dd-list::-webkit-scrollbar{width:4px}
 .hmc-dd-list::-webkit-scrollbar-thumb{background:var(--ln2);border-radius:4px}
-.hmc-dd-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 10px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border-radius:8px;transition:all 120ms}
+.hmc-dd-item{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border-radius:8px;transition:all 120ms;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hmc-dd-item:hover{background:rgba(42,79,246,.06);color:var(--bl)}
 .hmc-dd-item.on{background:var(--bl);color:#fff}
 .hmc-dd-item.on .hmc-dd-count{color:rgba(255,255,255,.7)}
-.hmc-dd-count{font-size:11px;color:var(--t4);font-weight:600}
+.hmc-dd-count{font-size:11px;color:var(--t4);font-weight:600;flex-shrink:0}
 
 /* ── Zoom controls ── */
 .hp-map-zoom{position:absolute;bottom:14px;right:14px;z-index:10;display:flex;flex-direction:column;gap:4px}

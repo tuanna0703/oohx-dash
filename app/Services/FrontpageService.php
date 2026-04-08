@@ -42,8 +42,8 @@ class FrontpageService
                 ->where('screens.active', true)
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
-                ->distinct()
-                ->count('sites.city');
+                ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
+                ->value('cnt');
 
             $totalOwners = Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->distinct()
@@ -85,20 +85,21 @@ class FrontpageService
     public function getTopCities(int $limit = 8): Collection
     {
         return Cache::remember('fp:top_cities', 1800, function () use ($limit) {
+            // sites.city may store "Hà Nội > Phường Dương Nội" — extract province part
             $rawCityCounts = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.active', true)
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
-                ->selectRaw('sites.city, count(*) as count')
-                ->groupBy('sites.city')
+                ->selectRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1)) as province, count(*) as count")
+                ->groupByRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1))")
                 ->orderByDesc('count')
                 ->limit($limit)
                 ->get();
 
             return $rawCityCounts->map(fn ($r) => [
-                'code'  => $this->cityToSlug($r->city),
-                'name'  => $r->city,
+                'code'  => $this->cityToSlug($r->province),
+                'name'  => $r->province,
                 'count' => (int) $r->count,
             ]);
         });
@@ -110,18 +111,19 @@ class FrontpageService
             $regionConfig = config('regions');
             $cityToCode   = array_flip(self::CITY_SLUG_MAP);
 
+            // Extract province from "Hà Nội > Phường..." format
             $rawProvinceCounts = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.active', true)
                 ->whereNull('screens.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
-                ->selectRaw('sites.city, count(*) as count')
-                ->groupBy('sites.city')
+                ->selectRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1)) as province, count(*) as count")
+                ->groupByRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1))")
                 ->get();
 
             $provinces = $rawProvinceCounts->map(function ($r) use ($cityToCode, $regionConfig) {
-                $code   = $cityToCode[$r->city] ?? Str::slug($r->city);
+                $code   = $cityToCode[$r->province] ?? Str::slug($r->province);
                 $region = null;
                 foreach ($regionConfig as $rc => $cfg) {
                     if (in_array($code, $cfg['provinces'])) {
@@ -131,7 +133,7 @@ class FrontpageService
                 }
                 return [
                     'code'   => $code,
-                    'name'   => $r->city,
+                    'name'   => $r->province,
                     'region' => $region,
                     'count'  => (int) $r->count,
                 ];
@@ -225,8 +227,8 @@ class FrontpageService
                 ->where('screens.owner_id', $owner->id)
                 ->where('screens.active', true)
                 ->whereNotNull('sites.city')
-                ->distinct('sites.city')
-                ->count('sites.city');
+                ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
+                ->value('cnt');
 
             $owner->venue_types_list = DB::table('screens')
                 ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
@@ -343,7 +345,7 @@ class FrontpageService
                 ->where('lat', '!=', 0)->where('lon', '!=', 0));
 
         if ($cityName) {
-            $query->whereHas('site', fn ($q) => $q->where('city', $cityName));
+            $this->applyCityFilter($query, $cityName);
         }
 
         $screens = $query
@@ -373,7 +375,8 @@ class FrontpageService
     }
 
     /**
-     * Resolve city slug to DB city name.
+     * Resolve city slug to province name for LIKE filtering.
+     * sites.city stores "Hà Nội > Phường Dương Nội" — we match by province prefix.
      * Returns null for 'all' (no filter = nationwide).
      */
     private function resolveCityName(string $slug): ?string
@@ -387,16 +390,24 @@ class FrontpageService
             return self::CITY_SLUG_MAP[$slug];
         }
 
-        // Fallback: look up in DB by matching slug against actual city names
-        $city = DB::table('sites')
+        // Fallback: find province name from DB by matching slug
+        $province = DB::table('sites')
             ->whereNotNull('city')
             ->where('city', '!=', '')
-            ->select('city')
-            ->distinct()
+            ->selectRaw("DISTINCT TRIM(SUBSTRING_INDEX(city, '>', 1)) as province")
             ->get()
-            ->first(fn ($r) => Str::slug($r->city) === $slug);
+            ->first(fn ($r) => Str::slug($r->province) === $slug);
 
-        return $city?->city;
+        return $province?->province;
+    }
+
+    /**
+     * Apply city/province filter using LIKE prefix match.
+     * Handles "Hà Nội > Phường..." format in sites.city.
+     */
+    private function applyCityFilter($query, string $cityName)
+    {
+        return $query->whereHas('site', fn ($q) => $q->where('city', 'LIKE', $cityName . '%'));
     }
 
     private function getHomepageMapCount(string $citySlug): int
@@ -410,7 +421,7 @@ class FrontpageService
                     ->where('lat', '!=', 0)->where('lon', '!=', 0));
 
             if ($cityName) {
-                $query->whereHas('site', fn ($q) => $q->where('city', $cityName));
+                $this->applyCityFilter($query, $cityName);
             }
 
             return $query->count();
@@ -432,7 +443,7 @@ class FrontpageService
             ->where('screens.active', true)
             ->whereNotNull('sites.city')
             ->where('sites.city', '!=', '')
-            ->selectRaw('screens.owner_id, count(distinct sites.city) as city_count')
+            ->selectRaw("screens.owner_id, COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as city_count")
             ->groupBy('screens.owner_id')
             ->pluck('city_count', 'owner_id');
 
@@ -469,7 +480,14 @@ class FrontpageService
                 $this->resolveArrayParam($request, 'city'),
                 $this->resolveArrayParam($request, 'province')
             ))),
-                fn ($q) => $q->whereHas('site', fn ($sq) => $sq->whereIn('city', $this->expandCitySlugs($citySlugs)))
+                fn ($q) => $q->whereHas('site', function ($sq) use ($citySlugs) {
+                    $cityNames = $this->expandCitySlugs($citySlugs);
+                    $sq->where(function ($or) use ($cityNames) {
+                        foreach ($cityNames as $name) {
+                            $or->orWhere('city', 'LIKE', $name . '%');
+                        }
+                    });
+                })
             )
             ->when(! empty($venueTypes = $this->resolveArrayParam($request, 'venue_type')),
                 fn ($q) => $q->whereHas('inventory', fn ($iq) => $iq->whereIn('venue_type', $venueTypes))
@@ -499,7 +517,13 @@ class FrontpageService
                     ->flatMap(fn ($r) => $regionConfig[$r]['provinces'] ?? [])
                     ->unique()->values()->all();
                 $cityNames = array_map(fn ($p) => self::CITY_SLUG_MAP[$p] ?? $p, $provinceCodes);
-                $q->whereHas('site', fn ($sq) => $sq->whereIn('city', $cityNames));
+                $q->whereHas('site', function ($sq) use ($cityNames) {
+                    $sq->where(function ($or) use ($cityNames) {
+                        foreach ($cityNames as $name) {
+                            $or->orWhere('city', 'LIKE', $name . '%');
+                        }
+                    });
+                });
             });
     }
 
