@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FrontpageListingRequest;
 use App\Services\FrontpageService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,7 +23,7 @@ class FrontpageController extends Controller
         ]);
     }
 
-    public function listing(Request $request): View
+    public function listing(FrontpageListingRequest $request): View
     {
         return view('frontpage.listing', [
             'screens' => $this->fp->getScreensPaginated($request),
@@ -41,7 +42,7 @@ class FrontpageController extends Controller
         ]);
     }
 
-    public function map(Request $request): View
+    public function map(FrontpageListingRequest $request): View
     {
         return view('frontpage.map', [
             'pins'    => $this->fp->getMapPins($request),

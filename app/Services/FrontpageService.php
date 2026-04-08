@@ -35,7 +35,7 @@ class FrontpageService
     public function getHeroStats(): array
     {
         return Cache::remember('fp:hero_stats', 1800, function () {
-            $totalScreens = Screen::where('active', true)->count();
+            $totalScreens = Screen::withoutGlobalScope('owner_scope')->where('active', true)->count();
 
             $totalCities = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
@@ -45,7 +45,7 @@ class FrontpageService
                 ->distinct()
                 ->count('sites.city');
 
-            $totalOwners = Screen::where('active', true)
+            $totalOwners = Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->distinct()
                 ->count('owner_id');
 
@@ -152,7 +152,7 @@ class FrontpageService
     public function getFeaturedScreens(int $limit = 4): Collection
     {
         return Cache::remember('fp:featured_screens', 900, function () use ($limit) {
-            return Screen::where('active', true)
+            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->whereHas('spec', fn ($q) => $q->whereNotNull('photo_url')->where('photo_url', '!=', ''))
                 ->whereHas('inventory', fn ($q) => $q->where('floor_cpm', '>', 0))
                 ->with(['spec', 'inventory', 'owner', 'site'])
@@ -245,7 +245,7 @@ class FrontpageService
 
     public function getOwnerScreens(string $ownerId, int $perPage = 12): LengthAwarePaginator
     {
-        return Screen::where('owner_id', $ownerId)
+        return Screen::withoutGlobalScope('owner_scope')->where('owner_id', $ownerId)
             ->where('active', true)
             ->with(['spec', 'inventory', 'site'])
             ->orderByDesc('updated_at')
@@ -292,7 +292,7 @@ class FrontpageService
     public function getScreenDetail(string $id): ?Screen
     {
         return Cache::remember("fp:screen:{$id}", 300, function () use ($id) {
-            return Screen::where('active', true)
+            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->with(['spec', 'inventory', 'owner', 'site'])
                 ->where(function ($q) use ($id) {
                     $q->where('id', $id)
@@ -306,7 +306,7 @@ class FrontpageService
     public function getSimilarScreens(Screen $screen, int $limit = 4): Collection
     {
         return Cache::remember("fp:similar:{$screen->id}", 600, function () use ($screen, $limit) {
-            return Screen::where('active', true)
+            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->where('id', '!=', $screen->id)
                 ->where(function ($q) use ($screen) {
                     $q->whereHas('site', fn ($sq) => $sq->where('city', $screen->site?->city))
@@ -366,7 +366,7 @@ class FrontpageService
 
     private function buildScreenQuery(Request $request)
     {
-        return Screen::query()
+        return Screen::withoutGlobalScope('owner_scope')
             ->where('active', true)
             ->when($request->filled('q'), function ($q) use ($request) {
                 $search = $request->input('q');
@@ -431,10 +431,10 @@ class FrontpageService
         $value = $request->input($key);
 
         if (is_array($value)) {
-            return array_values(array_filter($value));
+            return array_values(array_filter($value, fn ($v) => $v !== '' && $v !== null));
         }
         if (is_string($value) && str_contains($value, '|')) {
-            return explode('|', $value);
+            return array_values(array_filter(explode('|', $value), fn ($v) => $v !== ''));
         }
         if (is_string($value) && $value !== '') {
             return [$value];
