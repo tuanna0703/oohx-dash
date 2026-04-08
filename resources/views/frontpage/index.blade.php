@@ -490,7 +490,7 @@
   // Render pins
   var hpMarkers = L.layerGroup().addTo(hpMap);
 
-  function renderHpPins(pins) {
+  function renderHpPins(pins, flyToCity) {
     hpMarkers.clearLayers();
     pins.forEach(function(pin) {
       var col = pinColor(pin.type);
@@ -503,13 +503,15 @@
       m.on('click', function() { showHpPopup(pin); });
     });
 
-    if (pins.length > 0) {
-      var bounds = L.latLngBounds(pins.map(function(p){ return [p.lat, p.lng]; }));
-      hpMap.fitBounds(bounds, {padding:[30,30], maxZoom:14});
+    // Always center on the selected city, not on pin locations
+    // (pin data may have incorrect coordinates)
+    if (flyToCity) {
+      var c = CITY_CENTERS[flyToCity] || CITY_CENTERS.hanoi;
+      hpMap.setView([c.lat, c.lng], c.zoom);
     }
   }
 
-  renderHpPins(HP_PINS);
+  renderHpPins(HP_PINS, currentCity);
 
   // Popup
   function showHpPopup(pin) {
@@ -538,13 +540,13 @@
       document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
       currentCity = city;
 
-      // Fetch new pins via AJAX
+      // Fly to city center first, then fetch pins
       hpMap.flyTo([lat, lng], zoom, {duration:0.6});
       fetch('/?_map_city=' + city, {headers:{'X-Requested-With':'XMLHttpRequest'}})
         .then(function(r){ return r.json(); })
         .then(function(data){
           HP_PINS = data.pins || [];
-          renderHpPins(HP_PINS);
+          renderHpPins(HP_PINS, null); // don't re-center, already flew
           document.getElementById('hp-map-total').textContent = (data.total || 0).toLocaleString('vi-VN');
           document.getElementById('hp-map-city-label').textContent = data.cityName || '';
         })

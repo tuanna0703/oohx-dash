@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'ability' => \App\Http\Middleware\CheckTokenAbility::class,
         ]);
+        $middleware->encryptCookies(except: ['oohx_city']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // API routes luôn trả JSON 401 thay vì redirect về route('login')
