@@ -4,9 +4,12 @@
 
 @push('head')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <style>
 #leaflet-map{position:absolute;inset:0;z-index:0}
 #leaflet-map .leaflet-control-zoom{display:none}
+
+/* ── Individual pin (zoom 14+) ── */
 .oohx-pin{background:none;border:none}
 .oohx-pin-box{border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform 200ms var(--spring)}
 .oohx-pin-box:hover{transform:scale(1.1)}
@@ -15,6 +18,18 @@
 .oohx-pin--grn .oohx-pin-box{background:var(--grn)}.oohx-pin--grn .oohx-pin-arrow{border-top:8px solid var(--grn)}
 .oohx-pin--org .oohx-pin-box{background:var(--org)}.oohx-pin--org .oohx-pin-arrow{border-top:8px solid var(--org)}
 .oohx-pin--red .oohx-pin-box{background:var(--red)}.oohx-pin--red .oohx-pin-arrow{border-top:8px solid var(--red)}
+
+/* ── Cluster circles ── */
+.marker-cluster{background:none !important;border:none !important}
+.oohx-cluster{display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700;box-shadow:0 4px 20px rgba(42,79,246,.35);cursor:pointer;transition:transform 200ms ease}
+.oohx-cluster:hover{transform:scale(1.12)}
+.oohx-cluster--sm{width:44px;height:44px;font-size:13px;background:var(--bl);border:3px solid rgba(255,255,255,.9)}
+.oohx-cluster--md{width:56px;height:56px;font-size:14px;background:var(--bl);border:3px solid rgba(255,255,255,.9)}
+.oohx-cluster--lg{width:68px;height:68px;font-size:15px;background:#1a3af0;border:4px solid rgba(255,255,255,.9)}
+.oohx-cluster--xl{width:80px;height:80px;font-size:16px;background:#0f28c7;border:4px solid rgba(255,255,255,.9)}
+.oohx-cluster::after{content:'';position:absolute;inset:-6px;border-radius:50%;background:rgba(42,79,246,.15);z-index:-1;animation:cluster-pulse 2s ease-in-out infinite}
+@keyframes cluster-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.15);opacity:.2}}
+
 .mp-card.active{background:var(--bl-lt);border-color:rgba(42,79,246,.15)}
 </style>
 @endpush
@@ -119,6 +134,7 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 (function(){
     // ── Pin data from server ──
@@ -155,14 +171,54 @@
         return '—';
     }
 
-    // ── Create markers ──
+    // ── Cluster size helper ──
+    function clusterSize(count) {
+        if (count >= 500) return 'xl';
+        if (count >= 100) return 'lg';
+        if (count >= 20) return 'md';
+        return 'sm';
+    }
+
+    function fmtCount(n) {
+        if (n >= 1000) return (n / 1000).toFixed(1).replace('.0','') + 'K';
+        return n.toString();
+    }
+
+    // ── Create MarkerClusterGroup ──
     var markers = [];
-    var markerLayer = L.layerGroup().addTo(map);
+    var clusterGroup = L.markerClusterGroup({
+        maxClusterRadius: function(zoom) {
+            // Larger radius at low zoom → more aggressive grouping
+            if (zoom <= 7) return 120;
+            if (zoom <= 10) return 80;
+            if (zoom <= 12) return 50;
+            return 30;
+        },
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        disableClusteringAtZoom: 16,
+        chunkedLoading: true,
+        chunkInterval: 100,
+        chunkDelay: 20,
+        iconCreateFunction: function(cluster) {
+            var count = cluster.getChildCount();
+            var size = clusterSize(count);
+            return L.divIcon({
+                className: 'marker-cluster',
+                html: '<div class="oohx-cluster oohx-cluster--' + size + '">' + fmtCount(count) + '</div>',
+                iconSize: L.point(size === 'xl' ? 80 : size === 'lg' ? 68 : size === 'md' ? 56 : 44,
+                                  size === 'xl' ? 80 : size === 'lg' ? 68 : size === 'md' ? 56 : 44),
+            });
+        }
+    });
+    map.addLayer(clusterGroup);
 
     function renderPins(pinList) {
-        markerLayer.clearLayers();
+        clusterGroup.clearLayers();
         markers = [];
 
+        var markerArray = [];
         pinList.forEach(function(pin) {
             var col = pinColor(pin.type);
             var icon = L.divIcon({
@@ -172,11 +228,15 @@
                 iconAnchor: [35, 36],
             });
 
-            var marker = L.marker([pin.lat, pin.lng], {icon: icon}).addTo(markerLayer);
+            var marker = L.marker([pin.lat, pin.lng], {icon: icon});
             marker._pinData = pin;
             marker.on('click', function() { selectPin(pin); });
             markers.push({marker: marker, pin: pin});
+            markerArray.push(marker);
         });
+
+        // Bulk add for performance (chunkedLoading handles the rest)
+        clusterGroup.addLayers(markerArray);
 
         // Update counts
         var cnt = pinList.length.toLocaleString('vi-VN');
