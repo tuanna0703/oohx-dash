@@ -44,9 +44,28 @@ class FrontpageController extends Controller
 
     public function map(FrontpageListingRequest $request): View
     {
+        $pins = $this->fp->getMapPins($request);
+
+        $pinsJson = $pins->map(function ($p) {
+            return [
+                'id'    => $p->uuid ?? $p->id,
+                'name'  => $p->name,
+                'lat'   => (float) ($p->site?->lat ?? 0),
+                'lng'   => (float) ($p->site?->lon ?? 0),
+                'city'  => $p->site?->city ?? '',
+                'addr'  => $p->site?->address ?? '',
+                'photo' => $p->spec?->photo_url ?? '',
+                'price' => (float) ($p->inventory?->floor_cpm ?? 0),
+                'type'  => $p->inventory?->venue_type ?? '',
+            ];
+        })->filter(function ($p) {
+            return $p['lat'] != 0 && $p['lng'] != 0;
+        })->values();
+
         return view('frontpage.map', [
-            'pins'    => $this->fp->getMapPins($request),
-            'filters' => $this->fp->getFilterAggregates(),
+            'pins'     => $pins,
+            'pinsJson' => $pinsJson,
+            'filters'  => $this->fp->getFilterAggregates(),
         ]);
     }
 

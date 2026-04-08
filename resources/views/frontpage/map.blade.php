@@ -122,17 +122,7 @@
 <script>
 (function(){
     // ── Pin data from server ──
-    var PINS = @json($pins->map(fn($p) => [
-        'id'    => $p->uuid ?? $p->id,
-        'name'  => $p->name,
-        'lat'   => (float) ($p->site?->lat ?? 0),
-        'lng'   => (float) ($p->site?->lon ?? 0),
-        'city'  => $p->site?->city ?? '',
-        'addr'  => $p->site?->address ?? '',
-        'photo' => $p->spec?->photo_url ?? '',
-        'price' => (float) ($p->inventory?->floor_cpm ?? 0),
-        'type'  => $p->inventory?->venue_type ?? '',
-    ])->filter(fn($p) => $p['lat'] != 0 && $p['lng'] != 0)->values());
+    var PINS = @json($pinsJson);
 
     // ── Init Leaflet ──
     var map = L.map('leaflet-map', {
