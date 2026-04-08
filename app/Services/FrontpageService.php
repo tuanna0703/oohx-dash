@@ -335,7 +335,7 @@ class FrontpageService
      */
     public function getHomepageMapPins(string $citySlug = 'hanoi', int $limit = 50): array
     {
-        $cityName = self::CITY_SLUG_MAP[$citySlug] ?? null;
+        $cityName = $this->resolveCityName($citySlug);
 
         $query = Screen::withoutGlobalScope('owner_scope')
             ->where('active', true)
@@ -368,14 +368,41 @@ class FrontpageService
             'pins'      => $pins,
             'total'     => $this->getHomepageMapCount($citySlug),
             'citySlug'  => $citySlug,
-            'cityName'  => $cityName ?? 'Việt Nam',
+            'cityName'  => $cityName ?? 'Toàn quốc',
         ];
+    }
+
+    /**
+     * Resolve city slug to DB city name.
+     * Returns null for 'all' (no filter = nationwide).
+     */
+    private function resolveCityName(string $slug): ?string
+    {
+        if ($slug === 'all') {
+            return null;
+        }
+
+        // Check hardcoded map first
+        if (isset(self::CITY_SLUG_MAP[$slug])) {
+            return self::CITY_SLUG_MAP[$slug];
+        }
+
+        // Fallback: look up in DB by matching slug against actual city names
+        $city = DB::table('sites')
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->select('city')
+            ->distinct()
+            ->get()
+            ->first(fn ($r) => Str::slug($r->city) === $slug);
+
+        return $city?->city;
     }
 
     private function getHomepageMapCount(string $citySlug): int
     {
         return Cache::remember("fp:map_count:{$citySlug}", 1800, function () use ($citySlug) {
-            $cityName = self::CITY_SLUG_MAP[$citySlug] ?? null;
+            $cityName = $this->resolveCityName($citySlug);
 
             $query = Screen::withoutGlobalScope('owner_scope')
                 ->where('active', true)

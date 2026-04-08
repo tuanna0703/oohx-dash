@@ -303,12 +303,37 @@
 
         {{-- City picker bar --}}
         <div class="hp-map-city-bar" id="hp-city-bar">
-          <button class="hmc-btn{{ ($mapData['citySlug'] ?? 'hanoi') === 'hanoi' ? ' on' : '' }}" data-city="hanoi" data-lat="21.0285" data-lng="105.8542" data-zoom="12">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Hà Nội
+          @php $cs = $mapData['citySlug'] ?? 'hanoi'; @endphp
+          <button class="hmc-btn{{ $cs === 'all' ? ' on' : '' }}" data-city="all">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> Toàn quốc
           </button>
-          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'hcm' ? ' on' : '' }}" data-city="hcm" data-lat="10.7769" data-lng="106.7009" data-zoom="12">TP.HCM</button>
-          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'danang' ? ' on' : '' }}" data-city="danang" data-lat="16.0544" data-lng="108.2022" data-zoom="13">Đà Nẵng</button>
-          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'haiphong' ? ' on' : '' }}" data-city="haiphong" data-lat="20.8449" data-lng="106.6881" data-zoom="13">Hải Phòng</button>
+          <button class="hmc-btn{{ $cs === 'hanoi' ? ' on' : '' }}" data-city="hanoi">Hà Nội</button>
+          <button class="hmc-btn{{ $cs === 'hcm' ? ' on' : '' }}" data-city="hcm">TP.HCM</button>
+          <button class="hmc-btn{{ $cs === 'danang' ? ' on' : '' }}" data-city="danang">Đà Nẵng</button>
+          {{-- More cities dropdown --}}
+          <div class="hmc-more" id="hmc-more">
+            <button class="hmc-btn hmc-more-trigger" id="hmc-more-btn">
+              Khác <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+            <div class="hmc-dropdown" id="hmc-dropdown">
+              <div class="hmc-dd-head">Chọn tỉnh/thành</div>
+              <div class="hmc-dd-list">
+                @foreach($topCities as $city)
+                  @if(!in_array($city['code'], ['hanoi', 'hcm', 'danang']))
+                  <button class="hmc-dd-item{{ $cs === $city['code'] ? ' on' : '' }}" data-city="{{ $city['code'] }}">
+                    {{ $city['name'] }} <span class="hmc-dd-count">{{ number_format($city['count']) }}</span>
+                  </button>
+                  @endif
+                @endforeach
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{-- Zoom controls --}}
+        <div class="hp-map-zoom">
+          <button class="hm-zoom-btn" id="hp-zoom-in">+</button>
+          <button class="hm-zoom-btn" id="hp-zoom-out">−</button>
         </div>
 
         {{-- Popup overlay --}}
@@ -451,11 +476,20 @@
 
   // ── HOMEPAGE MINI MAP ──────────────────────────────────────────────
   var CITY_CENTERS = {
+    all:     {lat:16.0, lng:106.0, zoom:6, name:'Việt Nam'},
     hanoi:    {lat:21.0285, lng:105.8542, zoom:12, name:'Hà Nội'},
     hcm:     {lat:10.7769, lng:106.7009, zoom:12, name:'TP. Hồ Chí Minh'},
     danang:  {lat:16.0544, lng:108.2022, zoom:13, name:'Đà Nẵng'},
     haiphong:{lat:20.8449, lng:106.6881, zoom:13, name:'Hải Phòng'},
     cantho:  {lat:10.0452, lng:105.7469, zoom:13, name:'Cần Thơ'},
+    nghean:  {lat:18.6733, lng:105.6922, zoom:12, name:'Nghệ An'},
+    thanhhoa:{lat:19.8075, lng:105.7764, zoom:12, name:'Thanh Hóa'},
+    binhduong:{lat:11.3254, lng:106.477, zoom:12, name:'Bình Dương'},
+    dongnai: {lat:10.9453, lng:106.8243, zoom:12, name:'Đồng Nai'},
+    quangninh:{lat:21.006, lng:107.2925, zoom:12, name:'Quảng Ninh'},
+    hue:     {lat:16.4637, lng:107.5909, zoom:13, name:'Huế'},
+    khanhhoa:{lat:12.2388, lng:109.1967, zoom:12, name:'Khánh Hòa'},
+    bariavungtau:{lat:10.412, lng:107.136, zoom:12, name:'Bà Rịa - Vũng Tàu'},
   };
 
   var HP_PINS = @json($mapData['pins'] ?? []);
@@ -524,35 +558,84 @@
     hpMap.panTo([pin.lat, pin.lng]);
   }
 
-  // City picker buttons
-  document.querySelectorAll('.hmc-btn').forEach(function(btn) {
+  // ── Switch city (shared function) ──────────────────────────────────
+  function switchCity(city) {
+    // Update UI: highlight active button
+    document.querySelectorAll('.hmc-btn:not(.hmc-more-trigger)').forEach(function(b){ b.classList.remove('on'); });
+    document.querySelectorAll('.hmc-dd-item').forEach(function(b){ b.classList.remove('on'); });
+
+    var mainBtn = document.querySelector('.hmc-btn[data-city="' + city + '"]');
+    var ddItem  = document.querySelector('.hmc-dd-item[data-city="' + city + '"]');
+    if (mainBtn) mainBtn.classList.add('on');
+    if (ddItem) {
+      ddItem.classList.add('on');
+      // Show city name on the trigger button
+      document.getElementById('hmc-more-btn').classList.add('on');
+    } else {
+      document.getElementById('hmc-more-btn').classList.remove('on');
+    }
+
+    document.getElementById('hp-popup').style.display = 'none';
+    closeDropdown();
+
+    // Save cookie
+    document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
+    currentCity = city;
+
+    // Fly to city center
+    var c = CITY_CENTERS[city];
+    if (c) {
+      hpMap.flyTo([c.lat, c.lng], c.zoom, {duration:0.6});
+    } else {
+      // Unknown city — zoom to Vietnam
+      hpMap.flyTo([16.0, 106.0], 6, {duration:0.6});
+    }
+
+    // Fetch new pins
+    fetch('/?_map_city=' + city, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        HP_PINS = data.pins || [];
+        renderHpPins(HP_PINS, null);
+        document.getElementById('hp-map-total').textContent = (data.total || 0).toLocaleString('vi-VN');
+        document.getElementById('hp-map-city-label').textContent = data.cityName || '';
+      })
+      .catch(function(){});
+  }
+
+  // Main city buttons (Toàn quốc, Hà Nội, HCM, Đà Nẵng)
+  document.querySelectorAll('.hmc-btn:not(.hmc-more-trigger)').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.hmc-btn').forEach(function(b){ b.classList.remove('on'); });
-      btn.classList.add('on');
-      document.getElementById('hp-popup').style.display = 'none';
-
-      var city = btn.dataset.city;
-      var lat  = parseFloat(btn.dataset.lat);
-      var lng  = parseFloat(btn.dataset.lng);
-      var zoom = parseInt(btn.dataset.zoom);
-
-      // Save cookie
-      document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
-      currentCity = city;
-
-      // Fly to city center first, then fetch pins
-      hpMap.flyTo([lat, lng], zoom, {duration:0.6});
-      fetch('/?_map_city=' + city, {headers:{'X-Requested-With':'XMLHttpRequest'}})
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-          HP_PINS = data.pins || [];
-          renderHpPins(HP_PINS, null); // don't re-center, already flew
-          document.getElementById('hp-map-total').textContent = (data.total || 0).toLocaleString('vi-VN');
-          document.getElementById('hp-map-city-label').textContent = data.cityName || '';
-        })
-        .catch(function(){ /* fallback: just fly, keep old pins */ });
+      if (btn.dataset.city) switchCity(btn.dataset.city);
     });
   });
+
+  // ── Dropdown for more cities ──────────────────────────────────────
+  var dropdown = document.getElementById('hmc-dropdown');
+  var moreBtn  = document.getElementById('hmc-more-btn');
+
+  function closeDropdown() { dropdown.classList.remove('open'); }
+
+  moreBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  document.querySelectorAll('.hmc-dd-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.stopPropagation();
+      switchCity(item.dataset.city);
+    });
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('hmc-more').contains(e.target)) closeDropdown();
+  });
+
+  // ── Zoom controls ──────────────────────────────────────────────────
+  document.getElementById('hp-zoom-in').addEventListener('click', function(){ hpMap.zoomIn(); });
+  document.getElementById('hp-zoom-out').addEventListener('click', function(){ hpMap.zoomOut(); });
 
   // ── GEOLOCATION DETECT (first visit only) ──────────────────────────
   if (!getCookie('oohx_city') && navigator.geolocation) {
@@ -562,17 +645,14 @@
       var closest = 'hanoi';
       var minDist = Infinity;
       for (var key in CITY_CENTERS) {
+        if (key === 'all') continue;
         var c = CITY_CENTERS[key];
         var d = Math.pow(lat - c.lat, 2) + Math.pow(lng - c.lng, 2);
         if (d < minDist) { minDist = d; closest = key; }
       }
-      if (closest !== currentCity) {
-        var btn = document.querySelector('.hmc-btn[data-city="' + closest + '"]');
-        if (btn) btn.click();
-      }
+      if (closest !== currentCity) switchCity(closest);
       document.cookie = 'oohx_city=' + closest + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
     }, function(){
-      // Permission denied or error — use default, save cookie
       document.cookie = 'oohx_city=hanoi;path=/;max-age=' + (30*86400) + ';SameSite=Lax';
     }, {timeout: 5000, maximumAge: 3600000});
   }
