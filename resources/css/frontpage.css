@@ -762,6 +762,9 @@ body.page-map{overflow:hidden}
 .mp-card-pr{font-size:15px;font-weight:800;color:var(--t1);letter-spacing:-.3px}
 .mp-card-pr span{font-size:11px;color:var(--t4);font-weight:400}
 .map-area{flex:1;position:relative;background:#e8ecf0;overflow:hidden}
+#leaflet-map{position:absolute;inset:0;z-index:0}
+#leaflet-map .leaflet-control-zoom{display:none}
+.leaflet-container{font-family:var(--font)}
 .map-layout .mpin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform 200ms var(--spring);filter:none}
 .map-layout .mpin:hover{transform:translate(-50%,-100%) scale(1.12)}
 .mpin-box{border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:4px;white-space:nowrap}

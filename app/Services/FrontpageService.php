@@ -324,6 +324,7 @@ class FrontpageService
     public function getMapPins(Request $request): Collection
     {
         return $this->buildScreenQuery($request)
+            ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')->where('lat', '!=', 0)->where('lon', '!=', 0))
             ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type', 'site:id,lat,lon,city,address'])
             ->get();
     }
