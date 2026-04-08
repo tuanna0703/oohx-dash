@@ -486,11 +486,19 @@ class FrontpageService
 
     private function applySort($query, Request $request)
     {
-        return match ($request->input('sort')) {
-            'price_asc'  => $query->orderByRaw('(SELECT floor_cpm FROM screen_inventory WHERE screen_inventory.screen_id = screens.id LIMIT 1) ASC'),
-            'price_desc' => $query->orderByRaw('(SELECT floor_cpm FROM screen_inventory WHERE screen_inventory.screen_id = screens.id LIMIT 1) DESC'),
-            'newest'     => $query->orderBy('updated_at', 'desc'),
-            default      => $query->orderBy('screens.id', 'asc'),
+        $sort = $request->input('sort');
+
+        if ($sort === 'price_asc' || $sort === 'price_desc') {
+            $query->leftJoin('screen_inventory as sort_inv', 'screens.id', '=', 'sort_inv.screen_id')
+                  ->orderBy('sort_inv.floor_cpm', $sort === 'price_asc' ? 'asc' : 'desc')
+                  ->select('screens.*');
+
+            return $query;
+        }
+
+        return match ($sort) {
+            'newest' => $query->orderBy('screens.updated_at', 'desc'),
+            default  => $query->orderBy('screens.id', 'asc'),
         };
     }
 

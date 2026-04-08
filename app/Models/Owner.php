@@ -64,16 +64,6 @@ class Owner extends Model
     }
 
     // ── Helpers ────────────────────────────────────────────
-
-    public function getTotalScreensAttribute(): int
-    {
-        return $this->screens()->where('active', true)->count();
-    }
-
-    public function getProgrammaticScreensAttribute(): int
-    {
-        return Screen::where('owner_id', $this->id)
-            ->whereHas('inventory', fn($q) => $q->where('programmatic_enabled', true))
-            ->count();
-    }
+    // Note: Use withCount(['screens as screen_count' => ...]) at query time
+    // instead of computed accessors to avoid N+1 queries.
 }
