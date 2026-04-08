@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FrontpageListingRequest;
 use App\Services\FrontpageService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -11,8 +12,17 @@ class FrontpageController extends Controller
 {
     public function __construct(private FrontpageService $fp) {}
 
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
+        $citySlug = $request->input('_map_city', $request->cookie('oohx_city', 'hanoi'));
+
+        // AJAX request from city picker → return JSON only
+        if ($request->ajax() && $request->has('_map_city')) {
+            return response()->json($this->fp->getHomepageMapPins($citySlug, 50));
+        }
+
+        $mapData = $this->fp->getHomepageMapPins($citySlug, 50);
+
         return view('frontpage.index', [
             'stats'             => $this->fp->getHeroStats(),
             'venueTypes'        => $this->fp->getVenueTypesWithCounts(),
@@ -20,6 +30,7 @@ class FrontpageController extends Controller
             'featuredScreens'   => $this->fp->getFeaturedScreens(4),
             'featuredOwners'    => $this->fp->getFeaturedOwners(6),
             'locationsByRegion' => $this->fp->getLocationsByRegion(),
+            'mapData'           => $mapData,
         ]);
     }
 

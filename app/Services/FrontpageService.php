@@ -329,6 +329,67 @@ class FrontpageService
             ->get();
     }
 
+    /**
+     * Get pins for the homepage mini-map, scoped to a city.
+     * Returns lightweight data for up to $limit screens.
+     */
+    public function getHomepageMapPins(string $citySlug = 'hanoi', int $limit = 50): array
+    {
+        $cityName = self::CITY_SLUG_MAP[$citySlug] ?? null;
+
+        $query = Screen::withoutGlobalScope('owner_scope')
+            ->where('active', true)
+            ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')
+                ->where('lat', '!=', 0)->where('lon', '!=', 0));
+
+        if ($cityName) {
+            $query->whereHas('site', fn ($q) => $q->where('city', $cityName));
+        }
+
+        $screens = $query
+            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type', 'site:id,lat,lon,city,address'])
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
+
+        $pins = $screens->map(fn ($s) => [
+            'id'    => $s->uuid ?? $s->id,
+            'name'  => $s->name,
+            'lat'   => (float) ($s->site?->lat ?? 0),
+            'lng'   => (float) ($s->site?->lon ?? 0),
+            'city'  => $s->site?->city ?? '',
+            'addr'  => $s->site?->address ?? '',
+            'photo' => $s->spec?->photo_url ?? '',
+            'price' => (float) ($s->inventory?->floor_cpm ?? 0),
+            'type'  => $s->inventory?->venue_type ?? '',
+        ])->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
+
+        return [
+            'pins'      => $pins,
+            'total'     => $this->getHomepageMapCount($citySlug),
+            'citySlug'  => $citySlug,
+            'cityName'  => $cityName ?? 'Việt Nam',
+        ];
+    }
+
+    private function getHomepageMapCount(string $citySlug): int
+    {
+        return Cache::remember("fp:map_count:{$citySlug}", 1800, function () use ($citySlug) {
+            $cityName = self::CITY_SLUG_MAP[$citySlug] ?? null;
+
+            $query = Screen::withoutGlobalScope('owner_scope')
+                ->where('active', true)
+                ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')
+                    ->where('lat', '!=', 0)->where('lon', '!=', 0));
+
+            if ($cityName) {
+                $query->whereHas('site', fn ($q) => $q->where('city', $cityName));
+            }
+
+            return $query->count();
+        });
+    }
+
     // ── Private helpers ───────────────────────────────────
 
     private function loadOwnerExtras($owners): void

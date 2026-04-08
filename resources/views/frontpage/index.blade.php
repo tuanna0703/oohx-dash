@@ -3,6 +3,7 @@
 @section('title', 'OOHX – Marketplace OOH/DOOH')
 
 @push('head')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>@media(min-width:768px){#login-btn,#signup-btn{display:inline-flex!important}}</style>
 @endpush
 
@@ -297,38 +298,43 @@
       </div>
     </div>
     <div class="map-wrap">
-      <div class="map-mock">
-        <div class="map-bg"></div>
-        <div class="mpin" style="top:38%;left:32%">
-          <div class="mpc-lbl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg> LED – Láng Hạ</div>
-          <div class="mpc">24</div>
+      <div class="map-mock" id="hp-map-container">
+        <div id="hp-leaflet-map" style="position:absolute;inset:0;z-index:0"></div>
+
+        {{-- City picker bar --}}
+        <div class="hp-map-city-bar" id="hp-city-bar">
+          <button class="hmc-btn{{ ($mapData['citySlug'] ?? 'hanoi') === 'hanoi' ? ' on' : '' }}" data-city="hanoi" data-lat="21.0285" data-lng="105.8542" data-zoom="12">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Hà Nội
+          </button>
+          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'hcm' ? ' on' : '' }}" data-city="hcm" data-lat="10.7769" data-lng="106.7009" data-zoom="12">TP.HCM</button>
+          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'danang' ? ' on' : '' }}" data-city="danang" data-lat="16.0544" data-lng="108.2022" data-zoom="13">Đà Nẵng</button>
+          <button class="hmc-btn{{ ($mapData['citySlug'] ?? '') === 'haiphong' ? ' on' : '' }}" data-city="haiphong" data-lat="20.8449" data-lng="106.6881" data-zoom="13">Hải Phòng</button>
         </div>
-        <div class="mpin" style="top:58%;left:65%">
-          <div class="mpc-lbl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--grn)" style="width:11px;height:11px;flex-shrink:0"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg> LCD – Vincom</div>
-          <div class="mpc mpc-grn">18</div>
-        </div>
-        <div class="mpin" style="top:24%;left:70%">
-          <div class="mpc mpc-org" style="width:34px;height:34px;font-size:11px">8</div>
-        </div>
-        <div class="mpop">
-          <div class="mpop-ph"><img src="https://images.unsplash.com/photo-1567721913486-6585f069b3b7?w=200&q=70&auto=format&fit=crop" loading="lazy"></div>
-          <div class="mpop-bd">
-            <div class="mpop-name">LED Láng Hạ × Lê Văn Lương</div>
-            <div class="mpop-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Hanoiads · Verified</div>
-            <span class="badge badge-grn" style="display:inline-flex;margin-bottom:8px">Available</span>
-            <div class="mpop-price">65.000.000đ<span style="font-size:11px;color:var(--t4)">/tháng</span></div>
+
+        {{-- Popup overlay --}}
+        <div class="hp-map-popup" id="hp-popup" style="display:none">
+          <div class="hmpop-close" onclick="document.getElementById('hp-popup').style.display='none'">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:12px;height:12px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           </div>
-          <div class="mpop-ac"><a href="{{ route('fp.detail', 'demo') }}" class="btn btn-p btn-sm">View</a></div>
+          <div class="hmpop-img"><img id="hp-popup-img" src="" alt=""></div>
+          <div class="hmpop-body">
+            <div class="hmpop-name" id="hp-popup-name"></div>
+            <div class="hmpop-meta" id="hp-popup-meta">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+              <span id="hp-popup-city"></span>
+            </div>
+            <span class="badge b-grn" style="display:inline-flex;margin-bottom:6px;font-size:11px;padding:2px 8px">Available</span>
+            <div class="hmpop-price" id="hp-popup-price"></div>
+          </div>
+          <div class="hmpop-action">
+            <a href="#" id="hp-popup-link" class="btn btn-p btn-xs" style="border-radius:8px">Xem chi tiết</a>
+          </div>
         </div>
       </div>
+
       <div class="map-bar">
-        <div class="map-count"><strong>1,248</strong> inventory in view</div>
-        <div class="map-filters">
-          <button class="mf on">All</button>
-          <button class="mf">Available</button>
-          <button class="mf">LED / Digital</button>
-          <button class="mf">Mall / Indoor</button>
-        </div>
+        <div class="map-count"><strong id="hp-map-total">{{ number_format($mapData['total'] ?? 0) }}</strong> màn hình tại <span id="hp-map-city-label">{{ $mapData['cityName'] ?? 'Hà Nội' }}</span></div>
+        <a href="{{ route('fp.map') }}" class="btn btn-s btn-xs" style="flex-shrink:0;border-radius:8px">Xem tất cả trên bản đồ →</a>
       </div>
     </div>
   </div>
@@ -429,6 +435,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 (function(){
   // Impression counter
@@ -436,17 +443,142 @@
   const c=document.getElementById('imp-n');
   if(c) setInterval(()=>{imp+=Math.floor(Math.random()*12+3);c.textContent=imp.toLocaleString('en-US')},1400);
 
-  // Map filters
-  document.querySelectorAll('.mf').forEach(t=>t.addEventListener('click',function(){
-    this.closest('.map-filters').querySelectorAll('.mf').forEach(x=>x.classList.remove('on'));
-    this.classList.add('on');
-  }));
-
   // Save toggle
   document.querySelectorAll('.inv-save').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation(); b.classList.toggle('on');
     b.querySelector('svg').style.fill = b.classList.contains('on') ? 'var(--red)' : 'var(--t3)';
   }));
+
+  // ── HOMEPAGE MINI MAP ──────────────────────────────────────────────
+  var CITY_CENTERS = {
+    hanoi:    {lat:21.0285, lng:105.8542, zoom:12, name:'Hà Nội'},
+    hcm:     {lat:10.7769, lng:106.7009, zoom:12, name:'TP. Hồ Chí Minh'},
+    danang:  {lat:16.0544, lng:108.2022, zoom:13, name:'Đà Nẵng'},
+    haiphong:{lat:20.8449, lng:106.6881, zoom:13, name:'Hải Phòng'},
+    cantho:  {lat:10.0452, lng:105.7469, zoom:13, name:'Cần Thơ'},
+  };
+
+  var HP_PINS = @json($mapData['pins'] ?? []);
+  var currentCity = @json($mapData['citySlug'] ?? 'hanoi');
+  var cityInfo = CITY_CENTERS[currentCity] || CITY_CENTERS.hanoi;
+
+  var hpMap = L.map('hp-leaflet-map', {
+    zoomControl: false,
+    attributionControl: false,
+    dragging: true,
+    scrollWheelZoom: false,
+  }).setView([cityInfo.lat, cityInfo.lng], cityInfo.zoom);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18}).addTo(hpMap);
+  L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org">OSM</a>').addTo(hpMap);
+
+  // Pin color
+  function pinColor(type) {
+    if (!type) return 'bl';
+    if (type.indexOf('indoor') >= 0 || type.indexOf('mall') >= 0) return 'grn';
+    if (type.indexOf('transit') >= 0 || type.indexOf('airport') >= 0) return 'org';
+    return 'bl';
+  }
+
+  function fmtPrice(p) {
+    if (p >= 1e9) return (p/1e9).toFixed(1).replace('.0','') + 'B';
+    if (p >= 1e6) return Math.round(p/1e6) + 'M';
+    if (p > 0) return p.toLocaleString('vi-VN');
+    return '—';
+  }
+
+  // Render pins
+  var hpMarkers = L.layerGroup().addTo(hpMap);
+
+  function renderHpPins(pins) {
+    hpMarkers.clearLayers();
+    pins.forEach(function(pin) {
+      var col = pinColor(pin.type);
+      var icon = L.divIcon({
+        className: 'oohx-pin oohx-pin--' + col,
+        html: '<div class="oohx-pin-box">' + fmtPrice(pin.price) + '</div><div class="oohx-pin-arrow"></div>',
+        iconSize: [70, 36], iconAnchor: [35, 36],
+      });
+      var m = L.marker([pin.lat, pin.lng], {icon: icon}).addTo(hpMarkers);
+      m.on('click', function() { showHpPopup(pin); });
+    });
+
+    if (pins.length > 0) {
+      var bounds = L.latLngBounds(pins.map(function(p){ return [p.lat, p.lng]; }));
+      hpMap.fitBounds(bounds, {padding:[30,30], maxZoom:14});
+    }
+  }
+
+  renderHpPins(HP_PINS);
+
+  // Popup
+  function showHpPopup(pin) {
+    document.getElementById('hp-popup-name').textContent = pin.name;
+    document.getElementById('hp-popup-city').textContent = pin.city || pin.addr || '';
+    document.getElementById('hp-popup-price').innerHTML = fmtPrice(pin.price) + ' ₫<span style="font-size:11px;color:var(--t4);font-weight:400"> /tháng</span>';
+    document.getElementById('hp-popup-img').src = pin.photo || 'https://placehold.co/300x160/F5F5F7/6E6E73?text=No+Photo';
+    document.getElementById('hp-popup-link').href = '/explore/' + pin.id;
+    document.getElementById('hp-popup').style.display = 'flex';
+    hpMap.panTo([pin.lat, pin.lng]);
+  }
+
+  // City picker buttons
+  document.querySelectorAll('.hmc-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.hmc-btn').forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on');
+      document.getElementById('hp-popup').style.display = 'none';
+
+      var city = btn.dataset.city;
+      var lat  = parseFloat(btn.dataset.lat);
+      var lng  = parseFloat(btn.dataset.lng);
+      var zoom = parseInt(btn.dataset.zoom);
+
+      // Save cookie
+      document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
+      currentCity = city;
+
+      // Fetch new pins via AJAX
+      hpMap.flyTo([lat, lng], zoom, {duration:0.6});
+      fetch('/?_map_city=' + city, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          HP_PINS = data.pins || [];
+          renderHpPins(HP_PINS);
+          document.getElementById('hp-map-total').textContent = (data.total || 0).toLocaleString('vi-VN');
+          document.getElementById('hp-map-city-label').textContent = data.cityName || '';
+        })
+        .catch(function(){ /* fallback: just fly, keep old pins */ });
+    });
+  });
+
+  // ── GEOLOCATION DETECT (first visit only) ──────────────────────────
+  if (!getCookie('oohx_city') && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      var closest = 'hanoi';
+      var minDist = Infinity;
+      for (var key in CITY_CENTERS) {
+        var c = CITY_CENTERS[key];
+        var d = Math.pow(lat - c.lat, 2) + Math.pow(lng - c.lng, 2);
+        if (d < minDist) { minDist = d; closest = key; }
+      }
+      if (closest !== currentCity) {
+        var btn = document.querySelector('.hmc-btn[data-city="' + closest + '"]');
+        if (btn) btn.click();
+      }
+      document.cookie = 'oohx_city=' + closest + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
+    }, function(){
+      // Permission denied or error — use default, save cookie
+      document.cookie = 'oohx_city=hanoi;path=/;max-age=' + (30*86400) + ';SameSite=Lax';
+    }, {timeout: 5000, maximumAge: 3600000});
+  }
+
+  function getCookie(name) {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? m[1] : null;
+  }
 })();
 
 // ── SEARCH FILTER DROPDOWNS ────────────────────────────────────────
