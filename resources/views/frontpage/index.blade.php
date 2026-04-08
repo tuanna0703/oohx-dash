@@ -13,7 +13,7 @@
     <div style="animation:fade-up .8s var(--ease) both">
       <div class="hero-badge" style="display:inline-flex">
         <div class="hero-badge-dot"></div>
-        1,248 inventory đang mở đặt lịch
+        {{ number_format($stats['total_screens']) }} inventory đang mở đặt lịch
       </div>
     </div>
 
@@ -76,36 +76,14 @@
         </div>
         <div class="mega-body">
           <div class="loc-cols">
-            <!-- Miền Bắc -->
+            @foreach($locationsByRegion as $regionName => $provinces)
             <div class="loc-region">
-              <div class="loc-region-title">Miền Bắc</div>
-              <div class="loc-item" onclick="selectCity(this,'Hà Nội')"><div class="loc-check"></div><span>Hà Nội</span><span class="loc-count">480</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Hải Phòng')"><div class="loc-check"></div><span>Hải Phòng</span><span class="loc-count">98</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Quảng Ninh')"><div class="loc-check"></div><span>Quảng Ninh</span><span class="loc-count">34</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Bắc Ninh')"><div class="loc-check"></div><span>Bắc Ninh</span><span class="loc-count">22</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Hải Dương')"><div class="loc-check"></div><span>Hải Dương</span><span class="loc-count">18</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Vĩnh Phúc')"><div class="loc-check"></div><span>Vĩnh Phúc</span><span class="loc-count">14</span></div>
+              <div class="loc-region-title">{{ $regionName }}</div>
+              @foreach($provinces as $p)
+              <div class="loc-item" onclick="selectCity(this,'{{ $p['name'] }}')"><div class="loc-check"></div><span>{{ $p['name'] }}</span><span class="loc-count">{{ $p['count'] }}</span></div>
+              @endforeach
             </div>
-            <!-- Miền Trung -->
-            <div class="loc-region">
-              <div class="loc-region-title">Miền Trung</div>
-              <div class="loc-item" onclick="selectCity(this,'Đà Nẵng')"><div class="loc-check"></div><span>Đà Nẵng</span><span class="loc-count">124</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Huế')"><div class="loc-check"></div><span>Huế</span><span class="loc-count">28</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Quảng Nam')"><div class="loc-check"></div><span>Quảng Nam</span><span class="loc-count">16</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Nha Trang')"><div class="loc-check"></div><span>Nha Trang</span><span class="loc-count">42</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Quy Nhơn')"><div class="loc-check"></div><span>Quy Nhơn</span><span class="loc-count">20</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Đà Lạt')"><div class="loc-check"></div><span>Đà Lạt</span><span class="loc-count">15</span></div>
-            </div>
-            <!-- Miền Nam -->
-            <div class="loc-region">
-              <div class="loc-region-title">Miền Nam</div>
-              <div class="loc-item" onclick="selectCity(this,'TP. Hồ Chí Minh')"><div class="loc-check"></div><span>TP. Hồ Chí Minh</span><span class="loc-count">520</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Bình Dương')"><div class="loc-check"></div><span>Bình Dương</span><span class="loc-count">56</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Đồng Nai')"><div class="loc-check"></div><span>Đồng Nai</span><span class="loc-count">38</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Cần Thơ')"><div class="loc-check"></div><span>Cần Thơ</span><span class="loc-count">44</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Long An')"><div class="loc-check"></div><span>Long An</span><span class="loc-count">18</span></div>
-              <div class="loc-item" onclick="selectCity(this,'Vũng Tàu')"><div class="loc-check"></div><span>Vũng Tàu</span><span class="loc-count">22</span></div>
-            </div>
+            @endforeach
           </div>
           <!-- District sub-panel (shown when city selected) -->
           <div class="loc-district-panel" id="dist-panel">
@@ -130,48 +108,15 @@
         </div>
         <div class="mega-body">
           <div class="type-grid" id="type-grid">
-            <div class="type-card" onclick="toggleType(this,'LED Outdoor')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM5 15h3v2H5zm0-4h3v2H5zm0-4h3v2H5zm4 8h6v2H9zm0-4h6v2H9zm0-4h6v2H9zm7 8h3v2h-3zm0-4h3v2h-3zm0-4h3v2h-3z"/></svg></div>
+            @foreach($venueTypes->take(6) as $vt)
+            <div class="type-card" onclick="toggleType(this,'{{ $vt['label'] }}')">
+              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg></div>
               <div>
-                <div class="type-name">LED Outdoor</div>
-                <div class="type-count">218 vị trí</div>
+                <div class="type-name">{{ $vt['label'] }}</div>
+                <div class="type-count">{{ $vt['count'] }} vị trí</div>
               </div>
             </div>
-            <div class="type-card" onclick="toggleType(this,'Billboard Static')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M2 6v12h2V8h12V6zm4 4v12h14V10zm12 10H8v-8h10z"/></svg></div>
-              <div>
-                <div class="type-name">Billboard Static</div>
-                <div class="type-count">342 vị trí</div>
-              </div>
-            </div>
-            <div class="type-card" onclick="toggleType(this,'LCD Mall Indoor')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z"/></svg></div>
-              <div>
-                <div class="type-name">LCD Mall Indoor</div>
-                <div class="type-count">185 vị trí</div>
-              </div>
-            </div>
-            <div class="type-card" onclick="toggleType(this,'Màn hình Thang máy')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 2v16h10V4H7zm2.5 8H9l3-3.5 3 3.5h-1.5V16h-3v-4z"/></svg></div>
-              <div>
-                <div class="type-name">Màn hình Thang máy</div>
-                <div class="type-count">420 vị trí</div>
-              </div>
-            </div>
-            <div class="type-card" onclick="toggleType(this,'Transit / Sân bay')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
-              <div>
-                <div class="type-name">Transit / Sân bay</div>
-                <div class="type-count">92 vị trí</div>
-              </div>
-            </div>
-            <div class="type-card" onclick="toggleType(this,'Digital Standee')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg></div>
-              <div>
-                <div class="type-name">Digital Standee</div>
-                <div class="type-count">78 vị trí</div>
-              </div>
-            </div>
+            @endforeach
           </div>
         </div>
         <div class="mega-foot">
@@ -203,9 +148,9 @@
 
     <!-- Stats -->
     <div class="hero-stats">
-      <div class="hstat"><div class="hstat-n">1.2<span class="unit">K+</span></div><div class="hstat-l">Inventory</div></div>
-      <div class="hstat"><div class="hstat-n">63</div><div class="hstat-l">Tỉnh thành</div></div>
-      <div class="hstat"><div class="hstat-n">80<span class="unit">+</span></div><div class="hstat-l">Media owners</div></div>
+      <div class="hstat"><div class="hstat-n">{{ number_format($stats['total_screens'] / 1000, 1) }}<span class="unit">K+</span></div><div class="hstat-l">Inventory</div></div>
+      <div class="hstat"><div class="hstat-n">{{ $stats['total_cities'] }}</div><div class="hstat-l">Tỉnh thành</div></div>
+      <div class="hstat"><div class="hstat-n">{{ $stats['total_owners'] }}<span class="unit">+</span></div><div class="hstat-l">Media owners</div></div>
       <div class="hstat"><div class="hstat-n">48<span class="unit">h</span></div><div class="hstat-l">Confirm time</div></div>
     </div>
   </div>
@@ -280,7 +225,14 @@
         <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
       </div>
     </div>
-    <div class="cat-grid"><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1567721913486-6585f069b3b7?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">342</span></div><div class="cat-body"><div class="cat-name">Billboard</div><div class="cat-format">OUTDOOR</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1586985564150-11ee04838034?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">218</span></div><div class="cat-body"><div class="cat-name">LED Outdoor</div><div class="cat-format">DOOH</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1519567770579-c2fc5436bcf8?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">185</span></div><div class="cat-body"><div class="cat-name">LCD Mall</div><div class="cat-format">INDOOR</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">420</span></div><div class="cat-body"><div class="cat-name">Elevator Screen</div><div class="cat-format">INDOOR</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">92</span></div><div class="cat-body"><div class="cat-name">Transit / Airport</div><div class="cat-format">HIGH DWELL</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">134</span></div><div class="cat-body"><div class="cat-name">Roadside Premium</div><div class="cat-format">HIGHWAY</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv"><div class="cat-img"><img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=400&q=75&auto=format&fit=crop" loading="lazy"><div class="cat-img-ov"></div><span class="cat-count">78</span></div><div class="cat-body"><div class="cat-name">Digital Standee</div><div class="cat-format">RETAIL</div></div></a><a href="{{ route('fp.listing') }}" class="cat-card rv" style="border:2px dashed var(--ln2)"><div class="cat-img" style="background:var(--bl-lt);display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:40px;height:40px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg></div><div class="cat-body"><div class="cat-name" style="color:var(--bl)">Network Package</div><div class="cat-format">COMBO DEALS</div></div></a></div>
+    <div class="cat-grid">
+      @foreach($venueTypes->take(5) as $vt)
+      <a href="{{ route('fp.listing', ['venue_type' => $vt['type']]) }}" class="cat-card rv">
+        <div class="cat-img"><div class="cat-img-ov"></div><div class="cat-count">{{ $vt['count'] }}</div></div>
+        <div class="cat-body"><div class="cat-name">{{ $vt['label'] }}</div></div>
+      </a>
+      @endforeach
+    </div>
   </div>
 </section>
 
@@ -290,35 +242,22 @@
       <div class="sec-head-row">
         <div>
           <span class="eyebrow">MARKET COVERAGE</span>
-          <h2 class="section-hed">63 Tỉnh thành</h2>
+          <h2 class="section-hed">{{ $stats['total_cities'] }} Tỉnh thành</h2>
           <p class="section-sub" style="margin-top:10px;font-size:16px">Chọn thị trường để bắt đầu lên plan.</p>
         </div>
         <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">All markets <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
       </div>
     </div>
     <div class="city-grid">
-      <a href="{{ route('fp.listing') }}" class="city-card city-card--lg rv">
-        <div class="city-img"><img src="https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=900&q=80&auto=format&fit=crop" loading="lazy"></div>
-        <div class="city-ov"></div>
-        <div class="city-badge">HAN · 480 inventory</div>
-        <div class="city-info"><div class="city-name">Hà Nội</div><div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.7)" style="width:12px;height:12px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>LED · Billboard · Mall · Transit</div></div>
+      @foreach($topCities as $i => $city)
+      <a href="{{ route('fp.listing', ['city' => $city['code']]) }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }} rv">
+        <div class="city-img"><div class="city-ov"></div></div>
+        <div class="city-info">
+          <div class="city-name">{{ $city['name'] }}</div>
+          <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
+        </div>
       </a>
-      <a href="{{ route('fp.listing') }}" class="city-card city-card--lg rv rv-d1">
-        <div class="city-img"><img src="https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=900&q=80&auto=format&fit=crop" loading="lazy"></div>
-        <div class="city-ov"></div>
-        <div class="city-badge">SGN · 520 inventory</div>
-        <div class="city-info"><div class="city-name">TP. Hồ Chí Minh</div><div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.7)" style="width:12px;height:12px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>Premium · Mall · Transit · Airport</div></div>
-      </a>
-      <a href="{{ route('fp.listing') }}" class="city-card rv rv-d2">
-        <div class="city-img"><img src="https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400&q=75&auto=format&fit=crop" loading="lazy"></div>
-        <div class="city-ov"></div>
-        <div class="city-info"><div class="city-name">Đà Nẵng</div><div class="city-meta">124 inventory</div></div>
-      </a>
-      <a href="{{ route('fp.listing') }}" class="city-card rv rv-d3">
-        <div class="city-img"><img src="https://images.unsplash.com/photo-1548013146-72479768bada?w=400&q=75&auto=format&fit=crop" loading="lazy"></div>
-        <div class="city-ov"></div>
-        <div class="city-info"><div class="city-name">Hải Phòng</div><div class="city-meta">98 inventory</div></div>
-      </a>
+      @endforeach
     </div>
   </div>
 </section>
@@ -335,103 +274,13 @@
           <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">View all <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
         </div>
       </div>
-    <div class="hs" style="margin-left:-22px;margin-right:-22px;padding-left:22px;padding-right:22px"><article class="inv-card">
-      <div class="inv-photo">
-        <img src="https://images.unsplash.com/photo-1567721913486-6585f069b3b7?w=600&q=80&auto=format&fit=crop" loading="lazy">
-        <div class="inv-badges"><span class="badge" style="background:rgba(52,199,89,.12);color:#248A3D">Available</span></div>
-        <button class="inv-save"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:16px;height:16px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button>
-      </div>
-      <div class="inv-body">
-        <div class="inv-title">LED Billboard – Láng Hạ × Lê Văn Lương</div>
-        <div class="inv-loc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Đống Đa, Hà Nội</div>
-        <div class="inv-specs">
-          <div><div class="sp-label">Format</div><div class="sp-val">LED Outdoor</div></div>
-          <div><div class="sp-label">Size</div><div class="sp-val">12×5m</div></div>
-          <div><div class="sp-label">Traffic/day</div><div class="sp-val">120,000</div></div>
-          <div><div class="sp-label">Owner</div><div class="sp-val">Hanoiads</div></div>
-        </div>
-        <div class="inv-tags"><span class="badge badge-bl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</span></div>
-      </div>
-      <div class="inv-foot">
-        <div><div class="inv-price-label">Từ</div><div class="inv-price">65M<sup>đ</sup></div></div>
-        <div class="inv-actions">
-          <button class="btn btn-s btn-sm btn-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5l5-6v6zm9-15h-5v2h5v13l-5-6v9h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
-          <a href="{{ route('fp.detail', 'demo') }}" class="btn btn-p btn-sm">Book</a>
-        </div>
-      </div>
-    </article><article class="inv-card">
-      <div class="inv-photo">
-        <img src="https://images.unsplash.com/photo-1519567770579-c2fc5436bcf8?w=600&q=80&auto=format&fit=crop" loading="lazy">
-        <div class="inv-badges"><span class="badge" style="background:rgba(255,159,10,.12);color:#C93400">Filling fast</span></div>
-        <button class="inv-save"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:16px;height:16px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button>
-      </div>
-      <div class="inv-body">
-        <div class="inv-title">LCD Network – Vincom Mega Mall RC</div>
-        <div class="inv-loc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Thanh Xuân, Hà Nội</div>
-        <div class="inv-specs">
-          <div><div class="sp-label">Format</div><div class="sp-val">LCD Indoor</div></div>
-          <div><div class="sp-label">Size</div><div class="sp-val">8 units</div></div>
-          <div><div class="sp-label">Traffic/day</div><div class="sp-val">45,000</div></div>
-          <div><div class="sp-label">Owner</div><div class="sp-val">Vincom Media</div></div>
-        </div>
-        <div class="inv-tags"><span class="badge badge-bl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</span></div>
-      </div>
-      <div class="inv-foot">
-        <div><div class="inv-price-label">Từ</div><div class="inv-price">28M<sup>đ</sup></div></div>
-        <div class="inv-actions">
-          <button class="btn btn-s btn-sm btn-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5l5-6v6zm9-15h-5v2h5v13l-5-6v9h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
-          <a href="{{ route('fp.detail', 'demo') }}" class="btn btn-p btn-sm">Book</a>
-        </div>
-      </div>
-    </article><article class="inv-card">
-      <div class="inv-photo">
-        <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80&auto=format&fit=crop" loading="lazy">
-        <div class="inv-badges"><span class="badge" style="background:rgba(52,199,89,.12);color:#248A3D">Available</span></div>
-        <button class="inv-save"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:16px;height:16px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button>
-      </div>
-      <div class="inv-body">
-        <div class="inv-title">LED – Sân bay Nội Bài T2</div>
-        <div class="inv-loc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Sân bay Nội Bài</div>
-        <div class="inv-specs">
-          <div><div class="sp-label">Format</div><div class="sp-val">LED Indoor</div></div>
-          <div><div class="sp-label">Size</div><div class="sp-val">6×2.5m</div></div>
-          <div><div class="sp-label">Traffic/day</div><div class="sp-val">62,000</div></div>
-          <div><div class="sp-label">Owner</div><div class="sp-val">ACV Media</div></div>
-        </div>
-        <div class="inv-tags"><span class="badge badge-bl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</span></div>
-      </div>
-      <div class="inv-foot">
-        <div><div class="inv-price-label">Từ</div><div class="inv-price">90M<sup>đ</sup></div></div>
-        <div class="inv-actions">
-          <button class="btn btn-s btn-sm btn-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5l5-6v6zm9-15h-5v2h5v13l-5-6v9h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
-          <a href="{{ route('fp.detail', 'demo') }}" class="btn btn-p btn-sm">Book</a>
-        </div>
-      </div>
-    </article><article class="inv-card">
-      <div class="inv-photo">
-        <img src="https://images.unsplash.com/photo-1586985564150-11ee04838034?w=600&q=80&auto=format&fit=crop" loading="lazy">
-        <div class="inv-badges"><span class="badge" style="background:rgba(42,79,246,.1);color:var(--bl)">Best value</span></div>
-        <button class="inv-save"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:16px;height:16px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button>
-      </div>
-      <div class="inv-body">
-        <div class="inv-title">LED Billboard – Ngã tư Hàng Xanh</div>
-        <div class="inv-loc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Bình Thạnh, TP.HCM</div>
-        <div class="inv-specs">
-          <div><div class="sp-label">Format</div><div class="sp-val">LED Outdoor</div></div>
-          <div><div class="sp-label">Size</div><div class="sp-val">10×4m</div></div>
-          <div><div class="sp-label">Traffic/day</div><div class="sp-val">180,000</div></div>
-          <div><div class="sp-label">Owner</div><div class="sp-val">Saigon Outdoor</div></div>
-        </div>
-        <div class="inv-tags"><span class="badge badge-bl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</span></div>
-      </div>
-      <div class="inv-foot">
-        <div><div class="inv-price-label">Từ</div><div class="inv-price">78M<sup>đ</sup></div></div>
-        <div class="inv-actions">
-          <button class="btn btn-s btn-sm btn-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5l5-6v6zm9-15h-5v2h5v13l-5-6v9h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
-          <a href="{{ route('fp.detail', 'demo') }}" class="btn btn-p btn-sm">Book</a>
-        </div>
-      </div>
-    </article></div>
+    <div class="hs" style="margin-left:-22px;margin-right:-22px;padding-left:22px;padding-right:22px">
+    @forelse($featuredScreens as $screen)
+        @include('frontpage.partials.screen-card', ['screen' => $screen])
+    @empty
+        <div style="padding:40px;text-align:center;color:var(--t4)">Chưa có inventory</div>
+    @endforelse
+    </div>
   </div>
 </section>
 
@@ -497,8 +346,12 @@
         <a href="{{ route('fp.owners') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">All owners <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
       </div>
     </div>
-    <div class="owner-grid"><div class="owner-card rv"><div class="oc-head"><div class="oc-logo" style="background:linear-gradient(135deg,#1D1D1F,#3A3A3C)">HA</div><div><div class="oc-name">Hanoiads JSC</div><div class="oc-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</div></div></div><div class="oc-tags"><span class="oc-tag">Premium</span><span class="oc-tag">Fast reply</span></div><div class="oc-stats"><div><div class="oc-sn">120</div><div class="oc-sl">Inventory</div></div><div><div class="oc-sn">Hà Nội</div><div class="oc-sl">Market</div></div></div></div><div class="owner-card rv"><div class="oc-head"><div class="oc-logo" style="background:linear-gradient(135deg,#1C3A5E,#2A4FF6)">VM</div><div><div class="oc-name">Vincom Media</div><div class="oc-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</div></div></div><div class="oc-tags"><span class="oc-tag">Mall</span><span class="oc-tag">Indoor</span></div><div class="oc-stats"><div><div class="oc-sn">85</div><div class="oc-sl">Inventory</div></div><div><div class="oc-sn">Toàn quốc</div><div class="oc-sl">Market</div></div></div></div><div class="owner-card rv"><div class="oc-head"><div class="oc-logo" style="background:linear-gradient(135deg,#1A3A2A,#34C759)">ACV</div><div><div class="oc-name">ACV Media</div><div class="oc-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</div></div></div><div class="oc-tags"><span class="oc-tag">Airport</span><span class="oc-tag">Transit</span></div><div class="oc-stats"><div><div class="oc-sn">46</div><div class="oc-sl">Inventory</div></div><div><div class="oc-sn">22 airports</div><div class="oc-sl">Market</div></div></div></div><div class="owner-card rv"><div class="oc-head"><div class="oc-logo" style="background:linear-gradient(135deg,#3A1A3A,#AF52DE)">NM</div><div><div class="oc-name">NgoaiMedia</div><div class="oc-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified</div></div></div><div class="oc-tags"><span class="oc-tag">Billboard</span><span class="oc-tag">Roadside</span></div><div class="oc-stats"><div><div class="oc-sn">210</div><div class="oc-sl">Inventory</div></div><div><div class="oc-sn">HN+HCM</div><div class="oc-sl">Market</div></div></div></div></div>
-  </div>
+    <div class="owner-grid">
+    @foreach($featuredOwners as $owner)
+        @include('frontpage.partials.owner-card-mini', ['owner' => $owner])
+    @endforeach
+    </div>
+      </div>
 </section>
 
 <section class="sec sec-gray rv">

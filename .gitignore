@@ -23,5 +23,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 CLAUDE.md
-/agents/filament-coder.md
+.CLAUDE/agents/*
 /public/oohx-frontpage
