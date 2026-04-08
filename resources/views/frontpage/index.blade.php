@@ -582,16 +582,13 @@
     document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
     currentCity = city;
 
-    // Fly to city center
+    // Fly to known city immediately (if available), then fetch pins
     var c = CITY_CENTERS[city];
     if (c) {
       hpMap.flyTo([c.lat, c.lng], c.zoom, {duration:0.6});
-    } else {
-      // Unknown city — zoom to Vietnam
-      hpMap.flyTo([16.0, 106.0], 6, {duration:0.6});
     }
 
-    // Fetch new pins
+    // Fetch new pins → fitBounds to actual pin locations
     fetch('/?_map_city=' + city, {headers:{'X-Requested-With':'XMLHttpRequest'}})
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -599,8 +596,20 @@
         renderHpPins(HP_PINS, null);
         document.getElementById('hp-map-total').textContent = (data.total || 0).toLocaleString('vi-VN');
         document.getElementById('hp-map-city-label').textContent = data.cityName || '';
+
+        // Zoom to fit actual pins — works for all cities including dropdown ones
+        if (HP_PINS.length > 0) {
+          var bounds = L.latLngBounds(HP_PINS.map(function(p){ return [p.lat, p.lng]; }));
+          hpMap.flyToBounds(bounds, {padding:[40,40], maxZoom:14, duration:0.6});
+        } else if (!c) {
+          // No pins and unknown city — show Vietnam
+          hpMap.flyTo([16.0, 106.0], 6, {duration:0.6});
+        }
       })
-      .catch(function(){});
+      .catch(function(){
+        // Fetch failed — if no known center, fallback
+        if (!c) hpMap.flyTo([16.0, 106.0], 6, {duration:0.6});
+      });
   }
 
   // Main city buttons (Toàn quốc, Hà Nội, HCM, Đà Nẵng)
