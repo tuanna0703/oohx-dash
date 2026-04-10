@@ -106,12 +106,8 @@ class VenueCategoryResource extends Resource
 
                 Tables\Columns\TextColumn::make('icon')
                     ->label('Icon')
-                    ->width('60px')
-                    ->alignCenter()
-                    ->html()
-                    ->formatStateUsing(fn (string $state) =>
-                        '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><span class="material-icons" style="font-size:22px;color:#E5007D">' . e($state) . '</span>'
-                    ),
+                    ->badge()
+                    ->color('gray'),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name (EN)')
