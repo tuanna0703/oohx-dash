@@ -99,7 +99,7 @@
           <div class="type-grid" id="type-grid">
             @foreach($venueTypes->take(6) as $vt)
             <div class="type-card" onclick="toggleType(this,'{{ $vt['label'] }}')">
-              <div class="type-icon"><svg viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg></div>
+              <div class="type-icon"><span class="material-icons" style="font-size:20px;color:var(--bl)">{{ $vt['icon'] ?? 'tv' }}</span></div>
               <div>
                 <div class="type-name">{{ $vt['label'] }}</div>
                 <div class="type-count">{{ $vt['count'] }} vị trí</div>
@@ -214,7 +214,11 @@
     <div class="cat-grid">
       @foreach($venueTypes->take(5) as $vt)
       <a href="{{ route('fp.listing', ['venue_type' => $vt['type']]) }}" class="cat-card rv">
-        <div class="cat-img"><div class="cat-img-ov"></div><div class="cat-count">{{ $vt['count'] }}</div></div>
+        <div class="cat-img">
+          @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
+          <div class="cat-img-ov"></div>
+          <div class="cat-count">{{ $vt['count'] }}</div>
+        </div>
         <div class="cat-body"><div class="cat-name">{{ $vt['label'] }}</div></div>
       </a>
       @endforeach

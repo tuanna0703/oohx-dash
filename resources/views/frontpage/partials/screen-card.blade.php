@@ -5,7 +5,7 @@
     $price = $screen->inventory?->floor_cpm ?? 0;
     $priceDisplay = $price >= 1000000 ? number_format($price / 1000000) . 'M' : number_format($price, 0, ',', '.');
     $venueType = $screen->inventory?->venue_type ?? '';
-    $venueLabel = ucfirst(str_replace(['_', '.'], ' ', $venueType));
+    $venueLabel = ($venueLabels ?? [])[$venueType] ?? ucfirst(str_replace(['_', '.'], ' ', $venueType));
     $city = $screen->site?->city ?? '';
     $widthM = $screen->spec?->width_cm ? round($screen->spec->width_cm / 100, 1) : null;
     $heightM = $screen->spec?->height_cm ? round($screen->spec->height_cm / 100, 1) : null;

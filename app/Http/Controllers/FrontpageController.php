@@ -31,14 +31,16 @@ class FrontpageController extends Controller
             'featuredOwners'    => $this->fp->getFeaturedOwners(6),
             'locationsByRegion' => $this->fp->getLocationsByRegion(),
             'mapData'           => $mapData,
+            'venueLabels'       => $this->fp->getVenueTypeLabels(),
         ]);
     }
 
     public function listing(FrontpageListingRequest $request): View
     {
         return view('frontpage.listing', [
-            'screens' => $this->fp->getScreensPaginated($request),
-            'filters' => $this->fp->getFilterAggregates(),
+            'screens'     => $this->fp->getScreensPaginated($request),
+            'filters'     => $this->fp->getFilterAggregates(),
+            'venueLabels' => $this->fp->getVenueTypeLabels(),
         ]);
     }
 
@@ -50,14 +52,19 @@ class FrontpageController extends Controller
         return view('frontpage.detail', [
             'screen'         => $screenModel,
             'similarScreens' => $this->fp->getSimilarScreens($screenModel),
+            'venueLabels'    => $this->fp->getVenueTypeLabels(),
         ]);
     }
 
     public function map(FrontpageListingRequest $request): View
     {
+        $venueLabels = $this->fp->getVenueTypeLabels();
         $pins = $this->fp->getMapPins($request);
 
-        $pinsJson = $pins->map(function ($p) {
+        $typeToSlug = $this->fp->getVenueTypeSlugs();
+
+        $pinsJson = $pins->map(function ($p) use ($venueLabels, $typeToSlug) {
+            $rawType = $p->inventory?->venue_type ?? '';
             return [
                 'id'    => $p->uuid ?? $p->id,
                 'name'  => $p->name,
@@ -67,16 +74,18 @@ class FrontpageController extends Controller
                 'addr'  => $p->site?->address ?? '',
                 'photo' => $p->spec?->photo_url ?? '',
                 'price' => (float) ($p->inventory?->floor_cpm ?? 0),
-                'type'  => $p->inventory?->venue_type ?? '',
+                'type'  => $typeToSlug[$rawType] ?? $rawType,
+                'typeLabel' => $venueLabels[$rawType] ?? ucfirst(str_replace(['_', '.'], ' ', $rawType)),
             ];
         })->filter(function ($p) {
             return $p['lat'] != 0 && $p['lng'] != 0;
         })->values();
 
         return view('frontpage.map', [
-            'pins'     => $pins,
-            'pinsJson' => $pinsJson,
-            'filters'  => $this->fp->getFilterAggregates(),
+            'pins'        => $pins,
+            'pinsJson'    => $pinsJson,
+            'filters'     => $this->fp->getFilterAggregates(),
+            'venueLabels' => $venueLabels,
         ]);
     }
 
@@ -106,6 +115,7 @@ class FrontpageController extends Controller
         return view('frontpage.owner-detail', [
             'owner'        => $ownerModel,
             'ownerScreens' => $this->fp->getOwnerScreens($ownerModel->id),
+            'venueLabels'  => $this->fp->getVenueTypeLabels(),
         ]);
     }
 }

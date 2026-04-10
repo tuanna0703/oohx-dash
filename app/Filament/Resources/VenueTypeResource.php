@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\VenueTypeResource\Pages;
+use App\Models\VenueCategory;
 use App\Models\VenueType;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -98,6 +99,18 @@ class VenueTypeResource extends Resource
 
             ]),
 
+            Forms\Components\Section::make('VN DOOH Category')->columns(2)->schema([
+                Forms\Components\Select::make('vn_category_id')
+                    ->label('Danh mục VN')
+                    ->relationship('vnCategory', 'name_vi')
+                    ->searchable()
+                    ->preload()
+                    ->nullable()
+                    ->placeholder('Chưa gán danh mục VN')
+                    ->helperText('Gán venue type này vào 1 trong 12 danh mục DOOH Việt Nam')
+                    ->columnSpan(2),
+            ]),
+
             Forms\Components\Section::make('Settings')->columns(2)->schema([
                 Forms\Components\Toggle::make('hivestack_supported')
                     ->label('Hivestack Supported')
@@ -155,6 +168,13 @@ class VenueTypeResource extends Resource
                         default => 'gray',
                     }),
 
+                Tables\Columns\TextColumn::make('vnCategory.name_vi')
+                    ->label('VN Category')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable()
+                    ->placeholder('—'),
+
                 Tables\Columns\TextColumn::make('children_count')
                     ->label('Children')
                     ->counts('children')
@@ -179,6 +199,12 @@ class VenueTypeResource extends Resource
                 SelectFilter::make('depth')
                     ->label('Level')
                     ->options([0 => 'Root', 1 => 'Category', 2 => 'Subcategory']),
+
+                SelectFilter::make('vn_category_id')
+                    ->label('VN Category')
+                    ->relationship('vnCategory', 'name_vi')
+                    ->searchable()
+                    ->preload(),
 
                 TernaryFilter::make('is_active')->label('Active'),
                 TernaryFilter::make('hivestack_supported')->label('Hivestack Supported'),

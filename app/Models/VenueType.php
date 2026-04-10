@@ -15,6 +15,7 @@ class VenueType extends Model
         'category', 'subcategory', 'venue_type',
         'description', 'depth', 'parent_id',
         'hivestack_supported', 'is_active',
+        'vn_category_id',
     ];
 
     protected $casts = [
@@ -27,6 +28,11 @@ class VenueType extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(VenueType::class, 'parent_id');
+    }
+
+    public function vnCategory(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\VenueCategory::class, 'vn_category_id');
     }
 
     public function children(): HasMany

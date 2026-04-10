@@ -380,7 +380,7 @@
             var type = chip.dataset.type;
             var filtered = type === 'all' ? PINS : PINS.filter(function(p) {
                 if (type === 'available') return true;
-                return p.type && p.type.indexOf(type) >= 0;
+                return p.type === type;
             });
             renderPins(filtered);
 
