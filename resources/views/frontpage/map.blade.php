@@ -38,6 +38,7 @@
 <div class="map-layout">
     {{-- ── LEFT PANEL ── --}}
     <div class="map-panel" id="panel">
+        <div class="mp-drag" onclick="togglePanel()"><div class="mp-drag-bar"></div></div>
         <div class="mp-head">
             <div class="mp-search">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t4)" style="width:16px;height:16px;flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -60,7 +61,7 @@
                 <div class="mp-card-img">
                     <img src="{{ $pin->spec?->photo_url ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=No+Photo' }}" loading="lazy" alt="{{ $pin->name }}">
                 </div>
-                <div>
+                <div class="mp-card-info">
                     <div class="mp-card-nm">{{ $pin->name }}</div>
                     <div class="mp-card-lc">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
@@ -82,12 +83,33 @@
         <div id="leaflet-map"></div>
 
         <div class="map-toolbar">
+            <button class="mt-btn" data-city="all" data-lat="16.0" data-lng="106.0" data-zoom="6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> Tất cả
+            </button>
             <button class="mt-btn on" data-city="hanoi" data-lat="21.0285" data-lng="105.8542" data-zoom="12">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Hà Nội
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Hà Nội
             </button>
             <button class="mt-btn" data-city="hcm" data-lat="10.7769" data-lng="106.7009" data-zoom="12">TP.HCM</button>
             <button class="mt-btn" data-city="danang" data-lat="16.0544" data-lng="108.2022" data-zoom="13">Đà Nẵng</button>
-            <button class="mt-btn" data-city="all" data-lat="16.0" data-lng="106.0" data-zoom="6">Tất cả</button>
+            <button class="mt-btn" data-city="haiphong" data-lat="20.8449" data-lng="106.6881" data-zoom="13">Hải Phòng</button>
+            {{-- More cities dropdown --}}
+            <div class="mt-more" id="mt-more">
+                <button class="mt-btn mt-more-trigger" id="mt-more-btn" onclick="document.getElementById('mt-dropdown').classList.toggle('open');event.stopPropagation()">
+                    Khác <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <div class="mt-dropdown" id="mt-dropdown">
+                    <div class="mt-dd-head">Chọn tỉnh/thành</div>
+                    <div class="mt-dd-list">
+                        @foreach(($filters['cities'] ?? collect()) as $city)
+                            @if(!in_array($city['code'], ['hanoi', 'hcm', 'danang', 'haiphong']))
+                            <button class="mt-dd-item" data-city="{{ $city['code'] }}" onclick="selectMapCity(this);document.getElementById('mt-dropdown').classList.remove('open')">
+                                {{ $city['name'] }} <span class="mt-dd-count">{{ number_format($city['count']) }}</span>
+                            </button>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="map-count-badge"><strong id="map-pin-count">{{ number_format($pins->count()) }}</strong> vị trí đang hiển thị</div>
@@ -122,13 +144,13 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Mobile panel toggle --}}
-    <button class="panel-toggle" onclick="togglePanel()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px;flex-shrink:0"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-        Danh sách (<span id="toggle-count">{{ number_format($pins->count()) }}</span>)
-    </button>
+        {{-- Mobile panel toggle --}}
+        <button class="panel-toggle" onclick="togglePanel()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px;flex-shrink:0"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            Danh sách (<span id="toggle-count">{{ number_format($pins->count()) }}</span>)
+        </button>
+    </div>
 </div>
 @endsection
 
@@ -307,9 +329,10 @@
     });
 
     // ── City toolbar ──
-    document.querySelectorAll('.mt-btn').forEach(function(btn) {
+    document.querySelectorAll('.mt-btn:not(.mt-more-trigger)').forEach(function(btn) {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.mt-btn').forEach(function(b){ b.classList.remove('on'); });
+            document.querySelectorAll('.mt-dd-item').forEach(function(b){ b.classList.remove('on'); });
             btn.classList.add('on');
 
             var lat = parseFloat(btn.dataset.lat);
@@ -317,6 +340,35 @@
             var zoom = parseInt(btn.dataset.zoom);
             map.flyTo([lat, lng], zoom, {duration: 0.8});
         });
+    });
+
+    // ── More cities dropdown ──
+    window.selectMapCity = function(item) {
+        var city = item.dataset.city;
+        // Clear all active states
+        document.querySelectorAll('.mt-btn').forEach(function(b){ b.classList.remove('on'); });
+        document.querySelectorAll('.mt-dd-item').forEach(function(b){ b.classList.remove('on'); });
+        item.classList.add('on');
+        document.getElementById('mt-more-btn').classList.add('on');
+
+        // Filter pins by city name
+        var cityName = item.textContent.trim().replace(/\d[\d,.]*$/,'').trim();
+        var filtered = PINS.filter(function(p) {
+            return p.city && p.city.indexOf(cityName) >= 0;
+        });
+        renderPins(filtered);
+        if (filtered.length > 0) {
+            var bounds = L.latLngBounds(filtered.map(function(p){ return [p.lat, p.lng]; }));
+            map.fitBounds(bounds, {padding: [40, 40], maxZoom: 14});
+        }
+    };
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        var dd = document.getElementById('mt-dropdown');
+        if (dd && !document.getElementById('mt-more').contains(e.target)) {
+            dd.classList.remove('open');
+        }
     });
 
     // ── Filter chips ──

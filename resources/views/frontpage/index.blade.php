@@ -26,50 +26,40 @@
     </div>
 
     <p class="hero-desc">
-      Tìm, so sánh và đặt booking billboard · LED · LCD trong vài phút. Dữ liệu traffic xác thực, AI hỗ trợ lên plan, xác nhận trong 48h.
+      Tìm, so sánh và đặt booking billboard · LED · LCD trong vài phút. Dữ liệu traffic xác thực, AI hỗ trợ lên plan. Tiếp cận 30M+ khách hàng thường xuyên.
     </p>
 
     <!-- Search -->
     <div class="search-wrap" id="search-wrap">
 
-      <!-- Filter buttons row -->
-      <div class="search-filters">
-        <!-- Location filter -->
-        <button class="sf-btn" id="sf-loc" onclick="toggleDrop('loc')">
+      <!-- Search box with inline filters -->
+      <div class="search-box">
+        <button class="sf-inline" id="sf-loc" onclick="toggleDrop('loc')">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           <span id="sf-loc-label">Vị trí</span>
           <span class="sf-badge" id="sf-loc-badge" style="display:none">0</span>
           <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
-        <!-- Billboard type filter -->
-        <button class="sf-btn" id="sf-type" onclick="toggleDrop('type')">
+        <button class="sf-inline" id="sf-type" onclick="toggleDrop('type')">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
           <span id="sf-type-label">Loại biển</span>
           <span class="sf-badge" id="sf-type-badge" style="display:none">0</span>
           <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
-        <!-- Divider -->
-        <div style="width:1px;height:32px;background:var(--ln2);align-self:center"></div>
-        <!-- Active filter tags injected here -->
-        <div id="active-tags" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
-      </div>
-
-      <!-- Text search row -->
-      <div class="search-box">
-        <div class="search-ai-tag">
-          <span class="ai-pill">
-            <svg viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>
-            <div class="ai-blink"></div> AI
-          </span>
-        </div>
+        <div class="sb-divider"></div>
         <input class="search-input" id="q" type="text" placeholder="Tìm theo tên đường, tòa nhà, hoặc mô tả campaign…">
         <button class="search-btn">
           <svg viewBox="0 0 24 24" fill="#fff"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          Tìm ngay
+          <span class="search-btn-text">Tìm ngay</span>
         </button>
       </div>
+      <!-- Active filter tags (below search box) -->
+      <div id="active-tags" class="search-active-tags"></div>
+    </div><!-- /search-wrap -->
 
-      <!-- ── LOCATION MEGA DROPDOWN ── -->
+    <div class="drop-backdrop" id="backdrop" onclick="closeDrop()"></div>
+    {{-- Mega dropdowns — inside hero .w but outside search-wrap (no transform parent) --}}
+    <div class="mega-anchor" id="mega-anchor">
       <div class="mega-drop" id="drop-loc">
         <div class="mega-head">
           <div class="mega-head-title">Chọn vị trí</div>
@@ -86,7 +76,6 @@
             </div>
             @endforeach
           </div>
-          <!-- District sub-panel (shown when city selected) -->
           <div class="loc-district-panel" id="dist-panel">
             <div class="loc-region-title" style="margin-bottom:10px" id="dist-panel-title">Chọn quận / huyện</div>
             <div class="loc-district-grid" id="dist-grid"></div>
@@ -101,7 +90,6 @@
         </div>
       </div>
 
-      <!-- ── BILLBOARD TYPE MEGA DROPDOWN ── -->
       <div class="mega-drop" id="drop-type">
         <div class="mega-head">
           <div class="mega-head-title">Chọn loại biển quảng cáo</div>
@@ -128,10 +116,7 @@
           </button>
         </div>
       </div>
-    </div><!-- /search-wrap -->
-
-    <!-- Backdrop -->
-    <div class="drop-backdrop" id="backdrop" onclick="closeDrop()"></div>
+    </div>
 
     <div class="search-chips">
       <span class="schip" onclick="setQ('LED Hà Nội premium')">LED Hà Nội premium</span>
@@ -145,14 +130,14 @@
       <a href="{{ route('fp.listing') }}" class="btn btn-p btn-lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg> Khám phá Inventory</a>
       <a href="{{ route('fp.map') }}" class="btn btn-s btn-lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:18px;height:18px;flex-shrink:0"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> Xem bản đồ</a>
     </div>
-    <div class="hero-hint">Miễn phí đăng ký · Không phí môi giới · Xác nhận 48h</div>
+    <div class="hero-hint">Miễn phí đăng ký · Không phí môi giới · 30M+ impressions</div>
 
     <!-- Stats -->
     <div class="hero-stats">
       <div class="hstat"><div class="hstat-n">{{ number_format($stats['total_screens'] / 1000, 1) }}<span class="unit">K+</span></div><div class="hstat-l">Inventory</div></div>
       <div class="hstat"><div class="hstat-n">{{ $stats['total_cities'] }}</div><div class="hstat-l">Tỉnh thành</div></div>
       <div class="hstat"><div class="hstat-n">{{ $stats['total_owners'] }}<span class="unit">+</span></div><div class="hstat-l">Media owners</div></div>
-      <div class="hstat"><div class="hstat-n">48<span class="unit">h</span></div><div class="hstat-l">Confirm time</div></div>
+      <div class="hstat"><div class="hstat-n">30<span class="unit">M+</span></div><div class="hstat-l">Impressions</div></div>
     </div>
   </div>
 
@@ -204,9 +189,9 @@
   <div class="trust-in">
     <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>Verified inventory</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/></svg>Traffic real-time</div>
+    <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>Traffic real-time</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.28 6.28 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.19a8.16 8.16 0 0 0 4.77 1.52V6.27a4.85 4.85 0 0 1-1-.42z"/></svg>AI-powered search</div>
+    <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25z"/></svg>AI-powered search</div>
     <div class="trust-sep"></div>
     <div class="trust-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>Secure payment</div>
     <div class="trust-sep"></div>
@@ -393,7 +378,7 @@
       <p class="section-sub" style="margin:12px auto 0;font-size:16px">Không email qua lại. Tìm, kiểm tra, đặt và theo dõi trực tiếp.</p>
     </div>
     <div class="steps-grid" style="background:#fff;border-radius:var(--r4);border:1px solid var(--ln2);overflow:hidden;box-shadow:var(--sh2)">
-      <div class="step-card rv"><div class="step-num" style="background:var(--bl)">01</div><div class="step-title">Search & Filter</div><div class="step-desc">AI search theo khu vực, loại biển, budget và availability. Map view tức thì.</div></div><div class="step-card rv"><div class="step-num" style="background:#34C759">02</div><div class="step-title">Compare</div><div class="step-desc">Ảnh thực địa, traffic data, availability calendar. So sánh tối đa 5 vị trí.</div></div><div class="step-card rv"><div class="step-num" style="background:#FF9F0A">03</div><div class="step-title">Submit Booking</div><div class="step-desc">Điền thông tin campaign, upload creative. Media owner nhận ngay, xử lý trong 48h.</div></div><div class="step-card rv"><div class="step-num" style="background:#AF52DE">04</div><div class="step-title">Track & Report</div><div class="step-desc">Dashboard theo dõi booking status + proof-of-play report tự động.</div></div>
+      <div class="step-card rv"><div class="step-num" style="background:var(--bl)">01</div><div class="step-title">Search & Filter</div><div class="step-desc">AI search theo khu vực, loại biển, budget và availability. Map view tức thì.</div></div><div class="step-card rv"><div class="step-num" style="background:#34C759">02</div><div class="step-title">Compare</div><div class="step-desc">Ảnh thực địa, traffic data, availability calendar. So sánh tối đa 5 vị trí.</div></div><div class="step-card rv"><div class="step-num" style="background:#FF9F0A">03</div><div class="step-title">Submit Booking</div><div class="step-desc">Điền thông tin campaign, upload creative. Media owner nhận ngay, xử lý nhanh chóng.</div></div><div class="step-card rv"><div class="step-num" style="background:#AF52DE">04</div><div class="step-title">Track & Report</div><div class="step-desc">Dashboard theo dõi booking status + proof-of-play report tự động.</div></div>
     </div>
   </div>
 </section>
@@ -405,7 +390,7 @@
         <span class="eyebrow">AI-POWERED PLATFORM</span>
         <h2 class="section-hed" style="margin-top:8px;margin-bottom:12px">Marketplace OOH đầu tiên có AI</h2>
         <p class="section-sub" style="margin-bottom:32px;font-size:16px">Kết nối agency, brand và media owner — nhanh hơn, minh bạch hơn, đo được kết quả.</p>
-        <div class="ai-cards"><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.28 6.28 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.19a8.16 8.16 0 0 0 4.77 1.52V6.27a4.85 4.85 0 0 1-1-.42z"/></svg></div><div><div class="ai-card-title">AI Campaign Match</div><div class="ai-card-desc">Mô tả campaign bằng ngôn ngữ tự nhiên — AI đề xuất inventory phù hợp nhất trong giây.</div><div class="ai-card-tag"><span class="badge badge-bl">GPT-powered</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg></div><div><div class="ai-card-title">Real-time Availability</div><div class="ai-card-desc">Kiểm tra slot trống trước khi brief AdOps. Sync với owner trong 5 phút.</div><div class="ai-card-tag"><span class="badge badge-bl">Live sync &lt;5min</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/></svg></div><div><div class="ai-card-title">AI Audience Estimation</div><div class="ai-card-desc">Ước tính reach từ traffic data thực tế, thời điểm trong ngày và demographic khu vực.</div><div class="ai-card-tag"><span class="badge badge-bl">Data-driven ±8%</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg></div><div><div class="ai-card-title">Verified Data Network</div><div class="ai-card-desc">Ảnh thực địa, location verified, traffic data nguồn đáng tin. Không có inventory ảo.</div><div class="ai-card-tag"><span class="badge badge-bl">100% verified</span></div></div></div></div>
+        <div class="ai-cards"><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25z"/></svg></div><div><div class="ai-card-title">AI Campaign Match</div><div class="ai-card-desc">Mô tả campaign bằng ngôn ngữ tự nhiên — AI đề xuất inventory phù hợp nhất trong giây.</div><div class="ai-card-tag"><span class="badge badge-bl">GPT-powered</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg></div><div><div class="ai-card-title">Real-time Availability</div><div class="ai-card-desc">Kiểm tra slot trống trước khi brief AdOps. Sync với owner trong 5 phút.</div><div class="ai-card-tag"><span class="badge badge-bl">Live sync &lt;5min</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/></svg></div><div><div class="ai-card-title">AI Audience Estimation</div><div class="ai-card-desc">Ước tính reach từ traffic data thực tế, thời điểm trong ngày và demographic khu vực.</div><div class="ai-card-tag"><span class="badge badge-bl">Data-driven ±8%</span></div></div></div><div class="ai-card rv"><div class="ai-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:20px;height:20px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg></div><div><div class="ai-card-title">Verified Data Network</div><div class="ai-card-desc">Ảnh thực địa, location verified, traffic data nguồn đáng tin. Không có inventory ảo.</div><div class="ai-card-tag"><span class="badge badge-bl">100% verified</span></div></div></div></div>
       </div>
       <div>
         <div class="value-visual">
@@ -457,6 +442,7 @@
     </div>
   </div>
 </section>
+
 @endsection
 
 @push('scripts')
@@ -695,10 +681,7 @@ function toggleDrop(id) {
     document.getElementById('sf-loc').classList.remove('on');
     document.getElementById('sf-type').classList.remove('on');
   }
-  // Position dropdown below the button using fixed coords
-  var rect = btn.getBoundingClientRect();
   var drop = document.getElementById(target);
-  drop.style.top = (rect.bottom + 10) + 'px';
   drop.classList.add('open');
   document.getElementById('backdrop').classList.add('open');
   btn.classList.add('on');
