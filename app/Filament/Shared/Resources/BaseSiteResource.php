@@ -85,6 +85,14 @@ abstract class BaseSiteResource extends Resource
 
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),
+
+                    Forms\Components\TextInput::make('hivestack_site_id')
+                        ->label('Hivestack Site ID')
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->placeholder('—')
+                        ->helperText('Tự động gán khi import từ Hivestack')
+                        ->visible(fn (?Site $record) => $record?->hivestack_site_id !== null),
                 ]))
             ),
 
@@ -136,10 +144,16 @@ abstract class BaseSiteResource extends Resource
                     ->columnSpan(2),
 
                 Forms\Components\TextInput::make('city')
-                    ->label('Thành phố / Quận (tự động điền)'),
+                    ->label('Thành phố / Quận')
+                    ->disabled(fn (callable $get) => (bool) $get('province_id'))
+                    ->dehydrated()
+                    ->helperText(fn (callable $get) => $get('province_id') ? 'Tự động điền từ Tỉnh/Thành' : null),
 
                 Forms\Components\TextInput::make('region')
-                    ->label('Vùng / Khu vực (tự động điền)'),
+                    ->label('Vùng / Khu vực')
+                    ->disabled(fn (callable $get) => (bool) $get('province_id'))
+                    ->dehydrated()
+                    ->helperText(fn (callable $get) => $get('province_id') ? 'Tự động điền từ Tỉnh/Thành' : null),
 
                 Forms\Components\Select::make('country')
                     ->options(['VN' => 'Vietnam', 'SG' => 'Singapore', 'TH' => 'Thailand', 'ID' => 'Indonesia'])
@@ -226,6 +240,18 @@ abstract class BaseSiteResource extends Resource
                 Tables\Columns\TextColumn::make('lon')
                     ->label('Lon')
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated')
+                    ->since()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -273,12 +299,8 @@ abstract class BaseSiteResource extends Resource
                 TernaryFilter::make('has_screens')
                     ->label('Có màn hình')
                     ->queries(
-                        true:  fn(Builder $query) => $query->whereIn('id',
-                            DB::table('screens')->whereNull('deleted_at')->whereNotNull('site_id')->pluck('site_id')
-                        ),
-                        false: fn(Builder $query) => $query->whereNotIn('id',
-                            DB::table('screens')->whereNull('deleted_at')->whereNotNull('site_id')->pluck('site_id')
-                        ),
+                        true:  fn (Builder $query) => $query->whereHas('screens'),
+                        false: fn (Builder $query) => $query->whereDoesntHave('screens'),
                     ),
 
                 Filter::make('has_gps')

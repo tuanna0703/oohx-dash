@@ -48,12 +48,7 @@ class Site extends Model
         return $this->hasMany(Screen::class);
     }
 
-    // ── Helpers ────────────────────────────────────────────
-
-    public function getScreenCountAttribute(): int
-    {
-        return $this->screens()->where('active', true)->count();
-    }
+    // ── Scopes ─────────────────────────────────────────────
 
     public function scopeActive($query)
     {

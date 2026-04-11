@@ -9,10 +9,22 @@ use App\Services\GeocodingService;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class EditSite extends EditRecord
 {
     protected static string $resource = SiteResource::class;
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+
+        $ownerId = auth()->user()?->current_owner_id;
+        if ($ownerId && $this->record->owner_id !== $ownerId) {
+            throw new NotFoundHttpException();
+        }
+    }
 
     protected function getHeaderActions(): array
     {
@@ -35,6 +47,16 @@ class EditSite extends EditRecord
                             ->send();
                         return;
                     }
+
+                    $key = 'geocode:' . auth()->id();
+                    if (RateLimiter::tooManyAttempts($key, 1)) {
+                        Notification::make()
+                            ->title('Vui lòng chờ ' . RateLimiter::availableIn($key) . ' giây trước khi geocode tiếp')
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+                    RateLimiter::hit($key, 3);
 
                     $result = app(GeocodingService::class)
                         ->resolveLocation((float) $site->lat, (float) $site->lon);

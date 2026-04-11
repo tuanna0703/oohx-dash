@@ -58,7 +58,14 @@ class ScreensRelationManager extends RelationManager
                     ]),
             ])
             ->filtersFormColumns(2)
-            ->headerActions([])
+            ->headerActions([
+                Tables\Actions\Action::make('create_screen')
+                    ->label('Tạo Screen')
+                    ->icon('heroicon-o-plus')
+                    ->url(fn () => \App\Filament\Resources\ScreenResource::getUrl('create', [
+                        'site_id' => $this->getOwnerRecord()->getKey(),
+                    ])),
+            ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('view')

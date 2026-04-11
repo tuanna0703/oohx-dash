@@ -18,7 +18,7 @@ abstract class BaseViewSite extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Overview';
+        return $this->record?->name ?? 'Overview';
     }
 
     public function getView(): string

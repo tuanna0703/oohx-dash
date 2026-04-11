@@ -3,8 +3,10 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Models\Network;
+use App\Models\ScreenInventory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
@@ -69,6 +71,12 @@ abstract class BaseNetworkResource extends Resource
                         ->maxLength(255)
                         ->columnSpan($ownerField ? 1 : 2),
 
+                    Forms\Components\TextInput::make('code')
+                        ->label('Network Code')
+                        ->unique(Network::class, 'code', ignoreRecord: true)
+                        ->maxLength(100)
+                        ->helperText('Mã định danh duy nhất, dùng để liên kết screens. Để trống sẽ không gán qua code.'),
+
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),
 
@@ -87,6 +95,31 @@ abstract class BaseNetworkResource extends Resource
                         ->default('active'),
                 ]))
             ),
+
+            Forms\Components\Section::make('Hình ảnh')->columns(2)->schema([
+                Forms\Components\FileUpload::make('logo')
+                    ->label('Logo')
+                    ->image()
+                    ->directory('networks/logos')
+                    ->disk('public')
+                    ->imageResizeMode('contain')
+                    ->imageResizeTargetWidth('400')
+                    ->imageResizeTargetHeight('400')
+                    ->maxSize(1024)
+                    ->helperText('Logo network, nền trong suốt. Khuyến nghị 400×400px PNG, tối đa 1MB.'),
+
+                Forms\Components\FileUpload::make('banner')
+                    ->label('Banner')
+                    ->image()
+                    ->directory('networks/banners')
+                    ->disk('public')
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('21:9')
+                    ->imageResizeTargetWidth('1200')
+                    ->imageResizeTargetHeight('514')
+                    ->maxSize(2048)
+                    ->helperText('Ảnh bìa hiển thị trên trang chi tiết network. Khuyến nghị 1200×514px, tối đa 2MB.'),
+            ]),
         ]);
     }
 
@@ -98,9 +131,26 @@ abstract class BaseNetworkResource extends Resource
             ->columns([
                 ...static::additionalTableColumns(),
 
+                Tables\Columns\ImageColumn::make('logo')
+                    ->label('Logo')
+                    ->disk('public')
+                    ->width(36)
+                    ->height(36)
+                    ->circular()
+                    ->defaultImageUrl(fn (Network $record) =>
+                        'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&size=36&background=E5007D&color=fff&bold=true'
+                    ),
+
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('code')
+                    ->label('Code')
+                    ->searchable()
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('default_floor_cpm')
                     ->label('Floor CPM')
@@ -111,16 +161,26 @@ abstract class BaseNetworkResource extends Resource
                     ->label('Currency')
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('screens_count')
+                Tables\Columns\TextColumn::make('inventory_screens_count')
                     ->label('Screens')
-                    ->getStateUsing(fn(Network $record) =>
-                        \App\Models\Screen::whereHas('inventory', fn($q) =>
-                            $q->where('network_id', $record->id)
-                        )->count()
-                    ),
+                    ->counts('inventoryScreens')
+                    ->sortable()
+                    ->alignCenter(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors(['success' => 'active', 'warning' => 'paused']),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated')
+                    ->since()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -134,27 +194,45 @@ abstract class BaseNetworkResource extends Resource
                 TernaryFilter::make('has_screens')
                     ->label('Có màn hình')
                     ->queries(
-                        true:  fn(Builder $query) => $query->whereExists(fn($q) =>
-                            $q->from('screen_inventory')->whereColumn('network_id', 'networks.id')
-                        ),
-                        false: fn(Builder $query) => $query->whereNotExists(fn($q) =>
-                            $q->from('screen_inventory')->whereColumn('network_id', 'networks.id')
-                        ),
+                        true:  fn (Builder $query) => $query->whereHas('inventoryScreens'),
+                        false: fn (Builder $query) => $query->whereDoesntHave('inventoryScreens'),
                     ),
 
                 ...static::additionalFilters(),
             ])
             ->filtersFormColumns(3)
-            ->recordUrl(fn(Network $record) =>
+            ->recordUrl(fn (Network $record) =>
                 static::hasViewPage() ? static::getUrl('view', ['record' => $record]) : null
             )
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Network $record, Tables\Actions\DeleteAction $action) {
+                        $screenCount = ScreenInventory::where('network_id', $record->id)->count();
+                        if ($screenCount > 0) {
+                            Notification::make()
+                                ->title("Không thể xoá — network đang có {$screenCount} screens liên kết")
+                                ->body('Hãy gỡ tất cả screens khỏi network trước khi xoá.')
+                                ->danger()
+                                ->send();
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
+                            $networkIds = $records->pluck('id');
+                            $linkedCount = ScreenInventory::whereIn('network_id', $networkIds)->count();
+                            if ($linkedCount > 0) {
+                                Notification::make()
+                                    ->title("Không thể xoá — {$linkedCount} screens đang liên kết với các networks này")
+                                    ->danger()
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }),
                 ]),
             ])
             ->emptyStateHeading('Chưa có network nào')
