@@ -77,174 +77,176 @@ abstract class BaseScreenResource extends Resource
 
         return $form->schema([
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 1 — Thông tin cơ bản
-            // ══════════════════════════════════════════════════════════════════
-            Forms\Components\Section::make('Thông tin cơ bản')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('external_id')
-                        ->label('Screen ID')
-                        ->required()
-                        ->maxLength(75)
-                        ->helperText('e.g. GUARD-HOR-IND-001'),
+            Forms\Components\Tabs::make('screen_tabs')
+                ->tabs([
 
-                    Forms\Components\TextInput::make('name')
-                        ->label('Tên màn hình')
-                        ->required()
-                        ->maxLength(199),
-
-                    Forms\Components\Select::make('site_id')
-                        ->label('Site')
-                        ->required()
-                        ->placeholder('Chọn site')
-                        ->options(fn () => static::siteFormOptions())
-                        ->searchable(),
-
-                    Forms\Components\Select::make('inventory.network_id')
-                        ->label('Network')
-                        ->required()
-                        ->placeholder('Chọn network')
-                        ->options(fn () => static::networkFormOptions())
-                        ->searchable(),
-
-                    Forms\Components\Select::make('inventory.vn_category_id')
-                        ->label('Loại biển')
-                        ->placeholder('Chọn loại biển')
-                        ->options(fn () => VenueCategory::where('is_active', true)
-                            ->orderBy('sort_order')
-                            ->pluck('name_vi', 'id')
-                            ->toArray())
-                        ->searchable(),
-
-                    Forms\Components\Select::make('status')
-                        ->label('Trạng thái')
-                        ->options([
-                            'online'      => 'Online',
-                            'offline'     => 'Offline',
-                            'maintenance' => 'Maintenance',
-                        ])
-                        ->default('offline'),
-
-                    Forms\Components\Toggle::make('active')
-                        ->label('Hiển thị trên marketplace')
-                        ->default(true)
-                        ->columnSpan(2),
-
-                    Forms\Components\Textarea::make('description')
-                        ->label('Mô tả')
-                        ->rows(2)
-                        ->columnSpan(2),
-                ]),
-
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 2 — Hình ảnh & Kỹ thuật
-            // ══════════════════════════════════════════════════════════════════
-            Forms\Components\Section::make('Hình ảnh & Kỹ thuật')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\FileUpload::make('spec.photo_url')
-                        ->label('Ảnh màn hình')
-                        ->image()
-                        ->disk('public')
-                        ->directory('screen-photos')
-                        ->imagePreviewHeight('160')
-                        ->columnSpan(2),
-
-                    Forms\Components\View::make('filament.publisher.components.resolution-picker')
-                        ->columnSpan(2),
-
-                    Forms\Components\Hidden::make('spec.width_px')->default(1920),
-                    Forms\Components\Hidden::make('spec.height_px')->default(1080),
-                    Forms\Components\Hidden::make('spec.resolution_preset')->default('1920x1080'),
-
-                    Forms\Components\TextInput::make('spec.width_cm')
-                        ->label('Chiều rộng (cm)')
-                        ->numeric(),
-
-                    Forms\Components\TextInput::make('spec.height_cm')
-                        ->label('Chiều cao (cm)')
-                        ->numeric(),
-
-                    Forms\Components\Hidden::make('spec.width_unit')->default('cm'),
-                    Forms\Components\Hidden::make('spec.height_unit')->default('cm'),
-
-                    Forms\Components\Hidden::make('spec.allow_image')->default(true),
-                    Forms\Components\Hidden::make('spec.allow_video')->default(true),
-                    Forms\Components\Hidden::make('spec.allow_html')->default(false),
-                    Forms\Components\Hidden::make('spec.allow_zip')->default(false),
-                ]),
-
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 3 — Giá & Inventory
-            // ══════════════════════════════════════════════════════════════════
-            Forms\Components\Section::make('Giá & Inventory')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('inventory.floor_cpm')
-                        ->label('Giá sàn (Floor CPM)')
-                        ->numeric()
-                        ->prefix('₫')
-                        ->default(10.00)
-                        ->visible($canPricing),
-
-                    Forms\Components\TextInput::make('inventory.weekly_impressions')
-                        ->label('Lượt xem / tuần')
-                        ->numeric()
-                        ->helperText('Ước tính weekly impressions'),
-
-                    Forms\Components\TextInput::make('inventory.spot_length')
-                        ->label('Thời lượng quảng cáo')
-                        ->numeric()
-                        ->default(15)
-                        ->suffix('giây'),
-
-                    Forms\Components\Toggle::make('inventory.programmatic_enabled')
-                        ->label('Cho phép Programmatic (RTB)')
-                        ->default(false),
-
-                    Forms\Components\Section::make('Lịch hoạt động')
-                        ->collapsed()
-                        ->columnSpan(2)
+                    // ── TAB 1: Thông tin chung ───────────────────────────────
+                    Forms\Components\Tabs\Tab::make('Thông tin')
+                        ->icon('heroicon-o-information-circle')
+                        ->columns(3)
                         ->schema([
-                            Forms\Components\View::make('filament.publisher.components.operating-hours-grid'),
-                            Forms\Components\Hidden::make('inventory.operating_hours'),
+                            Forms\Components\TextInput::make('external_id')
+                                ->label('Screen ID')
+                                ->required()
+                                ->maxLength(75)
+                                ->placeholder('GUARD-HOR-IND-001'),
+
+                            Forms\Components\TextInput::make('name')
+                                ->label('Tên màn hình')
+                                ->required()
+                                ->maxLength(199)
+                                ->columnSpan(2),
+
+                            Forms\Components\Select::make('site_id')
+                                ->label('Site')
+                                ->required()
+                                ->placeholder('Chọn site')
+                                ->options(fn () => static::siteFormOptions())
+                                ->searchable(),
+
+                            Forms\Components\Select::make('inventory.network_id')
+                                ->label('Network')
+                                ->required()
+                                ->placeholder('Chọn network')
+                                ->options(fn () => static::networkFormOptions())
+                                ->searchable(),
+
+                            Forms\Components\Select::make('inventory.vn_category_id')
+                                ->label('Loại biển')
+                                ->placeholder('Chọn loại biển')
+                                ->options(fn () => VenueCategory::where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->pluck('name_vi', 'id')
+                                    ->toArray())
+                                ->searchable(),
+
+                            Forms\Components\Grid::make(3)->schema([
+                                Forms\Components\Select::make('status')
+                                    ->label('Device status')
+                                    ->options([
+                                        'online'      => 'Online',
+                                        'offline'     => 'Offline',
+                                        'maintenance' => 'Maintenance',
+                                    ])
+                                    ->default('offline'),
+
+                                Forms\Components\Toggle::make('active')
+                                    ->label('Hiển thị trên marketplace')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Forms\Components\Toggle::make('inventory.programmatic_enabled')
+                                    ->label('Cho phép Programmatic')
+                                    ->default(false)
+                                    ->inline(false),
+                            ])->columnSpan(3),
+
+                            Forms\Components\Textarea::make('description')
+                                ->label('Mô tả')
+                                ->rows(2)
+                                ->columnSpan(3),
                         ]),
-                ]),
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 4 — Vị trí
-            // ══════════════════════════════════════════════════════════════════
-            Forms\Components\Section::make('Vị trí')
-                ->columns(3)
-                ->collapsed()
-                ->schema([
-                    Forms\Components\TextInput::make('site.lat')
-                        ->label('Latitude')
-                        ->numeric()
-                        ->step(0.0000001),
+                    // ── TAB 2: Kỹ thuật & Ảnh ───────────────────────────────
+                    Forms\Components\Tabs\Tab::make('Kỹ thuật')
+                        ->icon('heroicon-o-tv')
+                        ->columns(2)
+                        ->schema([
+                            Forms\Components\FileUpload::make('spec.photo_url')
+                                ->label('Ảnh màn hình')
+                                ->image()
+                                ->disk('public')
+                                ->directory('screen-photos')
+                                ->imagePreviewHeight('160')
+                                ->columnSpan(2),
 
-                    Forms\Components\TextInput::make('site.lon')
-                        ->label('Longitude')
-                        ->numeric()
-                        ->step(0.0000001),
+                            Forms\Components\View::make('filament.publisher.components.resolution-picker')
+                                ->columnSpan(2),
 
-                    Forms\Components\Select::make('inventory.timezone')
-                        ->label('Múi giờ')
-                        ->options(fn () => collect(timezone_identifiers_list())
-                            ->mapWithKeys(fn ($tz) => [$tz => $tz]))
-                        ->searchable()
-                        ->default('Asia/Ho_Chi_Minh'),
-                ]),
+                            Forms\Components\Hidden::make('spec.width_px')->default(1920),
+                            Forms\Components\Hidden::make('spec.height_px')->default(1080),
+                            Forms\Components\Hidden::make('spec.resolution_preset')->default('1920x1080'),
 
-            // ══════════════════════════════════════════════════════════════════
-            // SECTION 5 — AdOps nâng cao (collapsed, Phase 2)
-            // ══════════════════════════════════════════════════════════════════
+                            Forms\Components\TextInput::make('spec.width_cm')
+                                ->label('Chiều rộng (cm)')
+                                ->numeric(),
+
+                            Forms\Components\TextInput::make('spec.height_cm')
+                                ->label('Chiều cao (cm)')
+                                ->numeric(),
+
+                            Forms\Components\Hidden::make('spec.width_unit')->default('cm'),
+                            Forms\Components\Hidden::make('spec.height_unit')->default('cm'),
+                            Forms\Components\Hidden::make('spec.allow_image')->default(true),
+                            Forms\Components\Hidden::make('spec.allow_video')->default(true),
+                            Forms\Components\Hidden::make('spec.allow_html')->default(false),
+                            Forms\Components\Hidden::make('spec.allow_zip')->default(false),
+                        ]),
+
+                    // ── TAB 3: Giá & Lịch ────────────────────────────────────
+                    Forms\Components\Tabs\Tab::make('Giá & Lịch')
+                        ->icon('heroicon-o-currency-dollar')
+                        ->columns(3)
+                        ->schema([
+                            Forms\Components\TextInput::make('inventory.floor_cpm')
+                                ->label('Giá sàn (Floor CPM)')
+                                ->numeric()
+                                ->prefix('₫')
+                                ->default(10.00)
+                                ->visible($canPricing),
+
+                            Forms\Components\TextInput::make('inventory.weekly_impressions')
+                                ->label('Lượt xem / tuần')
+                                ->numeric(),
+
+                            Forms\Components\TextInput::make('inventory.spot_length')
+                                ->label('Thời lượng QC')
+                                ->numeric()
+                                ->default(15)
+                                ->suffix('giây'),
+
+                            Forms\Components\Section::make('Lịch hoạt động')
+                                ->columnSpan(3)
+                                ->compact()
+                                ->schema([
+                                    Forms\Components\View::make('filament.publisher.components.operating-hours-grid'),
+                                    Forms\Components\Hidden::make('inventory.operating_hours'),
+                                ]),
+                        ]),
+
+                    // ── TAB 4: Vị trí ────────────────────────────────────────
+                    Forms\Components\Tabs\Tab::make('Vị trí')
+                        ->icon('heroicon-o-map-pin')
+                        ->columns(3)
+                        ->schema([
+                            Forms\Components\TextInput::make('site.lat')
+                                ->label('Latitude')
+                                ->numeric()
+                                ->step(0.0000001),
+
+                            Forms\Components\TextInput::make('site.lon')
+                                ->label('Longitude')
+                                ->numeric()
+                                ->step(0.0000001),
+
+                            Forms\Components\Select::make('inventory.timezone')
+                                ->label('Múi giờ')
+                                ->options(fn () => collect(timezone_identifiers_list())
+                                    ->mapWithKeys(fn ($tz) => [$tz => $tz]))
+                                ->searchable()
+                                ->default('Asia/Ho_Chi_Minh'),
+                        ]),
+
+                ])
+                ->persistTabInQueryString('tab')
+                ->columnSpanFull(),
+
+            // ── AdOps nâng cao (ngoài tabs, collapsed) ───────────────────
             Forms\Components\Section::make('AdOps nâng cao')
                 ->description('Cấu hình SSP/programmatic — bỏ qua nếu chỉ cần listing marketplace.')
                 ->collapsed()
                 ->visible($canPricing && config('oohx.show_adops_fields', false))
-                ->columns(2)
+                ->columns(3)
                 ->schema([
                     Forms\Components\TextInput::make('unit_id')
                         ->label('Unit ID')
@@ -279,69 +281,61 @@ abstract class BaseScreenResource extends Resource
                         ->nullable(),
 
                     Forms\Components\TextInput::make('inventory.share_of_voice_max_pct')
-                        ->label('Max share of voice (%)')
+                        ->label('Max SOV (%)')
                         ->numeric()
                         ->default(100)
-                        ->minValue(1)
-                        ->maxValue(100)
                         ->suffix('%'),
 
                     Forms\Components\TextInput::make('inventory.screen_count_override')
-                        ->label('Screen count override')
+                        ->label('Screen count')
                         ->numeric()
-                        ->minValue(1)
-                        ->maxValue(999)
                         ->nullable()
-                        ->placeholder('1 (mặc định)'),
+                        ->placeholder('1'),
 
                     Forms\Components\TextInput::make('inventory.max_spot_length')
-                        ->label('Max spot duration')
+                        ->label('Max duration')
                         ->numeric()
                         ->default(180)
-                        ->suffix('giây'),
+                        ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.min_spot_length')
-                        ->label('Min spot duration')
+                        ->label('Min duration')
                         ->numeric()
                         ->default(3)
-                        ->suffix('giây'),
+                        ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.loop_length')
                         ->label('Loop length')
                         ->numeric()
-                        ->suffix('giây'),
+                        ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.frequency_cap')
-                        ->label('Advertiser frequency cap')
+                        ->label('Freq cap')
                         ->numeric()
                         ->default(0)
-                        ->suffix('giây')
-                        ->helperText('0 = không giới hạn'),
+                        ->suffix('s')
+                        ->helperText('0 = unlimited'),
 
                     Forms\Components\TextInput::make('inventory.category_frequency_cap')
-                        ->label('Category frequency cap')
+                        ->label('Cat freq cap')
                         ->numeric()
                         ->default(0)
-                        ->suffix('giây'),
+                        ->suffix('s'),
 
                     Forms\Components\Toggle::make('inventory.strict_frequency_capping')
-                        ->label('Strict frequency capping')
+                        ->label('Strict freq cap')
                         ->default(false),
 
                     Forms\Components\Textarea::make('internal_notes')
                         ->label('Ghi chú nội bộ')
                         ->rows(2)
-                        ->columnSpan(2),
+                        ->columnSpan(3),
 
-                    Forms\Components\Section::make('Selective listing')
-                        ->columnSpan(2)
-                        ->schema([
-                            Forms\Components\View::make('filament.publisher.components.selective-listing-picker')
-                                ->columnSpan('full'),
-                            Forms\Components\Hidden::make('inventory.pmp_only')->default(false),
-                            Forms\Components\Hidden::make('inventory.ad_server_enabled')->default(true),
-                            Forms\Components\Hidden::make('inventory.deals_enabled')->default(true),
-                        ]),
+                    Forms\Components\View::make('filament.publisher.components.selective-listing-picker')
+                        ->columnSpan(3),
+                    Forms\Components\Hidden::make('inventory.pmp_only')->default(false),
+                    Forms\Components\Hidden::make('inventory.ad_server_enabled')->default(true),
+                    Forms\Components\Hidden::make('inventory.deals_enabled')->default(true),
                 ]),
 
         ])->columns(1);
