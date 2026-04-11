@@ -85,11 +85,13 @@ class SiteImportService
             'errors'          => [],
         ];
 
+        // Pre-populate siteIdMap from existing DB sites (for screens referencing sites not in this file)
+        $siteIdMap = Site::where('owner_id', $ownerId)->pluck('id', 'external_id')->all();
+
         // Import sites
-        $siteIdMap = []; // external_id → site ULID
         foreach ($sitesData as $s) {
             if ($s['action'] === 'error') {
-                $results['errors'][] = "Site [{$s['external_id']}]: {$s['error']}";
+                $results['errors'][] = "Site dòng {$s['row']} [{$s['external_id']}]: {$s['error']}";
                 continue;
             }
 
@@ -114,13 +116,13 @@ class SiteImportService
         // Import screens
         foreach ($screensData as $sc) {
             if ($sc['action'] === 'error') {
-                $results['errors'][] = "Screen [{$sc['external_id']}]: {$sc['error']}";
+                $results['errors'][] = "Screen dòng {$sc['row']} [{$sc['external_id']}]: {$sc['error']}";
                 continue;
             }
 
             $siteId = $siteIdMap[$sc['site_external_id']] ?? null;
             if (! $siteId) {
-                $results['errors'][] = "Screen [{$sc['external_id']}]: Site [{$sc['site_external_id']}] không tìm thấy";
+                $results['errors'][] = "Screen dòng {$sc['row']} [{$sc['external_id']}]: Site [{$sc['site_external_id']}] không tìm thấy trong DB";
                 continue;
             }
 
@@ -129,7 +131,7 @@ class SiteImportService
             if (! empty($sc['network_name'])) {
                 $network = Network::firstOrCreate(
                     ['owner_id' => $ownerId, 'name' => $sc['network_name']],
-                    ['status' => 'active']
+                    ['code' => Str::slug($sc['network_name']), 'status' => 'active']
                 );
                 $networkId = $network->id;
             }
@@ -200,7 +202,9 @@ class SiteImportService
 
     private function parseSitesSheet($spreadsheet): array
     {
-        $sheet = $spreadsheet->getSheetByName('Sites');
+        // Try by name first, then fallback to first sheet
+        $sheet = $spreadsheet->getSheetByName('Sites')
+              ?? $spreadsheet->getSheet(0);
         if (! $sheet) {
             return [];
         }
@@ -217,6 +221,11 @@ class SiteImportService
 
             if ($extId === '' && $name === '') {
                 continue; // Empty row
+            }
+
+            // Skip header row if accidentally included in data range
+            if (strtolower($extId) === 'mã site' || str_starts_with(strtolower($extId), 'mã site')) {
+                continue;
             }
 
             $entry = [
@@ -267,7 +276,11 @@ class SiteImportService
 
     private function parseScreensSheet($spreadsheet, array $sitesData): array
     {
+        // Try by name first, then fallback to second sheet
         $sheet = $spreadsheet->getSheetByName('Screens');
+        if (! $sheet && $spreadsheet->getSheetCount() >= 2) {
+            $sheet = $spreadsheet->getSheet(1);
+        }
         if (! $sheet) {
             return [];
         }
@@ -295,6 +308,11 @@ class SiteImportService
 
             if ($extId === '' && $name === '') {
                 continue; // Empty row
+            }
+
+            // Skip header row if accidentally included in data range
+            if (strtolower($extId) === 'mã screen' || str_starts_with(strtolower($extId), 'mã screen')) {
+                continue;
             }
 
             $venueLabel = trim($row[3] ?? '');

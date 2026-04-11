@@ -3,6 +3,9 @@
 namespace App\Filament\Publisher\Pages;
 
 use App\Services\SiteImportService;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -20,9 +23,9 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
  * Step 3 — Importing: Tự động trigger import khi render
  * Step 4 — Report   : Kết quả chi tiết
  */
-class ImportSites extends Page implements HasForms
+class ImportSites extends Page implements HasForms, HasActions
 {
-    use InteractsWithForms;
+    use InteractsWithForms, InteractsWithActions;
 
     protected static ?string $slug            = 'sites/import';
     protected static ?string $navigationGroup = 'Inventory';
@@ -78,9 +81,10 @@ class ImportSites extends Page implements HasForms
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/octet-stream',
                     ])
-                    ->disk('local')
-                    ->directory('imports/sites')  // Lưu thẳng vào local disk → tránh metadata mismatch
-                    ->maxSize(20480) // 20MB
+                    ->disk('public')
+                    ->directory('imports/sites')
+                    ->visibility('private')
+                    ->maxSize(20480)
                     ->required()
                     ->helperText('Dùng OOHX Import Template — 2 sheets: Sites + Screens. Tải template tại /storage/templates/oohx-import-template.xlsx'),
             ])
@@ -124,8 +128,7 @@ class ImportSites extends Page implements HasForms
         }
 
         $this->storedPath = $storedPath;
-        // Dùng Storage::path() thay vì tự nối chuỗi — tránh lỗi double-slash hay sai root
-        $fullPath = \Storage::disk('local')->path($storedPath);
+        $fullPath = \Storage::disk('public')->path($storedPath);
 
         try {
             $this->preview = $svc->readPreview($fullPath, $this->resolveOwnerId());
@@ -135,7 +138,7 @@ class ImportSites extends Page implements HasForms
                 ->body('Kiểm tra lại định dạng file. ' . $e->getMessage())
                 ->danger()
                 ->send();
-            \Storage::disk('local')->delete($storedPath);
+            \Storage::disk('public')->delete($storedPath);
             $this->storedPath = null;
             return;
         }
@@ -145,12 +148,40 @@ class ImportSites extends Page implements HasForms
         $this->step         = 2;
     }
 
-    // ── Step 2 → Step 3: Xác nhận import ─────────────────────────────────────
+    // ── Step 2 → Step 3: Xác nhận import (Filament Action modal) ────────────
 
-    public function confirmImport(): void
+    public function confirmImportAction(): Action
+    {
+        $s = $this->getSummary();
+        $hasErr = ($s['sites_error'] ?? 0) > 0 || ($s['screens_error'] ?? 0) > 0;
+        $errCount = ($s['sites_error'] ?? 0) + ($s['screens_error'] ?? 0);
+
+        $description = "**Sites:** {$s['sites_new']} mới, {$s['sites_update']} cập nhật";
+        if (! empty($this->preview['screens'])) {
+            $description .= "  \n**Screens:** {$s['screens_new']} mới, {$s['screens_update']} cập nhật";
+        }
+        if ($hasErr) {
+            $description .= "  \n⚠ **{$errCount} dòng lỗi** sẽ bị bỏ qua.";
+        }
+        $description .= '  \nDữ liệu sẽ được lưu vào database. Không thể hoàn tác.';
+
+        return Action::make('confirmImport')
+            ->label('Confirm & Import')
+            ->icon('heroicon-o-check-circle')
+            ->color($hasErr ? 'warning' : 'success')
+            ->size('sm')
+            ->requiresConfirmation()
+            ->modalHeading('Xác nhận Import')
+            ->modalDescription($description)
+            ->modalIcon($hasErr ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-check-circle')
+            ->modalIconColor($hasErr ? 'warning' : 'success')
+            ->modalSubmitActionLabel('Xác nhận Import')
+            ->action(fn () => $this->doConfirmImport());
+    }
+
+    public function doConfirmImport(): void
     {
         $this->step = 3;
-        // View step 3 sẽ gọi $wire.runImport() qua Alpine x-init
     }
 
     // ── Step 3: Thực thi import (gọi từ Alpine.js) ───────────────────────────
@@ -164,7 +195,7 @@ class ImportSites extends Page implements HasForms
             return;
         }
 
-        $fullPath = \Storage::disk('local')->path($this->storedPath);
+        $fullPath = \Storage::disk('public')->path($this->storedPath);
 
         if (! file_exists($fullPath)) {
             Notification::make()->title('File không còn tồn tại')->body('Vui lòng upload lại.')->danger()->send();
@@ -320,26 +351,10 @@ class ImportSites extends Page implements HasForms
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    /**
-     * Tìm file upload và copy vào storage/app/private/imports/sites/ để xử lý.
-     *
-     * Laravel 11 thay đổi disk layout:
-     *   local  disk → storage/app/private/   (private, không serve qua URL)
-     *   public disk → storage/app/public/    (serve qua /storage symlink)
-     *
-     * Livewire temp upload có thể nằm ở NHIỀU nơi tuỳ cấu hình server:
-     *   - storage/app/private/livewire-tmp/  (khi default disk = local)
-     *   - storage/app/public/livewire-tmp/   (khi default disk = public / FILESYSTEM_DISK=public)
-     *   - storage/app/public/                (khi livewire tmp directory = null/root)
-     *
-     * Strategy: tìm file trên cả 3 disk (local, public, default), với nhiều path format,
-     * rồi copy vào local disk imports/sites/ để xử lý an toàn.
-     */
     private function resolveUploadedPath(mixed $file): ?string
     {
-        // ── Case 1: TemporaryUploadedFile object (chưa serialize) ────────────
         if ($file instanceof TemporaryUploadedFile) {
-            $path = $file->storeAs('imports/sites', Str::ulid() . '.xlsx', 'local');
+            $path = $file->storeAs('imports/sites', Str::ulid() . '.xlsx', 'public');
             return $path ?: null;
         }
 
@@ -349,75 +364,9 @@ class ImportSites extends Page implements HasForms
 
         $cleanFile = ltrim($file, '/\\');
 
-        // ── Case 2: Filament đã storeFiles() vào local disk (happy path) ─────
-        // Với ->disk('local')->directory('imports/sites')->storeFiles(), Filament
-        // lưu file tại 'imports/sites/xxx.xlsx' trên local disk và trả về path đó.
-        if (\Storage::disk('local')->exists($cleanFile)) {
+        // Filament đã store vào public disk → check trực tiếp
+        if (\Storage::disk('public')->exists($cleanFile)) {
             return $cleanFile;
-        }
-        $basename  = basename($cleanFile);
-
-        // Đích lưu cuối cùng (luôn trên local disk để không expose ra web)
-        $dest = 'imports/sites/' . Str::ulid() . '.xlsx';
-
-        // Livewire config
-        $livewireTmpDir = rtrim(
-            config('livewire.temporary_file_upload.directory', 'livewire-tmp') ?? 'livewire-tmp',
-            '/'
-        );
-
-        // ── Danh sách disk sẽ thử (theo thứ tự ưu tiên) ─────────────────────
-        // 1. local  → storage/app/private/
-        // 2. public → storage/app/public/
-        // 3. default disk (từ FILESYSTEM_DISK env)
-        $disksToSearch = array_unique(array_filter([
-            'local',
-            'public',
-            config('filesystems.default', 'local'),
-            config('livewire.temporary_file_upload.disk') ?: null,
-        ]));
-
-        // ── Danh sách path sẽ thử trên mỗi disk ─────────────────────────────
-        $pathCandidates = array_unique([
-            $cleanFile,                                    // Path Filament trả về (có thể đã có dir)
-            $basename,                                     // Chỉ filename
-            $livewireTmpDir . '/' . $cleanFile,            // livewire-tmp + full path
-            $livewireTmpDir . '/' . $basename,             // livewire-tmp + filename
-        ]);
-
-        foreach ($disksToSearch as $diskName) {
-            $disk = \Storage::disk($diskName);
-
-            foreach ($pathCandidates as $candidate) {
-                try {
-                    if ($disk->exists($candidate)) {
-                        \Storage::disk('local')->put($dest, $disk->get($candidate));
-                        return $dest;
-                    }
-                } catch (\Throwable) {
-                    // Disk không hỗ trợ candidate này (metadata error, permission…) → thử tiếp
-                    continue;
-                }
-            }
-        }
-
-        // ── Fallback: absolute path trên filesystem ───────────────────────────
-        $absolutePaths = array_unique([
-            $file,
-            storage_path('app/public/' . $cleanFile),
-            storage_path('app/private/' . $cleanFile),
-            storage_path('app/' . $cleanFile),
-            storage_path('app/public/' . $basename),
-            storage_path('app/private/' . $basename),
-            storage_path('app/public/' . $livewireTmpDir . '/' . $basename),
-            storage_path('app/private/' . $livewireTmpDir . '/' . $basename),
-        ]);
-
-        foreach ($absolutePaths as $absPath) {
-            if (file_exists($absPath) && is_file($absPath)) {
-                \Storage::disk('local')->put($dest, file_get_contents($absPath));
-                return $dest;
-            }
         }
 
         return null;

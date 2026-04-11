@@ -57,10 +57,10 @@
 
     {{-- Format guide --}}
     <div class="mb-5 space-y-4">
-        {{-- Sheet 1: Site List --}}
+        {{-- Sheet 1: Sites --}}
         <div class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-950/40">
             <h4 class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-primary-700 dark:text-primary-400">
-                <x-heroicon-s-map-pin class="h-4 w-4"/> Sheet: <code class="ml-1 rounded bg-primary-100 px-1 dark:bg-primary-900">1b. Site List</code>
+                <x-heroicon-s-map-pin class="h-4 w-4"/> Sheet: <code class="ml-1 rounded bg-primary-100 px-1 dark:bg-primary-900">Sites</code>
                 <span class="ml-auto text-xs font-normal text-primary-500">Row 5+ là dữ liệu</span>
             </h4>
             <div class="overflow-x-auto">
@@ -68,18 +68,19 @@
                     <thead>
                         <tr class="border-b border-primary-200 dark:border-primary-700">
                             <th class="pb-1.5 pr-4 text-left font-semibold">Cột</th>
-                            <th class="pb-1.5 pr-4 text-left font-semibold">Tên cột trong file</th>
-                            <th class="pb-1.5 text-left font-semibold">Lưu vào database</th>
+                            <th class="pb-1.5 pr-4 text-left font-semibold">Header</th>
+                            <th class="pb-1.5 text-left font-semibold">Field</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-primary-100 dark:divide-primary-800">
                         @foreach([
-                            ['A', 'Media Owner Site ID', 'hivestack_site_id <em class="text-primary-400">(link key — không phải site ID)</em>'],
-                            ['B', 'Site ID',             '<em class="text-primary-400">(bỏ qua)</em>'],
-                            ['C', 'Site Name',           'name + <strong>external_id</strong> (tự động tạo từ tên)  <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
-                            ['D', 'Internal Notes',      'description'],
-                            ['E', 'Latitude',            'lat'],
-                            ['F', 'Longitude',           'lon'],
+                            ['A', 'Mã site *',   'external_id <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['B', 'Tên site *',  'name <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['C', 'Địa chỉ',     'address'],
+                            ['D', 'Thành phố',   'city'],
+                            ['E', 'Latitude',    'lat'],
+                            ['F', 'Longitude',   'lon'],
+                            ['G', 'Mô tả',       'description'],
                         ] as [$col, $header, $db])
                         <tr>
                             <td class="py-1 pr-4 font-mono font-bold">{{ $col }}</td>
@@ -92,31 +93,35 @@
             </div>
         </div>
 
-        {{-- Sheet 2: Screen List --}}
+        {{-- Sheet 2: Screens --}}
         <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950/40">
             <h4 class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-indigo-700 dark:text-indigo-400">
-                <x-heroicon-s-computer-desktop class="h-4 w-4"/> Sheet: <code class="ml-1 rounded bg-indigo-100 px-1 dark:bg-indigo-900">2b. Screen List</code>
-                <span class="ml-auto text-xs font-normal text-indigo-500">Row 6+ là dữ liệu</span>
+                <x-heroicon-s-computer-desktop class="h-4 w-4"/> Sheet: <code class="ml-1 rounded bg-indigo-100 px-1 dark:bg-indigo-900">Screens</code>
+                <span class="ml-auto text-xs font-normal text-indigo-500">Row 5+ là dữ liệu</span>
             </h4>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs text-indigo-800 dark:text-indigo-300">
                     <thead>
                         <tr class="border-b border-indigo-200 dark:border-indigo-700">
                             <th class="pb-1.5 pr-4 text-left font-semibold">Cột</th>
-                            <th class="pb-1.5 pr-4 text-left font-semibold">Tên cột trong file</th>
-                            <th class="pb-1.5 text-left font-semibold">Lưu vào database</th>
+                            <th class="pb-1.5 pr-4 text-left font-semibold">Header</th>
+                            <th class="pb-1.5 text-left font-semibold">Field</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-indigo-100 dark:divide-indigo-800">
                         @foreach([
-                            ['1',  'Media Owner Screen ID', 'external_id  <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
-                            ['3',  'Screen Name',           'name  <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
-                            ['5',  'Media Owner Site ID',   'tra cứu site qua hivestack_site_id → site_id'],
-                            ['6-7','Width × Height px',     'spec.width_px / height_px'],
-                            ['14', 'Network',               'normalize tên → tạo network nếu chưa có → network_id'],
-                            ['15', 'Venue Type',            'inventory.venue_type'],
-                            ['25', 'Floor CPM (VND)',       'inventory.floor_cpm'],
-                            ['26-39','Hours Mon–Sun',       'inventory.operating_hours'],
+                            ['A', 'Mã screen *',       'external_id <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['B', 'Tên screen *',      'name <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['C', 'Mã site *',         'site_external_id <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['D', 'Loại biển',          'vn_category_id (dropdown 12 loại VN)'],
+                            ['E', 'Network',            'network — tạo mới nếu chưa có'],
+                            ['F', 'Rộng (px) *',       'spec.width_px <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['G', 'Cao (px) *',        'spec.height_px <span class="rounded bg-danger-100 px-1 text-[10px] font-bold text-danger-600">bắt buộc</span>'],
+                            ['H-I', 'Rộng/Cao (cm)',   'spec.width_cm / height_cm'],
+                            ['J', 'Giá (VND/tháng)',   'inventory.floor_cpm'],
+                            ['K', 'Lượt xem/tuần',    'inventory.weekly_impressions'],
+                            ['L', 'Thời lượng QC',     'inventory.spot_length (giây)'],
+                            ['M-N', 'Giờ mở/đóng',    'inventory.operating_hours'],
                         ] as [$col, $header, $db])
                         <tr>
                             <td class="py-1 pr-4 font-mono font-bold">{{ $col }}</td>
@@ -139,10 +144,7 @@
                 wire:loading.attr="disabled"
                 wire:target="uploadAndPreview">
                 <span wire:loading.remove wire:target="uploadAndPreview">Preview trước khi Import</span>
-                <span wire:loading wire:target="uploadAndPreview" class="flex items-center gap-2">
-                    <x-filament::loading-indicator class="h-4 w-4"/>
-                    Đang phân tích file...
-                </span>
+                <span wire:loading wire:target="uploadAndPreview">Đang phân tích file...</span>
             </x-filament::button>
             <p class="text-sm text-gray-400">Tối đa 20MB · Chỉ file .xlsx</p>
         </div>
@@ -160,120 +162,92 @@
     $screensOk      = ($s['screens_new'] ?? 0) + ($s['screens_update'] ?? 0);
     $hasErr         = ($s['sites_error'] ?? 0) > 0 || ($s['screens_error'] ?? 0) > 0;
     $hasScreens     = !empty($preview['screens']);
-    $fileDupSites   = ($s['sites_file_dup']   ?? 0);
-    $fileDupScreens = ($s['screens_file_dup'] ?? 0);
-    $hasFileDup     = $fileDupSites > 0 || $fileDupScreens > 0;
     $confirmMsg     = $hasErr
-        ? (($s['sites_error'] + $s['screens_error'])) . ' dòng lỗi sẽ bị bỏ qua. Tiến hành import ' . $sitesOk . ' sites và ' . $screensOk . ' screens?'
-        : 'Xác nhận lưu ' . ($s['sites_new'] ?? 0) . ' sites mới, cập nhật ' . ($s['sites_update'] ?? 0) . ' sites, ' . ($s['screens_new'] ?? 0) . ' screens mới, cập nhật ' . ($s['screens_update'] ?? 0) . ' screens?';
+        ? (($s['sites_error'] + $s['screens_error'])) . ' dòng lỗi sẽ bị bỏ qua. Import ' . $sitesOk . ' sites + ' . $screensOk . ' screens?'
+        : 'Import ' . ($s['sites_new'] ?? 0) . ' sites mới, ' . ($s['sites_update'] ?? 0) . ' cập nhật, ' . ($s['screens_new'] ?? 0) . ' screens mới, ' . ($s['screens_update'] ?? 0) . ' cập nhật?';
 @endphp
 
-{{-- Page header --}}
-<div class="mb-5 flex flex-wrap items-start justify-between gap-3">
-    <div>
-        <h2 class="text-xl font-bold text-gray-800 dark:text-white">Review Import</h2>
-        <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-            <span class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-semibold text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-                <x-heroicon-s-document class="h-3 w-3"/>
-                {{ $preview['filename'] ?? 'file.xlsx' }}
-            </span>
-            <span>{{ number_format(($s['sites_total'] ?? 0) + ($s['screens_total'] ?? 0)) }} bản ghi</span>
-            <span class="text-gray-300">·</span>
-            <span class="text-warning-600 dark:text-warning-400">Chưa lưu vào database</span>
+{{-- Summary bar --}}
+<div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        {{-- Stats inline --}}
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {{-- Sites --}}
+            <div class="flex items-center gap-2">
+                <x-heroicon-s-map-pin class="h-4 w-4 text-primary-500"/>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites:</span>
+                <span class="rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-900/40 dark:text-success-400">{{ $s['sites_new'] ?? 0 }} mới</span>
+                <span class="rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-900/40 dark:text-warning-400">{{ $s['sites_update'] ?? 0 }} cập nhật</span>
+                @if(($s['sites_error'] ?? 0) > 0)
+                <span class="rounded-full bg-danger-100 px-2 py-0.5 text-xs font-bold text-danger-700 dark:bg-danger-900/40 dark:text-danger-400">{{ $s['sites_error'] }} lỗi</span>
+                @endif
+            </div>
+            @if($hasScreens)
+            <div class="hidden sm:block h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
+            {{-- Screens --}}
+            <div class="flex items-center gap-2">
+                <x-heroicon-s-computer-desktop class="h-4 w-4 text-indigo-500"/>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Screens:</span>
+                <span class="rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-900/40 dark:text-success-400">{{ $s['screens_new'] ?? 0 }} mới</span>
+                <span class="rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-900/40 dark:text-warning-400">{{ $s['screens_update'] ?? 0 }} cập nhật</span>
+                @if(($s['screens_error'] ?? 0) > 0)
+                <span class="rounded-full bg-danger-100 px-2 py-0.5 text-xs font-bold text-danger-700 dark:bg-danger-900/40 dark:text-danger-400">{{ $s['screens_error'] }} lỗi</span>
+                @endif
+            </div>
+            @endif
+        </div>
+        {{-- Actions --}}
+        <div class="flex shrink-0 gap-2">
+            <x-filament::button color="gray" size="sm" wire:click="backToUpload" icon="heroicon-o-arrow-left">
+                Đổi file
+            </x-filament::button>
+            {{ $this->confirmImportAction }}
         </div>
     </div>
-    <div class="flex shrink-0 gap-2">
-        <x-filament::button color="gray" wire:click="backToUpload" icon="heroicon-o-arrow-left">
-            Đổi file
-        </x-filament::button>
-        <x-filament::button
-            color="{{ $hasErr ? 'warning' : 'success' }}"
-            wire:click="confirmImport"
-            wire:loading.attr="disabled"
-            wire:target="confirmImport"
-            icon="heroicon-o-check-circle"
-            wire:confirm="{{ $confirmMsg }}">
-            <span wire:loading.remove wire:target="confirmImport">Confirm &amp; Import</span>
-            <span wire:loading wire:target="confirmImport" class="flex items-center gap-1.5">
-                <x-filament::loading-indicator class="h-4 w-4"/> Đang lưu...
-            </span>
-        </x-filament::button>
-    </div>
 </div>
 
-{{-- Combined error banner --}}
+{{-- Error banner --}}
 @if($hasErr)
-<div class="mb-3 flex items-start gap-3 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 dark:border-danger-800 dark:bg-danger-950/30">
-    <x-heroicon-s-exclamation-triangle class="mt-0.5 h-5 w-5 shrink-0 text-danger-500"/>
-    <p class="text-sm text-danger-700 dark:text-danger-400">
-        @if(($s['sites_error'] ?? 0) > 0)
-            <strong>{{ number_format($s['sites_error']) }} site lỗi</strong>
-        @endif
-        @if(($s['sites_error'] ?? 0) > 0 && ($s['screens_error'] ?? 0) > 0) &nbsp;·&nbsp; @endif
-        @if(($s['screens_error'] ?? 0) > 0)
-            <strong>{{ number_format($s['screens_error']) }} screen lỗi</strong>
-        @endif
-        &nbsp;sẽ bị bỏ qua khi import. Bấm thẻ <strong>✕ Lỗi</strong> để xem chi tiết.
-    </p>
-</div>
-@endif
-
-{{-- File duplicate banner --}}
-@if($hasFileDup)
-<div class="mb-4 flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-700 dark:bg-orange-950/30">
-    <x-heroicon-s-document-duplicate class="mt-0.5 h-5 w-5 shrink-0 text-orange-500"/>
-    <div class="text-sm text-orange-700 dark:text-orange-400">
-        <p class="font-semibold">⚠ Phát hiện ID trùng lặp trong file:</p>
-        <ul class="mt-1 list-disc pl-4">
-            @if($fileDupSites > 0)
-                <li><strong>{{ $fileDupSites }} site rows</strong> có Site Name trùng nhau (external_id giống nhau) — dòng cuối cùng sẽ ghi đè các dòng trước.</li>
-            @endif
-            @if($fileDupScreens > 0)
-                <li><strong>{{ $fileDupScreens }} screen rows</strong> có Media Owner Screen ID xuất hiện nhiều lần — dòng cuối cùng sẽ ghi đè các dòng trước.</li>
-            @endif
-        </ul>
-        <p class="mt-1 text-xs text-orange-500">Các dòng trùng được đánh dấu <span class="rounded bg-orange-200 px-1 font-mono dark:bg-orange-800">⊕ DUP</span> trong bảng bên dưới.</p>
-    </div>
+<div class="mb-3 flex items-center gap-2 rounded-lg border border-danger-200 bg-danger-50 px-4 py-2.5 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-950/30 dark:text-danger-400">
+    <x-heroicon-s-exclamation-triangle class="h-4 w-4 shrink-0 text-danger-500"/>
+    @if(($s['sites_error'] ?? 0) > 0)<strong>{{ $s['sites_error'] }} site lỗi</strong>@endif
+    @if(($s['sites_error'] ?? 0) > 0 && ($s['screens_error'] ?? 0) > 0) · @endif
+    @if(($s['screens_error'] ?? 0) > 0)<strong>{{ $s['screens_error'] }} screen lỗi</strong>@endif
+    — sẽ bị bỏ qua khi import.
 </div>
 @endif
 
 {{-- ── SITES SECTION ──────────────────────────────────────────────────────── --}}
-<div class="mb-2 flex items-center gap-2">
-    <x-heroicon-o-map-pin class="h-5 w-5 text-primary-500"/>
-    <h3 class="text-base font-semibold text-gray-800 dark:text-white">
-        Sites
-        <span class="ml-1 text-sm font-normal text-gray-400">— sheet: 1b. Site List</span>
-    </h3>
-</div>
-
-{{-- Sites filter cards --}}
-<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-    @foreach([
-        ['all',    ($s['sites_total'] ?? 0), 'Tất cả',     'gray'],
-        ['new',    ($s['sites_new']   ?? 0), '✦ Thêm mới', 'success'],
-        ['update', ($s['sites_update']?? 0), '↻ Cập nhật', 'warning'],
-        ['error',  ($s['sites_error'] ?? 0), '✕ Lỗi',      'danger'],
-        ['skip',   ($s['sites_skip']  ?? 0), '— Bỏ qua',   'gray'],
-    ] as [$action, $count, $label, $color])
-    @php
-        $active  = $filterAction === $action;
-        $palette = [
-            'gray'    => ['border-gray-300 dark:border-gray-600', 'bg-gray-50 dark:bg-gray-800',             'text-gray-600 dark:text-gray-300'],
-            'success' => ['border-success-400',                   'bg-success-50 dark:bg-success-950/40',    'text-success-700 dark:text-success-400'],
-            'warning' => ['border-warning-400',                   'bg-warning-50 dark:bg-warning-950/40',    'text-warning-700 dark:text-warning-400'],
-            'danger'  => ['border-danger-400',                    'bg-danger-50 dark:bg-danger-950/40',      'text-danger-700 dark:text-danger-400'],
-        ][$color];
-    @endphp
-    <button wire:click="setFilter('{{ $action }}')"
-            class="rounded-xl border-2 p-3 text-center transition-all focus:outline-none
-                   {{ $active
-                       ? $palette[0] . ' ' . $palette[1] . ' shadow-sm'
-                       : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-gray-600' }}
-                   {{ $palette[2] }}">
-        <div class="text-2xl font-bold tabular-nums">{{ number_format($count) }}</div>
-        <div class="mt-0.5 text-xs font-medium">{{ $label }}</div>
-    </button>
-    @endforeach
+<div class="mb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <x-heroicon-o-map-pin class="h-5 w-5 text-primary-500"/>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-white">Sites</h3>
+    </div>
+    {{-- Inline filter pills --}}
+    <div class="flex gap-1">
+        @foreach([
+            ['all',    ($s['sites_total'] ?? 0), 'Tất cả',  'gray'],
+            ['new',    ($s['sites_new']   ?? 0), 'Mới',     'success'],
+            ['update', ($s['sites_update']?? 0), 'Update',  'warning'],
+            ['error',  ($s['sites_error'] ?? 0), 'Lỗi',     'danger'],
+        ] as [$action, $count, $label, $color])
+        @if($count > 0 || $action === 'all')
+        <button wire:click="setFilter('{{ $action }}')"
+            class="rounded-full px-2.5 py-1 text-xs font-semibold transition-all
+            {{ $filterAction === $action
+                ? match($color) {
+                    'success' => 'bg-success-500 text-white',
+                    'warning' => 'bg-warning-500 text-white',
+                    'danger'  => 'bg-danger-500 text-white',
+                    default   => 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-800',
+                }
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400'
+            }}">
+            {{ $label }} ({{ $count }})
+        </button>
+        @endif
+        @endforeach
+    </div>
 </div>
 
 {{-- Sites table --}}
@@ -313,13 +287,6 @@
                               title="{{ $site['external_id'] }}">
                             {{ $site['external_id'] ?: '—' }}
                         </span>
-                        {{-- Chain ID (hivestack_site_id) --}}
-                        @if(!empty($site['hivestack_id']))
-                            <span class="block truncate font-mono text-[10px] text-gray-400 dark:text-gray-500"
-                                  title="{{ $site['hivestack_id'] }}">
-                                {{ $site['hivestack_id'] }}
-                            </span>
-                        @endif
                         @if(!empty($site['duplicate_in_file']))
                             <span class="mt-0.5 inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
                                 ⊕ DUP
@@ -378,42 +345,35 @@
 
 {{-- ── SCREENS SECTION ────────────────────────────────────────────────────── --}}
 @if($hasScreens)
-<div class="mb-2 flex items-center gap-2">
-    <x-heroicon-o-computer-desktop class="h-5 w-5 text-indigo-500"/>
-    <h3 class="text-base font-semibold text-gray-800 dark:text-white">
-        Screens
-        <span class="ml-1 text-sm font-normal text-gray-400">— sheet: 2b. Screen List</span>
-    </h3>
-</div>
-
-{{-- Screens filter cards --}}
-<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-    @foreach([
-        ['all',    ($s['screens_total'] ?? 0), 'Tất cả',     'gray'],
-        ['new',    ($s['screens_new']   ?? 0), '✦ Thêm mới', 'success'],
-        ['update', ($s['screens_update']?? 0), '↻ Cập nhật', 'warning'],
-        ['error',  ($s['screens_error'] ?? 0), '✕ Lỗi',      'danger'],
-        ['skip',   ($s['screens_skip']  ?? 0), '— Bỏ qua',   'gray'],
-    ] as [$action, $count, $label, $color])
-    @php
-        $active  = $screenFilterAction === $action;
-        $palette = [
-            'gray'    => ['border-gray-300 dark:border-gray-600', 'bg-gray-50 dark:bg-gray-800',          'text-gray-600 dark:text-gray-300'],
-            'success' => ['border-success-400',                   'bg-success-50 dark:bg-success-950/40', 'text-success-700 dark:text-success-400'],
-            'warning' => ['border-warning-400',                   'bg-warning-50 dark:bg-warning-950/40', 'text-warning-700 dark:text-warning-400'],
-            'danger'  => ['border-danger-400',                    'bg-danger-50 dark:bg-danger-950/40',   'text-danger-700 dark:text-danger-400'],
-        ][$color];
-    @endphp
-    <button wire:click="setScreenFilter('{{ $action }}')"
-            class="rounded-xl border-2 p-3 text-center transition-all focus:outline-none
-                   {{ $active
-                       ? $palette[0] . ' ' . $palette[1] . ' shadow-sm'
-                       : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-gray-600' }}
-                   {{ $palette[2] }}">
-        <div class="text-2xl font-bold tabular-nums">{{ number_format($count) }}</div>
-        <div class="mt-0.5 text-xs font-medium">{{ $label }}</div>
-    </button>
-    @endforeach
+<div class="mb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <x-heroicon-o-computer-desktop class="h-5 w-5 text-indigo-500"/>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-white">Screens</h3>
+    </div>
+    <div class="flex gap-1">
+        @foreach([
+            ['all',    ($s['screens_total'] ?? 0), 'Tất cả',  'gray'],
+            ['new',    ($s['screens_new']   ?? 0), 'Mới',     'success'],
+            ['update', ($s['screens_update']?? 0), 'Update',  'warning'],
+            ['error',  ($s['screens_error'] ?? 0), 'Lỗi',     'danger'],
+        ] as [$action, $count, $label, $color])
+        @if($count > 0 || $action === 'all')
+        <button wire:click="setScreenFilter('{{ $action }}')"
+            class="rounded-full px-2.5 py-1 text-xs font-semibold transition-all
+            {{ $screenFilterAction === $action
+                ? match($color) {
+                    'success' => 'bg-success-500 text-white',
+                    'warning' => 'bg-warning-500 text-white',
+                    'danger'  => 'bg-danger-500 text-white',
+                    default   => 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-800',
+                }
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400'
+            }}">
+            {{ $label }} ({{ $count }})
+        </button>
+        @endif
+        @endforeach
+    </div>
 </div>
 
 {{-- Screens table --}}
@@ -470,13 +430,6 @@
                               title="{{ $screen['site_external_id'] }}">
                             {{ $screen['site_external_id'] ?: '—' }}
                         </span>
-                        {{-- Raw chain ID từ file --}}
-                        @if(!empty($screen['site_chain_id']) && $screen['site_chain_id'] !== $screen['site_external_id'])
-                            <span class="block truncate font-mono text-[10px] text-gray-400 dark:text-gray-500"
-                                  title="{{ $screen['site_chain_id'] }}">
-                                {{ $screen['site_chain_id'] }}
-                            </span>
-                        @endif
                     </td>
                     <td class="px-3 py-2">
                         @if(!empty($screen['network_name']))
@@ -505,8 +458,8 @@
                         @endif
                     </td>
                     <td class="max-w-[140px] px-3 py-2 text-xs text-gray-600 dark:text-gray-400">
-                        <span class="block truncate" title="{{ $screen['venue_type'] ?? '' }}">
-                            {{ $screen['venue_type'] ?: '—' }}
+                        <span class="block truncate" title="{{ $screen['venue_label'] ?? '' }}">
+                            {{ ($screen['venue_label'] ?? '') ?: '—' }}
                         </span>
                     </td>
                     <td class="max-w-[240px] px-3 py-2">
@@ -549,54 +502,8 @@
 </x-filament::section>
 @endif {{-- end hasScreens --}}
 
-{{-- Sticky bottom action bar --}}
-<div class="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 bg-white/95 shadow-2xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95"
-     style="margin-left: var(--sidebar-width, 256px)">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 py-3">
-        <div class="flex flex-1 flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-            {{-- Sites --}}
-            <span class="flex items-center gap-1.5 text-gray-400">
-                <x-heroicon-s-map-pin class="h-3.5 w-3.5 text-primary-400"/> Sites:
-            </span>
-            <span class="font-semibold text-success-600 dark:text-success-400">✦ {{ number_format($s['sites_new'] ?? 0) }} mới</span>
-            <span class="font-semibold text-warning-600 dark:text-warning-400">↻ {{ number_format($s['sites_update'] ?? 0) }} cập nhật</span>
-            @if(($s['sites_error'] ?? 0) > 0)
-                <span class="font-semibold text-danger-600">✕ {{ number_format($s['sites_error']) }} lỗi</span>
-            @endif
-            @if($hasScreens)
-            <span class="text-gray-200 dark:text-gray-700">|</span>
-            {{-- Screens --}}
-            <span class="flex items-center gap-1.5 text-gray-400">
-                <x-heroicon-s-computer-desktop class="h-3.5 w-3.5 text-indigo-400"/> Screens:
-            </span>
-            <span class="font-semibold text-success-600 dark:text-success-400">✦ {{ number_format($s['screens_new'] ?? 0) }} mới</span>
-            <span class="font-semibold text-warning-600 dark:text-warning-400">↻ {{ number_format($s['screens_update'] ?? 0) }} cập nhật</span>
-            @if(($s['screens_error'] ?? 0) > 0)
-                <span class="font-semibold text-danger-600">✕ {{ number_format($s['screens_error']) }} lỗi</span>
-            @endif
-            @endif
-        </div>
-        <div class="flex shrink-0 gap-2">
-            <x-filament::button color="gray" wire:click="backToUpload" icon="heroicon-o-arrow-left">
-                Đổi file
-            </x-filament::button>
-            <x-filament::button
-                color="{{ $hasErr ? 'warning' : 'success' }}"
-                wire:click="confirmImport"
-                wire:loading.attr="disabled"
-                wire:target="confirmImport"
-                icon="heroicon-o-check-circle"
-                size="lg"
-                wire:confirm="{{ $confirmMsg }}">
-                <span wire:loading.remove wire:target="confirmImport">Confirm &amp; Import</span>
-                <span wire:loading wire:target="confirmImport" class="flex items-center gap-1.5">
-                    <x-filament::loading-indicator class="h-4 w-4"/> Đang lưu...
-                </span>
-            </x-filament::button>
-        </div>
-    </div>
-</div>
-<div class="h-20"></div>{{-- spacer for sticky bar --}}
+{{-- Bottom spacer --}}
+<div class="h-4"></div>
 @endif
 
 {{-- ══════════════════════════════════════════════════════════════════════════
@@ -640,67 +547,57 @@
 @endphp
 
 <x-filament::section>
-    {{-- Status icon --}}
-    <div class="mb-6 text-center">
-        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full
+    {{-- Status + Summary --}}
+    <div class="mb-6 flex items-start gap-4">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full
                     {{ $importOk ? 'bg-success-100 dark:bg-success-900/40' : 'bg-warning-100 dark:bg-warning-900/40' }}">
             @if($importOk)
-                <x-heroicon-o-check-circle class="h-12 w-12 text-success-600 dark:text-success-400"/>
+                <x-heroicon-o-check-circle class="h-7 w-7 text-success-600"/>
             @else
-                <x-heroicon-o-exclamation-triangle class="h-12 w-12 text-warning-600 dark:text-warning-400"/>
+                <x-heroicon-o-exclamation-triangle class="h-7 w-7 text-warning-600"/>
             @endif
         </div>
-        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">
-            {{ $importOk ? 'Import thành công!' : 'Import hoàn tất' }}
-        </h3>
-        <p class="mt-1 text-sm text-gray-500">
-            {{ $importOk
-                ? 'Tất cả Sites và Screens đã được lưu vào database.'
-                : 'Một số dòng bị bỏ qua do lỗi validation.' }}
-        </p>
-    </div>
-
-    {{-- Sites stats --}}
-    <div class="mb-3 flex items-center gap-2">
-        <x-heroicon-o-map-pin class="h-4 w-4 text-primary-500"/>
-        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites</span>
-    </div>
-    <div class="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-xl border border-success-200 bg-success-50 p-5 text-center dark:border-success-800 dark:bg-success-950/30">
-            <div class="text-3xl font-bold tabular-nums text-success-700 dark:text-success-400">{{ number_format($sitesCreated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-success-600 dark:text-success-500">Tạo mới</div>
-        </div>
-        <div class="rounded-xl border border-warning-200 bg-warning-50 p-5 text-center dark:border-warning-800 dark:bg-warning-950/30">
-            <div class="text-3xl font-bold tabular-nums text-warning-700 dark:text-warning-400">{{ number_format($sitesUpdated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-warning-600 dark:text-warning-500">Cập nhật</div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center dark:border-gray-700 dark:bg-gray-800">
-            <div class="text-3xl font-bold tabular-nums text-gray-600 dark:text-gray-300">{{ number_format($sitesCreated + $sitesUpdated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-gray-500">Tổng đã lưu</div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center dark:border-gray-700 dark:bg-gray-800">
-            <div class="text-3xl font-bold tabular-nums text-gray-400">{{ number_format($skipped) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-gray-400">Bỏ qua</div>
-        </div>
-    </div>
-
-    {{-- Screens stats --}}
-    <div class="mb-3 flex items-center gap-2">
-        <x-heroicon-o-computer-desktop class="h-4 w-4 text-indigo-500"/>
-        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Screens</span>
-    </div>
-    <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div class="rounded-xl border border-success-200 bg-success-50 p-5 text-center dark:border-success-800 dark:bg-success-950/30">
-            <div class="text-3xl font-bold tabular-nums text-success-700 dark:text-success-400">{{ number_format($screensCreated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-success-600 dark:text-success-500">Tạo mới</div>
-        </div>
-        <div class="rounded-xl border border-warning-200 bg-warning-50 p-5 text-center dark:border-warning-800 dark:bg-warning-950/30">
-            <div class="text-3xl font-bold tabular-nums text-warning-700 dark:text-warning-400">{{ number_format($screensUpdated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-warning-600 dark:text-warning-500">Cập nhật</div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center dark:border-gray-700 dark:bg-gray-800">
-            <div class="text-3xl font-bold tabular-nums text-gray-600 dark:text-gray-300">{{ number_format($screensCreated + $screensUpdated) }}</div>
-            <div class="mt-1.5 text-sm font-medium text-gray-500">Tổng đã lưu</div>
+        <div class="flex-1">
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                {{ $importOk ? 'Import thành công!' : 'Import hoàn tất (có lỗi)' }}
+            </h3>
+            <div class="mt-2 flex flex-wrap gap-x-6 gap-y-2">
+                {{-- Sites --}}
+                <div class="flex items-center gap-2">
+                    <x-heroicon-s-map-pin class="h-4 w-4 text-primary-500"/>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Sites:</span>
+                    @if($sitesCreated > 0)
+                    <span class="rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-900/40 dark:text-success-400">{{ $sitesCreated }} mới</span>
+                    @endif
+                    @if($sitesUpdated > 0)
+                    <span class="rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-900/40 dark:text-warning-400">{{ $sitesUpdated }} cập nhật</span>
+                    @endif
+                    @if($sitesCreated === 0 && $sitesUpdated === 0)
+                    <span class="text-xs text-gray-400">0</span>
+                    @endif
+                </div>
+                {{-- Screens --}}
+                <div class="flex items-center gap-2">
+                    <x-heroicon-s-computer-desktop class="h-4 w-4 text-indigo-500"/>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Screens:</span>
+                    @if($screensCreated > 0)
+                    <span class="rounded-full bg-success-100 px-2 py-0.5 text-xs font-bold text-success-700 dark:bg-success-900/40 dark:text-success-400">{{ $screensCreated }} mới</span>
+                    @endif
+                    @if($screensUpdated > 0)
+                    <span class="rounded-full bg-warning-100 px-2 py-0.5 text-xs font-bold text-warning-700 dark:bg-warning-900/40 dark:text-warning-400">{{ $screensUpdated }} cập nhật</span>
+                    @endif
+                    @if($screensCreated === 0 && $screensUpdated === 0)
+                    <span class="text-xs text-gray-400">0</span>
+                    @endif
+                </div>
+                {{-- Errors --}}
+                @if($errCount > 0)
+                <div class="flex items-center gap-2">
+                    <x-heroicon-s-x-circle class="h-4 w-4 text-danger-500"/>
+                    <span class="rounded-full bg-danger-100 px-2 py-0.5 text-xs font-bold text-danger-700 dark:bg-danger-900/40 dark:text-danger-400">{{ $errCount }} lỗi bỏ qua</span>
+                </div>
+                @endif
+            </div>
         </div>
     </div>
 

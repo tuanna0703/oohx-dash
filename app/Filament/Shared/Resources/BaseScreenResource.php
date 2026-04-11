@@ -26,7 +26,7 @@ abstract class BaseScreenResource extends Resource
     protected static ?string $navigationIcon  = null;
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Screens';
-    protected static ?int    $navigationSort  = 2;
+    protected static ?int    $navigationSort  = 1;
 
     // ── Hooks cho subclass ────────────────────────────────────────────────────
 

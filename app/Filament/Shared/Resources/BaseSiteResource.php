@@ -31,7 +31,7 @@ abstract class BaseSiteResource extends Resource
     protected static ?string $navigationIcon  = null;
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Sites';
-    protected static ?int    $navigationSort  = 1;
+    protected static ?int    $navigationSort  = 2;
 
     // ── Hooks cho subclass override ───────────────────────────────────────────
 
@@ -86,13 +86,6 @@ abstract class BaseSiteResource extends Resource
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),
 
-                    Forms\Components\TextInput::make('hivestack_site_id')
-                        ->label('Hivestack Site ID')
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->placeholder('—')
-                        ->helperText('Tự động gán khi import từ Hivestack')
-                        ->visible(fn (?Site $record) => $record?->hivestack_site_id !== null),
                 ]))
             ),
 

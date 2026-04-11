@@ -15,7 +15,7 @@ class Site extends Model
     use HasFactory, HasUlids, HasOwnerScope, SoftDeletes;
 
     protected $fillable = [
-        'owner_id', 'external_id', 'hivestack_site_id',
+        'owner_id', 'external_id',
         'name', 'description', 'banner', 'lat', 'lon',
         'address', 'city', 'region', 'country', 'status',
         'province_id', 'commune_id',
