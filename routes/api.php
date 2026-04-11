@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\ImportController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\OwnerController;
 use App\Http\Controllers\Api\V1\PlayerController;
@@ -46,9 +45,6 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('owners', OwnerController::class);
     Route::post('owners/{owner}/switch',   [OwnerController::class, 'switchContext']);
     Route::get('owners/{owner}/stats',     [OwnerController::class, 'stats']);
-
-    // Hivestack bulk import
-    Route::post('owners/{owner}/import/hivestack', [ImportController::class, 'hivestackBulk']);
 
     // Sites (scoped to current owner via GlobalScope)
     Route::apiResource('sites', SiteController::class);

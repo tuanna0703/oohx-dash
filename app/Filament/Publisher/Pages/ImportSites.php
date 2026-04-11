@@ -78,11 +78,11 @@ class ImportSites extends Page implements HasForms
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/octet-stream',
                     ])
-                    ->disk('local')               // Giống pattern HasImportPreview
+                    ->disk('local')
                     ->directory('imports/sites')  // Lưu thẳng vào local disk → tránh metadata mismatch
                     ->maxSize(20480) // 20MB
                     ->required()
-                    ->helperText('Format hỗ trợ: PRODUCTION SITE PARAMETERS FOR BULK IMPORT — Cột: Media Owner Site ID, Site Name, Internal Notes, Latitude, Longitude'),
+                    ->helperText('Dùng OOHX Import Template — 2 sheets: Sites + Screens. Tải template tại /storage/templates/oohx-import-template.xlsx'),
             ])
             ->statePath('data');
     }
