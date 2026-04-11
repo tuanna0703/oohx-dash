@@ -1,44 +1,62 @@
 @php
-    // BUG FIX: $hours có thể null nếu inventory chưa có data → guard thành array
-    $hours    = is_array($getState()) ? $getState() : [];
-    $dayShort = ['mon'=>'Mon','tue'=>'Tue','wed'=>'Wed','thu'=>'Thu','fri'=>'Fri','sat'=>'Sat','sun'=>'Sun'];
-    $grid = [];
-    foreach (array_keys($dayShort) as $day) {
-        $val = $hours[$day] ?? null;
+    $hours = is_array($getState()) ? $getState() : [];
+    $dayLabels = [
+        'mon' => 'Thứ 2', 'tue' => 'Thứ 3', 'wed' => 'Thứ 4',
+        'thu' => 'Thứ 5', 'fri' => 'Thứ 6', 'sat' => 'Thứ 7',
+        'sun' => 'Chủ nhật',
+    ];
+
+    $rows = [];
+    foreach ($dayLabels as $key => $label) {
+        $val = $hours[$key] ?? null;
+
         if ($val === 'closed' || empty($val)) {
-            $grid[$day] = array_fill(0, 24, false);
-        } elseif (array_is_list((array) $val)) {
-            // New format: array of active hour indices [8, 9, 12, 14, ...]
-            $active = array_map('intval', (array) $val);
-            $grid[$day] = array_map(fn($h) => in_array($h, $active), range(0, 23));
+            $rows[] = ['label' => $label, 'active' => false, 'time' => ''];
+        } elseif (is_array($val) && !array_is_list($val) && isset($val['open'], $val['close'])) {
+            $rows[] = ['label' => $label, 'active' => true, 'time' => $val['open'] . ' – ' . $val['close']];
+        } elseif (is_array($val) && array_is_list($val)) {
+            // Hour array format → derive range
+            $sorted = collect($val)->sort()->values();
+            if ($sorted->isEmpty()) {
+                $rows[] = ['label' => $label, 'active' => false, 'time' => ''];
+            } else {
+                $open  = str_pad($sorted->first(), 2, '0', STR_PAD_LEFT) . ':00';
+                $close = str_pad($sorted->last() + 1, 2, '0', STR_PAD_LEFT) . ':00';
+                $rows[] = ['label' => $label, 'active' => true, 'time' => $open . ' – ' . $close];
+            }
         } else {
-            // Legacy format: {open: '08:00', close: '18:00'}
-            $open  = (int) explode(':', $val['open']  ?? '00:00')[0];
-            $close = (int) explode(':', $val['close'] ?? '24:00')[0];
-            $grid[$day] = array_map(fn($h) => $h >= $open && $h < $close, range(0, 23));
+            $rows[] = ['label' => $label, 'active' => true, 'time' => '00:00 – 24:00'];
         }
     }
+
+    $activeCount = collect($rows)->where('active', true)->count();
+    $allSame = $activeCount > 0 && collect($rows)->where('active', true)->pluck('time')->unique()->count() === 1;
 @endphp
-<div class="select-none overflow-x-auto">
-    <div class="flex items-center mb-1">
-        <div class="w-16 shrink-0"></div>
-        <div class="grid flex-1 gap-px" style="grid-template-columns:repeat(24,1fr)">
-            @foreach(range(0,23) as $h)
-                <div class="text-center">
-                    <span class="text-xs font-semibold text-gray-500">{{ $h === 0 ? '12' : ($h <= 12 ? $h : $h-12) }}</span>
-                    <span class="block text-xs text-gray-400">{{ $h < 12 ? 'AM' : 'PM' }}</span>
-                </div>
-            @endforeach
+
+<div class="space-y-1">
+    @foreach($rows as $row)
+    <div class="flex items-center gap-3 py-1.5">
+        <div class="w-4 flex items-center justify-center">
+            @if($row['active'])
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+            @else
+                <div class="w-2.5 h-2.5 rounded-full bg-gray-300"></div>
+            @endif
+        </div>
+        <div class="w-20 text-sm font-medium {{ $row['active'] ? 'text-gray-800' : 'text-gray-400' }}">
+            {{ $row['label'] }}
+        </div>
+        <div class="text-sm {{ $row['active'] ? 'text-gray-600' : 'text-gray-400 italic' }}">
+            {{ $row['active'] ? $row['time'] : 'Đóng cửa' }}
         </div>
     </div>
-    @foreach($dayShort as $key => $label)
-        <div class="flex items-center gap-1 mb-1">
-            <div class="w-16 shrink-0 text-xs font-semibold text-gray-600">{{ $label }}</div>
-            <div class="grid flex-1 gap-px" style="grid-template-columns:repeat(24,1fr)">
-                @foreach(range(0,23) as $h)
-                    <div class="h-7 rounded-sm {{ ($grid[$key][$h] ?? false) ? 'bg-primary-500' : 'bg-gray-200' }}"></div>
-                @endforeach
-            </div>
-        </div>
     @endforeach
+
+    @if($activeCount === 7 && $allSame)
+        <div class="pt-2 text-xs text-gray-400">
+            Hàng ngày {{ collect($rows)->where('active', true)->first()['time'] }}
+        </div>
+    @elseif($activeCount === 0)
+        <div class="pt-2 text-xs text-red-400">Tất cả ngày đóng cửa</div>
+    @endif
 </div>
