@@ -1,36 +1,96 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Screen technical specifications.
+ *
+ * Marketplace fields (Phase 1):
+ * @property int         $width_px
+ * @property int         $height_px
+ * @property float|null  $width_cm
+ * @property float|null  $height_cm
+ * @property string|null $photo_url
+ * @property bool        $allow_image
+ * @property bool        $allow_video
+ *
+ * @internal AdOps fields (Phase 2 — hidden from frontpage):
+ * @property string|null $resolution_preset
+ * @property string|null $width_unit
+ * @property string|null $height_unit
+ * @property string|null $facing_direction
+ * @property bool        $allow_html
+ * @property bool        $allow_zip
+ * @property bool        $allow_vast
+ * @property array|null  $allowed_languages
+ */
 class ScreenSpec extends Model
 {
     use HasFactory;
 
     protected $table = 'screen_specs';
+
     protected $fillable = [
-        'screen_id','width_px','height_px','resolution_preset','width_cm','width_unit','height_cm','height_unit',
-        'facing_direction','photo_url',
-        'allow_image','allow_video','allow_html','allow_zip','allow_vast',
+        // Marketplace
+        'screen_id', 'width_px', 'height_px', 'width_cm', 'height_cm',
+        'photo_url', 'allow_image', 'allow_video',
+
+        // AdOps (Phase 2)
+        'resolution_preset', 'width_unit', 'height_unit',
+        'facing_direction',
+        'allow_html', 'allow_zip', 'allow_vast',
         'allowed_languages',
     ];
+
     protected $casts = [
-        'allow_image'=>'boolean','allow_video'=>'boolean',
-        'allow_html'=>'boolean','allow_zip'=>'boolean','allow_vast'=>'boolean',
-        'allowed_languages'=>'array',
-        'width_cm'=>'decimal:1','height_cm'=>'decimal:1',
+        'allow_image'      => 'boolean',
+        'allow_video'      => 'boolean',
+        'allow_html'       => 'boolean',
+        'allow_zip'        => 'boolean',
+        'allow_vast'       => 'boolean',
+        'allowed_languages' => 'array',
+        'width_cm'         => 'decimal:1',
+        'height_cm'        => 'decimal:1',
     ];
-    public function screen(): BelongsTo { return $this->belongsTo(Screen::class); }
-    public function getOrientationAttribute(): string {
-        if ($this->width_px > $this->height_px) return 'landscape';
-        if ($this->width_px < $this->height_px) return 'portrait';
+
+    // ── Relationships ───────────────────────────────────────
+
+    public function screen(): BelongsTo
+    {
+        return $this->belongsTo(Screen::class);
+    }
+
+    // ── Accessors ───────────────────────────────────────────
+
+    public function getOrientationAttribute(): string
+    {
+        if ($this->width_px > $this->height_px) {
+            return 'landscape';
+        }
+        if ($this->width_px < $this->height_px) {
+            return 'portrait';
+        }
+
         return 'square';
     }
-    public function getAspectRatioAttribute(): string {
-        if (!$this->width_px || !$this->height_px) return 'unknown';
+
+    public function getAspectRatioAttribute(): string
+    {
+        if (! $this->width_px || ! $this->height_px) {
+            return 'unknown';
+        }
+
         $gcd = $this->gcd($this->width_px, $this->height_px);
-        return ($this->width_px/$gcd).':'.($this->height_px/$gcd);
+
+        return ($this->width_px / $gcd) . ':' . ($this->height_px / $gcd);
     }
-    private function gcd(int $a, int $b): int { return $b===0 ? $a : $this->gcd($b,$a%$b); }
+
+    private function gcd(int $a, int $b): int
+    {
+        return $b === 0 ? $a : $this->gcd($b, $a % $b);
+    }
 }

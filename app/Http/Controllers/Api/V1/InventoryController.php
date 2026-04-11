@@ -29,9 +29,8 @@ class InventoryController extends Controller
 
         $limit = min((int) $request->input('limit', 50), 100);
 
-        $query = $this->buildScreenQuery($request)
-            ->with(['spec', 'inventory', 'owner', 'site']);
-
+        $with = $this->resolveRelations($request);
+        $query = $this->buildScreenQuery($request)->with($with);
         $query = $this->applySort($query, $request);
 
         return new ScreenCollection($query->paginate($limit));
@@ -46,7 +45,11 @@ class InventoryController extends Controller
         ]);
 
         $screens = $this->buildScreenQuery($request)
-            ->with(['spec', 'inventory', 'site'])
+            ->with([
+                'spec:screen_id,photo_url,width_cm,height_cm',
+                'inventory:screen_id,venue_type',
+                'site:id,address,lat,lon',
+            ])
             ->get();
 
         return new ScreenMapCollection($screens);
@@ -54,7 +57,8 @@ class InventoryController extends Controller
 
     public function show(string $screenId): JsonResponse|ScreenResource
     {
-        $screen = Screen::with(['spec', 'inventory', 'owner', 'site'])
+        $with = $this->resolveRelations(request());
+        $screen = Screen::with($with)
             ->where('external_id', $screenId)
             ->orWhere('uuid', $screenId)
             ->first();
@@ -407,6 +411,26 @@ class InventoryController extends Controller
 
     /**
      * Xây dựng query chung cho cả index() và map().
+     * Resolve eager-load relations based on ?include param.
+     * Default: marketplace-only fields. With ?include=adops: full relations.
+     */
+    private function resolveRelations(Request $request): array
+    {
+        $includeAdops = str_contains($request->input('include', ''), 'adops');
+
+        if ($includeAdops) {
+            return ['spec', 'inventory', 'owner:id,name,slug', 'site'];
+        }
+
+        return [
+            'spec:screen_id,photo_url,width_px,height_px,width_cm,height_cm',
+            'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,operating_hours,spot_length',
+            'owner:id,name,slug',
+            'site:id,address,city,region,lat,lon',
+        ];
+    }
+
+    /**
      * Áp dụng tất cả filters nhưng không paginate/sort.
      */
     private function buildScreenQuery(Request $request)

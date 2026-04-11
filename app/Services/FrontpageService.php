@@ -299,7 +299,12 @@ class FrontpageService
             return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->whereHas('spec', fn ($q) => $q->whereNotNull('photo_url')->where('photo_url', '!=', ''))
                 ->whereHas('inventory', fn ($q) => $q->where('floor_cpm', '>', 0))
-                ->with(['spec', 'inventory', 'owner', 'site'])
+                ->with([
+                    'spec:screen_id,photo_url,width_cm,height_cm',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'owner:id,name,slug',
+                    'site:id,city,address',
+                ])
                 ->inRandomOrder()
                 ->limit($limit)
                 ->get();
@@ -395,7 +400,11 @@ class FrontpageService
     {
         return Screen::withoutGlobalScope('owner_scope')->where('owner_id', $ownerId)
             ->where('active', true)
-            ->with(['spec', 'inventory', 'site'])
+            ->with([
+                'spec:screen_id,photo_url,width_cm,height_cm',
+                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                'site:id,city,address',
+            ])
             ->orderByDesc('updated_at')
             ->paginate($perPage);
     }
@@ -405,7 +414,12 @@ class FrontpageService
     public function getScreensPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
     {
         $query = $this->buildScreenQuery($request)
-            ->with(['spec', 'inventory', 'owner', 'site']);
+            ->with([
+                'spec:screen_id,photo_url,width_cm,height_cm',
+                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                'owner:id,name,slug',
+                'site:id,city,address',
+            ]);
 
         $query = $this->applySort($query, $request);
 
@@ -441,7 +455,12 @@ class FrontpageService
     {
         return Cache::remember("fp:screen:{$id}", 300, function () use ($id) {
             return Screen::withoutGlobalScope('owner_scope')->where('active', true)
-                ->with(['spec', 'inventory', 'owner', 'site'])
+                ->with([
+                    'spec:screen_id,photo_url,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'owner:id,name,slug',
+                    'site:id,city,address,lat,lon',
+                ])
                 ->where(function ($q) use ($id) {
                     $q->where('id', $id)
                       ->orWhere('uuid', $id)
@@ -460,7 +479,11 @@ class FrontpageService
                     $q->whereHas('site', fn ($sq) => $sq->where('city', $screen->site?->city))
                       ->orWhereHas('inventory', fn ($iq) => $iq->where('venue_type', $screen->inventory?->venue_type));
                 })
-                ->with(['spec', 'inventory', 'site'])
+                ->with([
+                    'spec:screen_id,photo_url,width_cm,height_cm',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'site:id,city,address',
+                ])
                 ->inRandomOrder()
                 ->limit($limit)
                 ->get();

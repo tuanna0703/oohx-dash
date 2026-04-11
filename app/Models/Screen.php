@@ -12,15 +12,41 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * Screen — core marketplace entity (digital display unit).
+ *
+ * Marketplace fields (Phase 1):
+ * @property string      $name
+ * @property string      $external_id
+ * @property string      $uuid
+ * @property bool        $active
+ * @property string      $status         online|offline|maintenance
+ * @property string      $description
+ *
+ * @internal AdOps / device fields (Phase 2 — hidden from UI by default):
+ * @property string|null $unit_id
+ * @property string|null $internal_notes
+ * @property string|null $site_external_id
+ * @property string|null $network_code
+ * @property string|null $location_district
+ * @property string|null $location_district_code
+ * @property string|null $player_type
+ * @property string|null $player_version
+ * @property string|null $device_token
+ * @property \Carbon\Carbon|null $last_heartbeat_at
+ */
 class Screen extends Model
 {
     use HasFactory, HasUlids, HasOwnerScope, SoftDeletes;
 
     protected $fillable = [
+        // Marketplace
         'site_id', 'owner_id', 'external_id', 'uuid',
-        'unit_id', 'name', 'description', 'internal_notes',
+        'name', 'description', 'active', 'status',
+
+        // AdOps / device (Phase 2)
+        'unit_id', 'internal_notes',
         'site_external_id', 'network_code', 'location_district', 'location_district_code',
-        'active', 'status',
         'player_type', 'player_version',
         'last_heartbeat_at', 'device_token',
     ];

@@ -14,40 +14,66 @@ class ScreenResource extends JsonResource
         $site      = $this->site;
         $owner     = $this->owner;
 
-        return [
-            'screen_id'         => $this->external_id ?? $this->uuid,
-            'name'              => $this->name,
-            'owner_id'          => 'OWN-' . $this->owner_id,
-            'owner_name'        => $owner?->name,
-            'screen_type'       => $this->resolveScreenType($spec, $inventory),
-            'venue_type'        => $inventory?->venue_type,
-            'location'          => [
+        $data = [
+            // ── Marketplace fields (always returned) ─────────────────────
+            'screen_id'          => $this->external_id ?? $this->uuid,
+            'name'               => $this->name,
+            'owner_id'           => $owner?->slug ?? ('OWN-' . $this->owner_id),
+            'owner_name'         => $owner?->name,
+            'screen_type'        => $this->resolveScreenType($spec, $inventory),
+            'venue_type'         => $inventory?->venue_type,
+            'location'           => [
                 'address'  => $site?->address,
                 'city'     => $site?->city,
                 'district' => $site?->region,
                 'lat'      => $site ? (float) $site->lat : null,
                 'lng'      => $site ? (float) $site->lon : null,
             ],
-            'specs'             => [
-                'width_px'    => $spec?->width_px,
-                'height_px'   => $spec?->height_px,
-                'width_m'     => $spec?->width_cm ? round($spec->width_cm / 100, 2) : null,
-                'height_m'    => $spec?->height_cm ? round($spec->height_cm / 100, 2) : null,
-                'orientation' => $spec?->orientation,
-                'resolution'  => $spec?->resolution_preset,
+            'specs'              => [
+                'width_px'  => $spec?->width_px,
+                'height_px' => $spec?->height_px,
+                'width_m'   => $spec?->width_cm ? round($spec->width_cm / 100, 2) : null,
+                'height_m'  => $spec?->height_cm ? round($spec->height_cm / 100, 2) : null,
             ],
-            'slot_duration_sec' => $inventory?->spot_length ?? 15,
-            'slots_per_loop'    => $this->resolveSlotsPerLoop($inventory),
-            'operating_hours'   => $this->resolveOperatingHours($inventory),
-            'price_per_slot_vnd'=> $inventory?->floor_cpm ? (int) $inventory->floor_cpm : 0,
-            'min_booking_days'  => 7,
-            'photos'            => $spec?->photo_url ? [$spec->photo_url] : [],
-            'status'            => $this->active ? 'active' : 'inactive',
-            'updated_at'        => $this->updated_at?->toIso8601String(),
+            'price_per_slot_vnd' => $inventory?->floor_cpm ? (int) $inventory->floor_cpm : 0,
+            'operating_hours'    => $this->resolveOperatingHours($inventory),
+            'min_booking_days'   => 7,
+            'photos'             => $spec?->photo_url ? [$spec->photo_url] : [],
+            'status'             => $this->active ? 'active' : 'inactive',
+            'updated_at'         => $this->updated_at?->toIso8601String(),
         ];
+
+        // ── AdOps fields (only with ?include=adops) ──────────────────
+        if ($this->shouldIncludeAdops($request)) {
+            $data['adops'] = [
+                'slot_duration_sec'      => $inventory?->spot_length ?? 15,
+                'min_slot_duration_sec'  => $inventory?->min_spot_length ?? 3,
+                'max_slot_duration_sec'  => $inventory?->max_spot_length ?? 180,
+                'slots_per_loop'         => $this->resolveSlotsPerLoop($inventory),
+                'loop_length_sec'        => $inventory?->loop_length,
+                'weekly_impressions'     => $inventory?->weekly_impressions ? (int) $inventory->weekly_impressions : null,
+                'programmatic_enabled'   => (bool) ($inventory?->programmatic_enabled ?? false),
+                'pmp_only'               => (bool) ($inventory?->pmp_only ?? false),
+                'deals_enabled'          => (bool) ($inventory?->deals_enabled ?? true),
+                'ad_server_enabled'      => (bool) ($inventory?->ad_server_enabled ?? true),
+                'share_of_voice_max_pct' => $inventory?->share_of_voice_max_pct ?? 100,
+                'frequency_cap_sec'      => $inventory?->frequency_cap ?? 0,
+                'orientation'            => $spec?->orientation,
+                'resolution_preset'      => $spec?->resolution_preset,
+            ];
+        }
+
+        return $data;
     }
 
     // ── Helpers ─────────────────────────────────────────────
+
+    private function shouldIncludeAdops(Request $request): bool
+    {
+        $include = $request->input('include', '');
+
+        return str_contains($include, 'adops');
+    }
 
     private function resolveScreenType($spec, $inventory): string
     {
@@ -67,7 +93,9 @@ class ScreenResource extends JsonResource
 
     private function resolveSlotsPerLoop($inventory): int
     {
-        if (! $inventory) return 8;
+        if (! $inventory) {
+            return 8;
+        }
 
         $loop = $inventory->loop_length;
         $spot = $inventory->spot_length;
@@ -79,26 +107,22 @@ class ScreenResource extends JsonResource
         return 8;
     }
 
-    /**
-     * Transform operating_hours từ DB format → TapON format.
-     *
-     * DB:   { "mon": {"open":"08:00","close":"22:00"}, "tue": "closed", ... }
-     * TapON: { "open": "08:00", "close": "22:00", "days": ["mon","tue",...] }
-     */
     private function resolveOperatingHours($inventory): array
     {
         $hours = $inventory?->operating_hours;
 
         if (empty($hours)) {
-            return ['open' => '08:00', 'close' => '22:00', 'days' => ['mon','tue','wed','thu','fri','sat','sun']];
+            return ['open' => '08:00', 'close' => '22:00', 'days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']];
         }
 
-        $openTime  = '08:00';
-        $closeTime = '22:00';
+        $openTime   = '08:00';
+        $closeTime  = '22:00';
         $activeDays = [];
 
         foreach ($hours as $day => $value) {
-            if ($value === 'closed' || empty($value)) continue;
+            if ($value === 'closed' || empty($value)) {
+                continue;
+            }
 
             $activeDays[] = $day;
 

@@ -10,8 +10,6 @@
     $widthM = $screen->spec?->width_cm ? round($screen->spec->width_cm / 100, 1) : null;
     $heightM = $screen->spec?->height_cm ? round($screen->spec->height_cm / 100, 1) : null;
     $sizeDisplay = ($widthM && $heightM) ? "{$widthM}x{$heightM}m" : '—';
-    $weeklyImpressions = $screen->inventory?->weekly_impressions ?? 0;
-    $dailyTraffic = $weeklyImpressions > 0 ? number_format(round($weeklyImpressions / 7)) : '—';
 @endphp
 <article class="inv-card">
     <div class="inv-photo">
@@ -25,7 +23,6 @@
         <div class="inv-specs">
             <div><div class="sp-label">Format</div><div class="sp-val">{{ $venueLabel }}</div></div>
             <div><div class="sp-label">Size</div><div class="sp-val">{{ $sizeDisplay }}</div></div>
-            <div><div class="sp-label">Traffic/day</div><div class="sp-val">{{ $dailyTraffic }}</div></div>
             <div><div class="sp-label">Owner</div><div class="sp-val">{{ $screen->owner?->name ?? '—' }}</div></div>
         </div>
     </div>
