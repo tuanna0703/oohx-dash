@@ -17,7 +17,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>{{ $screen->site?->city ?? '' }}
         </div>
         <div class="ic-specs">
-          <div><div class="sp-l">Format</div><div class="sp-v">{{ $venueLabels[$screen->inventory?->venue_type ?? ''] ?? ucfirst(str_replace(['_','.'],' ',$screen->inventory?->venue_type ?? '')) }}</div></div>
+          <div><div class="sp-l">Format</div><div class="sp-v">{{ ($vnCatLabels ?? [])[$screen->inventory?->vn_category_id] ?? '—' }}</div></div>
           <div><div class="sp-l">Size</div><div class="sp-v">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'x'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div></div>
         </div>
         <div class="ic-price-row">

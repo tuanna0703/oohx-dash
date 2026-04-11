@@ -419,12 +419,13 @@ class InventoryController extends Controller
         $includeAdops = str_contains($request->input('include', ''), 'adops');
 
         if ($includeAdops) {
-            return ['spec', 'inventory', 'owner:id,name,slug', 'site'];
+            return ['spec', 'inventory.vnCategory', 'owner:id,name,slug', 'site'];
         }
 
         return [
             'spec:screen_id,photo_url,width_px,height_px,width_cm,height_cm',
-            'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,operating_hours,spot_length',
+            'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,operating_hours,spot_length',
+            'inventory.vnCategory:id,slug,name,name_vi',
             'owner:id,name,slug',
             'site:id,address,city,region,lat,lon',
         ];

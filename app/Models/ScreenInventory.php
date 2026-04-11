@@ -41,7 +41,8 @@ class ScreenInventory extends Model
 
     protected $fillable = [
         // Marketplace
-        'screen_id', 'network_id', 'network_name', 'venue_type',
+        'screen_id', 'network_id', 'network_name',
+        'venue_type', 'vn_category_id',
         'spot_length', 'floor_cpm', 'floor_cpm_currency',
         'weekly_impressions', 'operating_hours', 'timezone',
         'programmatic_enabled',
@@ -76,6 +77,11 @@ class ScreenInventory extends Model
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class);
+    }
+
+    public function vnCategory(): BelongsTo
+    {
+        return $this->belongsTo(VenueCategory::class, 'vn_category_id');
     }
 
     // ── Helpers ─────────────────────────────────────────────

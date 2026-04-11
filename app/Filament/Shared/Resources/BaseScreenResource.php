@@ -5,7 +5,7 @@ namespace App\Filament\Shared\Resources;
 use App\Models\Network;
 use App\Models\Screen;
 use App\Models\Site;
-use App\Models\VenueType;
+use App\Models\VenueCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -108,12 +108,12 @@ abstract class BaseScreenResource extends Resource
                         ->options(fn () => static::networkFormOptions())
                         ->searchable(),
 
-                    Forms\Components\Select::make('inventory.venue_type')
+                    Forms\Components\Select::make('inventory.vn_category_id')
                         ->label('Loại biển')
-                        ->placeholder('Chọn venue type')
-                        ->options(fn () => VenueType::forSelect()
-                            ->get()->groupBy('category')
-                            ->map(fn ($items) => $items->pluck('venue_type', 'venue_type'))
+                        ->placeholder('Chọn loại biển')
+                        ->options(fn () => VenueCategory::where('is_active', true)
+                            ->orderBy('sort_order')
+                            ->pluck('name_vi', 'id')
                             ->toArray())
                         ->searchable(),
 
@@ -421,9 +421,10 @@ abstract class BaseScreenResource extends Resource
                     ->getStateUsing(fn (Screen $r) => $r->inventory?->network?->name ?? $r->inventory?->network_name ?? '—')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('inventory.venue_type')
+                Tables\Columns\TextColumn::make('inventory.vnCategory.name_vi')
                     ->label('Loại biển')
-                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('site_location')
@@ -500,14 +501,15 @@ abstract class BaseScreenResource extends Resource
                     ))
                     ->searchable(),
 
-                SelectFilter::make('venue_type')
+                SelectFilter::make('vn_category')
                     ->label('Loại biển')
-                    ->options(fn () => cache()->remember('filter_venue_types', 600, fn () =>
-                        VenueType::forSelect()->get()->pluck('venue_type', 'venue_type')->toArray()
-                    ))
+                    ->options(fn () => VenueCategory::where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name_vi', 'id')
+                        ->toArray())
                     ->query(fn (Builder $query, array $data) => $query->when(
                         $data['value'] ?? null,
-                        fn ($q, $v) => $q->whereHas('inventory', fn ($iq) => $iq->where('venue_type', $v))
+                        fn ($q, $v) => $q->whereHas('inventory', fn ($iq) => $iq->where('vn_category_id', $v))
                     ))
                     ->searchable(),
 

@@ -16,7 +16,6 @@ class FrontpageController extends Controller
     {
         $citySlug = $request->input('_map_city', $request->cookie('oohx_city', 'hanoi'));
 
-        // AJAX request from city picker → return JSON only
         if ($request->ajax() && $request->has('_map_city')) {
             return response()->json($this->fp->getHomepageMapPins($citySlug, 50));
         }
@@ -31,7 +30,7 @@ class FrontpageController extends Controller
             'featuredOwners'    => $this->fp->getFeaturedOwners(6),
             'locationsByRegion' => $this->fp->getLocationsByRegion(),
             'mapData'           => $mapData,
-            'venueLabels'       => $this->fp->getVenueTypeLabels(),
+            'vnCatLabels'       => $this->fp->getVnCategoryLabels(),
         ]);
     }
 
@@ -40,7 +39,7 @@ class FrontpageController extends Controller
         return view('frontpage.listing', [
             'screens'     => $this->fp->getScreensPaginated($request),
             'filters'     => $this->fp->getFilterAggregates(),
-            'venueLabels' => $this->fp->getVenueTypeLabels(),
+            'vnCatLabels' => $this->fp->getVnCategoryLabels(),
         ]);
     }
 
@@ -52,40 +51,37 @@ class FrontpageController extends Controller
         return view('frontpage.detail', [
             'screen'         => $screenModel,
             'similarScreens' => $this->fp->getSimilarScreens($screenModel),
-            'venueLabels'    => $this->fp->getVenueTypeLabels(),
+            'vnCatLabels'    => $this->fp->getVnCategoryLabels(),
         ]);
     }
 
     public function map(FrontpageListingRequest $request): View
     {
-        $venueLabels = $this->fp->getVenueTypeLabels();
+        $vnCatLabels = $this->fp->getVnCategoryLabels();
+        $vnCatSlugs  = $this->fp->getVnCategorySlugs();
         $pins = $this->fp->getMapPins($request);
 
-        $typeToSlug = $this->fp->getVenueTypeSlugs();
-
-        $pinsJson = $pins->map(function ($p) use ($venueLabels, $typeToSlug) {
-            $rawType = $p->inventory?->venue_type ?? '';
+        $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs) {
+            $catId = $p->inventory?->vn_category_id;
             return [
-                'id'    => $p->uuid ?? $p->id,
-                'name'  => $p->name,
-                'lat'   => (float) ($p->site?->lat ?? 0),
-                'lng'   => (float) ($p->site?->lon ?? 0),
-                'city'  => $p->site?->city ?? '',
-                'addr'  => $p->site?->address ?? '',
-                'photo' => $p->spec?->photo_url ?? '',
-                'price' => (float) ($p->inventory?->floor_cpm ?? 0),
-                'type'  => $typeToSlug[$rawType] ?? $rawType,
-                'typeLabel' => $venueLabels[$rawType] ?? ucfirst(str_replace(['_', '.'], ' ', $rawType)),
+                'id'        => $p->uuid ?? $p->id,
+                'name'      => $p->name,
+                'lat'       => (float) ($p->site?->lat ?? 0),
+                'lng'       => (float) ($p->site?->lon ?? 0),
+                'city'      => $p->site?->city ?? '',
+                'addr'      => $p->site?->address ?? '',
+                'photo'     => $p->spec?->photo_url ?? '',
+                'price'     => (float) ($p->inventory?->floor_cpm ?? 0),
+                'type'      => $vnCatSlugs[$catId] ?? '',
+                'typeLabel' => $vnCatLabels[$catId] ?? '',
             ];
-        })->filter(function ($p) {
-            return $p['lat'] != 0 && $p['lng'] != 0;
-        })->values();
+        })->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
 
         return view('frontpage.map', [
             'pins'        => $pins,
             'pinsJson'    => $pinsJson,
             'filters'     => $this->fp->getFilterAggregates(),
-            'venueLabels' => $venueLabels,
+            'vnCatLabels' => $vnCatLabels,
         ]);
     }
 
@@ -115,7 +111,7 @@ class FrontpageController extends Controller
         return view('frontpage.owner-detail', [
             'owner'        => $ownerModel,
             'ownerScreens' => $this->fp->getOwnerScreens($ownerModel->id),
-            'venueLabels'  => $this->fp->getVenueTypeLabels(),
+            'vnCatLabels'  => $this->fp->getVnCategoryLabels(),
         ]);
     }
 }

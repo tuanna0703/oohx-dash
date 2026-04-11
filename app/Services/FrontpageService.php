@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Owner;
 use App\Models\Screen;
 use App\Models\VenueCategory;
-use App\Models\VenueType;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -65,163 +64,58 @@ class FrontpageService
     public function getVenueTypesWithCounts(): Collection
     {
         return Cache::remember('fp:venue_types', 1800, function () {
-            // Get raw counts per screen_inventory.venue_type
-            $rawCounts = DB::table('screens')
-                ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
-                ->where('screens.active', true)
-                ->whereNotNull('screen_inventory.venue_type')
-                ->where('screen_inventory.venue_type', '!=', '')
-                ->selectRaw('screen_inventory.venue_type, count(*) as cnt')
-                ->groupBy('screen_inventory.venue_type')
-                ->pluck('cnt', 'venue_type');
-
-            // Use slug mapping to group by VN category
-            $slugs = $this->getVenueTypeSlugs();
-            $labels = $this->getVenueTypeLabels();
-
-            // Load category metadata
-            $categories = DB::table('venue_categories')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->get()
-                ->keyBy('slug');
-
-            // Aggregate counts by VN category slug
-            $grouped = [];
-            foreach ($rawCounts as $rawType => $count) {
-                $slug = $slugs[$rawType] ?? null;
-                if ($slug && isset($categories[$slug])) {
-                    if (! isset($grouped[$slug])) {
-                        $cat = $categories[$slug];
-                        $grouped[$slug] = [
-                            'type'  => $slug,
-                            'label' => $cat->name_vi ?: $cat->name,
-                            'icon'  => $cat->icon ?? 'tv',
-                            'thumb' => $cat->thumb ? asset('storage/' . $cat->thumb) : null,
-                            'count' => 0,
-                            '_sort' => $cat->sort_order,
-                        ];
-                    }
-                    $grouped[$slug]['count'] += $count;
-                } else {
-                    // Unmapped — show as-is
-                    $grouped[$rawType] = [
-                        'type'  => $rawType,
-                        'label' => $labels[$rawType] ?? ucfirst(str_replace(['_', '.'], ' ', $rawType)),
-                        'icon'  => 'tv',
-                        'thumb' => null,
-                        'count' => (int) $count,
-                        '_sort' => 999,
-                    ];
-                }
-            }
-
-            return collect($grouped)
-                ->sortBy('_sort')
-                ->map(fn ($v) => ['type' => $v['type'], 'label' => $v['label'], 'icon' => $v['icon'], 'thumb' => $v['thumb'], 'count' => $v['count']])
-                ->values();
-        });
-    }
-
-    /**
-     * Build complete mapping: any raw venue_type value → VN category info.
-     * Handles both OpenOOH string_values ("retail.convenience_store")
-     * and Hivestack format ("RETAIL: Convenience Stores") stored in screen_inventory.
-     */
-    private function buildVenueTypeMappings(): array
-    {
-        return Cache::remember('fp:venue_type_map', 3600, function () {
-            // 1. Map by string_value (OpenOOH dot format)
-            $byStringValue = DB::table('venue_types')
-                ->join('venue_categories', 'venue_types.vn_category_id', '=', 'venue_categories.id')
-                ->whereNotNull('venue_types.string_value')
-                ->select('venue_types.string_value', 'venue_categories.slug', 'venue_categories.name_vi', 'venue_categories.name', 'venue_categories.icon')
-                ->get();
-
-            $labels = [];
-            $slugs  = [];
-            foreach ($byStringValue as $row) {
-                $label = $row->name_vi ?: $row->name;
-                $labels[$row->string_value] = $label;
-                $slugs[$row->string_value]  = $row->slug;
-            }
-
-            // 2. Map Hivestack-format values from screen_inventory that don't match string_value
-            //    e.g. "RETAIL: Convenience Stores" → match by fuzzy against venue_types.venue_type
-            $unmappedTypes = DB::table('screen_inventory')
-                ->whereNotNull('venue_type')
-                ->where('venue_type', '!=', '')
-                ->whereNotIn('venue_type', array_keys($labels))
-                ->distinct()
-                ->pluck('venue_type');
-
-            foreach ($unmappedTypes as $rawType) {
-                // Extract category part: "RETAIL: Convenience Stores" → "convenience stores"
-                $parts    = array_map('trim', explode(':', $rawType, 2));
-                $catPart  = strtolower($parts[0] ?? '');
-                $subPart  = strtolower($parts[1] ?? '');
-
-                // Try to match via venue_types.category (case-insensitive)
-                $match = DB::table('venue_types')
-                    ->join('venue_categories', 'venue_types.vn_category_id', '=', 'venue_categories.id')
-                    ->whereRaw('LOWER(venue_types.category) = ?', [$catPart])
-                    ->select('venue_categories.slug', 'venue_categories.name_vi', 'venue_categories.name')
-                    ->first();
-
-                // Special case: "Malls" → Mall category
-                if (! $match && str_contains($catPart, 'mall')) {
-                    $match = DB::table('venue_categories')->where('slug', 'mall')
-                        ->select('slug', 'name_vi', 'name')->first();
-                }
-
-                if ($match) {
-                    $labels[$rawType] = $match->name_vi ?: $match->name;
-                    $slugs[$rawType]  = $match->slug;
-                }
-            }
-
-            return ['labels' => $labels, 'slugs' => $slugs];
-        });
-    }
-
-    /**
-     * Cached lookup map: raw venue_type → VN category slug.
-     */
-    public function getVenueTypeSlugs(): array
-    {
-        return $this->buildVenueTypeMappings()['slugs'];
-    }
-
-    /**
-     * Cached lookup map: raw venue_type → VN category name.
-     * e.g. 'transit.airports' → 'Giao thông', 'RETAIL: Convenience Stores' → 'Bán lẻ'
-     */
-    public function getVenueTypeLabels(): array
-    {
-        return $this->buildVenueTypeMappings()['labels'];
-    }
-
-    /**
-     * Get raw OpenOOH venue types (for API/programmatic use).
-     */
-    public function getRawVenueTypesWithCounts(): Collection
-    {
-        return Cache::remember('fp:venue_types_raw', 1800, function () {
             return DB::table('screens')
                 ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
-                ->leftJoin('venue_types', 'screen_inventory.venue_type', '=', 'venue_types.string_value')
+                ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
                 ->where('screens.active', true)
-                ->whereNotNull('screen_inventory.venue_type')
-                ->selectRaw('screen_inventory.venue_type as type, venue_types.venue_type as taxonomy_label, venue_types.enumeration_id, count(*) as count')
-                ->groupBy('screen_inventory.venue_type', 'venue_types.venue_type', 'venue_types.enumeration_id')
+                ->where('venue_categories.is_active', true)
+                ->selectRaw('
+                    venue_categories.slug as type,
+                    COALESCE(venue_categories.name_vi, venue_categories.name) as label,
+                    venue_categories.icon,
+                    venue_categories.thumb,
+                    venue_categories.sort_order,
+                    count(*) as count
+                ')
+                ->groupBy('venue_categories.slug', 'venue_categories.name_vi', 'venue_categories.name', 'venue_categories.icon', 'venue_categories.thumb', 'venue_categories.sort_order')
+                ->orderBy('venue_categories.sort_order')
                 ->get()
                 ->map(fn ($r) => [
                     'type'  => $r->type,
-                    'label' => $r->taxonomy_label ?? ucfirst(str_replace(['_', '.'], ' ', $r->type)),
+                    'label' => $r->label,
+                    'icon'  => $r->icon ?? 'tv',
+                    'thumb' => $r->thumb ? asset('storage/' . $r->thumb) : null,
                     'count' => (int) $r->count,
-                ])
-                ->values();
+                ]);
         });
+    }
+
+    /**
+     * Cached lookup: vn_category_id → VN category name.
+     * Used by Blade views to display VN label for individual screens.
+     */
+    public function getVnCategoryLabels(): array
+    {
+        return Cache::remember('fp:vn_category_labels', 3600, fn () =>
+            DB::table('venue_categories')
+                ->where('is_active', true)
+                ->pluck(DB::raw('COALESCE(name_vi, name)'), 'id')
+                ->all()
+        );
+    }
+
+    /**
+     * Cached lookup: vn_category_id → slug.
+     * Used for map pin filtering.
+     */
+    public function getVnCategorySlugs(): array
+    {
+        return Cache::remember('fp:vn_category_slugs', 3600, fn () =>
+            DB::table('venue_categories')
+                ->where('is_active', true)
+                ->pluck('slug', 'id')
+                ->all()
+        );
     }
 
     public function getTopCities(int $limit = 8): Collection
@@ -301,7 +195,7 @@ class FrontpageService
                 ->whereHas('inventory', fn ($q) => $q->where('floor_cpm', '>', 0))
                 ->with([
                     'spec:screen_id,photo_url,width_cm,height_cm',
-                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                     'owner:id,name,slug',
                     'site:id,city,address',
                 ])
@@ -377,18 +271,14 @@ class FrontpageService
                 ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
                 ->value('cnt');
 
-            $labels = $this->getVenueTypeLabels();
             $owner->venue_types_list = DB::table('screens')
                 ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
+                ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
                 ->where('screens.owner_id', $owner->id)
                 ->where('screens.active', true)
-                ->whereNotNull('screen_inventory.venue_type')
-                ->where('screen_inventory.venue_type', '!=', '')
-                ->distinct()
-                ->pluck('screen_inventory.venue_type')
-                ->map(fn ($raw) => $labels[$raw] ?? ucfirst(str_replace(['_', '.'], ' ', $raw)))
-                ->unique()
-                ->sort()
+                ->selectRaw('DISTINCT COALESCE(venue_categories.name_vi, venue_categories.name) as label')
+                ->orderBy('label')
+                ->pluck('label')
                 ->values()
                 ->toArray();
 
@@ -402,7 +292,7 @@ class FrontpageService
             ->where('active', true)
             ->with([
                 'spec:screen_id,photo_url,width_cm,height_cm',
-                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                 'site:id,city,address',
             ])
             ->orderByDesc('updated_at')
@@ -416,7 +306,7 @@ class FrontpageService
         $query = $this->buildScreenQuery($request)
             ->with([
                 'spec:screen_id,photo_url,width_cm,height_cm',
-                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                 'owner:id,name,slug',
                 'site:id,city,address',
             ]);
@@ -457,7 +347,7 @@ class FrontpageService
             return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->with([
                     'spec:screen_id,photo_url,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
-                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                     'owner:id,name,slug',
                     'site:id,city,address,lat,lon',
                 ])
@@ -481,7 +371,7 @@ class FrontpageService
                 })
                 ->with([
                     'spec:screen_id,photo_url,width_cm,height_cm',
-                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type',
+                    'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                     'site:id,city,address',
                 ])
                 ->inRandomOrder()
@@ -496,7 +386,7 @@ class FrontpageService
     {
         return $this->buildScreenQuery($request)
             ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')->where('lat', '!=', 0)->where('lon', '!=', 0))
-            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type', 'site:id,lat,lon,city,address'])
+            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'site:id,lat,lon,city,address'])
             ->get();
     }
 
@@ -518,7 +408,7 @@ class FrontpageService
         }
 
         $screens = $query
-            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type', 'site:id,lat,lon,city,address'])
+            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'site:id,lat,lon,city,address'])
             ->inRandomOrder()
             ->limit($limit)
             ->get();
@@ -616,21 +506,16 @@ class FrontpageService
             ->groupBy('screens.owner_id')
             ->pluck('city_count', 'owner_id');
 
-        $labels = $this->getVenueTypeLabels();
         $venueTypesByOwner = DB::table('screens')
             ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
+            ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
             ->whereIn('screens.owner_id', $ownerIds)
             ->where('screens.active', true)
-            ->whereNotNull('screen_inventory.venue_type')
-            ->where('screen_inventory.venue_type', '!=', '')
-            ->selectRaw('screens.owner_id, screen_inventory.venue_type')
+            ->selectRaw('screens.owner_id, COALESCE(venue_categories.name_vi, venue_categories.name) as label')
             ->distinct()
             ->get()
             ->groupBy('owner_id')
-            ->map(fn ($rows) => $rows->pluck('venue_type')
-                ->map(fn ($raw) => $labels[$raw] ?? ucfirst(str_replace(['_', '.'], ' ', $raw)))
-                ->unique()->sort()->values()->toArray()
-            );
+            ->map(fn ($rows) => $rows->pluck('label')->sort()->values()->toArray());
 
         $owners->each(function ($owner) use ($cityCounts, $venueTypesByOwner) {
             $owner->city_count       = (int) ($cityCounts[$owner->id] ?? 0);
@@ -664,7 +549,16 @@ class FrontpageService
                 })
             )
             ->when(! empty($venueTypes = $this->resolveArrayParam($request, 'venue_type')),
-                fn ($q) => $q->whereHas('inventory', fn ($iq) => $iq->whereIn('venue_type', $this->resolveVenueTypeFilter($venueTypes)))
+                fn ($q) => $q->whereHas('inventory', function ($iq) use ($venueTypes) {
+                    // Resolve VN category slugs to IDs
+                    $catIds = DB::table('venue_categories')->whereIn('slug', $venueTypes)->pluck('id');
+                    if ($catIds->isNotEmpty()) {
+                        $iq->whereIn('vn_category_id', $catIds);
+                    } else {
+                        // Fallback: raw venue_type match
+                        $iq->whereIn('venue_type', $venueTypes);
+                    }
+                })
             )
             ->when(! empty($screenTypes = $this->resolveArrayParam($request, 'screen_type')),
                 fn ($q) => $this->applyScreenTypeFilter($q, $screenTypes)
@@ -701,33 +595,6 @@ class FrontpageService
             });
     }
 
-    /**
-     * Resolve venue type filter values.
-     * Accepts both VN category slugs ("mall", "transit") and raw string_values.
-     * Returns array of screen_inventory.venue_type values to match.
-     */
-    private function resolveVenueTypeFilter(array $types): array
-    {
-        $resolved = [];
-        foreach ($types as $type) {
-            // Check if it's a VN category slug
-            $stringValues = DB::table('venue_types')
-                ->join('venue_categories', 'venue_types.vn_category_id', '=', 'venue_categories.id')
-                ->where('venue_categories.slug', $type)
-                ->whereNotNull('venue_types.string_value')
-                ->pluck('venue_types.string_value')
-                ->all();
-
-            if (! empty($stringValues)) {
-                $resolved = array_merge($resolved, $stringValues);
-            } else {
-                // Raw string_value — pass through
-                $resolved[] = $type;
-            }
-        }
-
-        return array_unique($resolved);
-    }
 
     private function expandCitySlugs(array $slugs): array
     {

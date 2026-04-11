@@ -92,7 +92,8 @@ trait SavesScreenRelationships
             ['screen_id' => $screen->id],
             [
                 'network_id'           => $i['network_id']           ?? null,
-                'venue_type'           => $i['venue_type']           ?? null,
+                'vn_category_id'       => $i['vn_category_id']       ?? $existing?->vn_category_id,
+                'venue_type'           => $i['venue_type']           ?? $existing?->venue_type,
                 'spot_length'          => $i['spot_length']          ?? 15,
                 'max_spot_length'      => $i['max_spot_length']      ?? 30,
                 'min_spot_length'      => $i['min_spot_length']      ?? 5,

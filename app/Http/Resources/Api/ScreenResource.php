@@ -21,7 +21,8 @@ class ScreenResource extends JsonResource
             'owner_id'           => $owner?->slug ?? ('OWN-' . $this->owner_id),
             'owner_name'         => $owner?->name,
             'screen_type'        => $this->resolveScreenType($spec, $inventory),
-            'venue_type'         => $inventory?->venue_type,
+            'venue_type'         => $inventory?->vnCategory?->slug ?? $inventory?->venue_type,
+            'venue_type_label'   => $inventory?->vnCategory?->name_vi ?? $inventory?->vnCategory?->name,
             'location'           => [
                 'address'  => $site?->address,
                 'city'     => $site?->city,

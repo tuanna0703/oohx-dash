@@ -4,8 +4,8 @@
     $photo = $screen->spec?->photo_url ?? 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
     $price = $screen->inventory?->floor_cpm ?? 0;
     $priceDisplay = $price >= 1000000 ? number_format($price / 1000000) . 'M' : number_format($price, 0, ',', '.');
-    $venueType = $screen->inventory?->venue_type ?? '';
-    $venueLabel = ($venueLabels ?? [])[$venueType] ?? ucfirst(str_replace(['_', '.'], ' ', $venueType));
+    $vnCatId = $screen->inventory?->vn_category_id;
+    $venueLabel = ($vnCatLabels ?? [])[$vnCatId] ?? '—';
     $city = $screen->site?->city ?? '';
     $widthM = $screen->spec?->width_cm ? round($screen->spec->width_cm / 100, 1) : null;
     $heightM = $screen->spec?->height_cm ? round($screen->spec->height_cm / 100, 1) : null;
