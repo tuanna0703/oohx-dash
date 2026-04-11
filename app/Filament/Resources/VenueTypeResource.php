@@ -210,8 +210,8 @@ class VenueTypeResource extends Resource
                 TernaryFilter::make('hivestack_supported')->label('Hivestack Supported'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('toggle_active')
                         ->label(fn(VenueType $r) => $r->is_active ? 'Deactivate' : 'Activate')
                         ->icon(fn(VenueType $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')

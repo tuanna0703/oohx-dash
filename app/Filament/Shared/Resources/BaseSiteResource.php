@@ -378,8 +378,8 @@ abstract class BaseSiteResource extends Resource
             ->filtersFormColumns(3)
             ->recordUrl(fn(Site $record) => static::getUrl('view', ['record' => $record]))
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()
                         ->modalDescription(function (Site $record) {

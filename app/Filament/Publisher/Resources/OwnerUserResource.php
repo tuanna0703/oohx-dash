@@ -137,18 +137,18 @@ class OwnerUserResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->visible($canManage)
-                    ->before(function (OwnerUser $record) {
-                        if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
-                            Notification::make()
-                                ->title('Không thể sửa quyền Owner')
-                                ->danger()->send();
-                            $this->halt();
-                        }
-                    }),
-
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make()
+                        ->visible($canManage)
+                        ->before(function (OwnerUser $record) {
+                            if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
+                                Notification::make()
+                                    ->title('Không thể sửa quyền Owner')
+                                    ->danger()->send();
+                                $this->halt();
+                            }
+                        }),
+
                     Tables\Actions\Action::make('remove')
                         ->label('Remove')
                         ->icon('heroicon-o-user-minus')

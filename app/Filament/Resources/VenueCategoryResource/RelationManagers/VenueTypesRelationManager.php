@@ -126,8 +126,8 @@ class VenueTypesRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('unmap')
                         ->label('Bỏ gán')
                         ->icon('heroicon-o-x-mark')

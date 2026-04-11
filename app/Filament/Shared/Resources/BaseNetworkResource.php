@@ -211,8 +211,8 @@ abstract class BaseNetworkResource extends Resource
                 static::hasViewPage() ? static::getUrl('view', ['record' => $record]) : null
             )
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()
                         ->modalDescription(function (Network $record) {
                             $siteCount = $record->sites()->count();

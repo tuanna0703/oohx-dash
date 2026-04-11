@@ -73,8 +73,8 @@ class OwnerResource extends Resource
                 SelectFilter::make('type')->options(['retailer'=>'Retailer','media_owner'=>'Media Owner']),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('stats')
                         ->icon('heroicon-o-chart-bar')
                         ->url(fn(Owner $r) => static::getUrl('edit', ['record'=>$r])),

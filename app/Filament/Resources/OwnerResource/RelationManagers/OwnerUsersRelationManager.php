@@ -194,49 +194,49 @@ class OwnerUsersRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\Action::make('edit_role')
-                    ->label('Edit Role')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('gray')
-                    ->form(fn(OwnerUser $record) => [
-                        Forms\Components\Select::make('role')
-                            ->label('Role')
-                            ->options(OwnerUser::ROLES)
-                            ->default($record->role)
-                            ->required()
-                            ->live(),
-
-                        Forms\Components\Placeholder::make('role_desc')
-                            ->label('Quyền hạn')
-                            ->content(fn(Forms\Get $get) => match ($get('role')) {
-                                'owner'          => '👑 Toàn quyền — quản lý team, inventory, pricing, reports.',
-                                'manager'        => '🔧 Quản lý inventory & pricing, xem reports.',
-                                'scheduler'      => '📅 Thêm/sửa screens, import file.',
-                                'read_only'      => '👁 Chỉ xem screens & sites.',
-                                'reporting_only' => '📊 Chỉ xem & export reports.',
-                                'sales_manager'  => '💼 Xem inventory & sales dashboard.',
-                                default          => '',
-                            }),
-
-                        Forms\Components\CheckboxList::make('allowed_network_ids')
-                            ->label('Giới hạn Networks')
-                            ->options(fn() => \App\Models\Network::where('owner_id', $this->getOwnerRecord()->id)
-                                ->pluck('name', 'id'))
-                            ->default($record->allowed_network_ids)
-                            ->columns(2)
-                            ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
-                    ])
-                    ->action(function (OwnerUser $record, array $data): void {
-                        $record->update([
-                            'role'                => $data['role'],
-                            'allowed_network_ids' => $data['allowed_network_ids'] ?? null,
-                        ]);
-                        Notification::make()
-                            ->title('Role đã được cập nhật')
-                            ->success()->send();
-                    }),
-
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('edit_role')
+                        ->label('Edit Role')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('gray')
+                        ->form(fn(OwnerUser $record) => [
+                            Forms\Components\Select::make('role')
+                                ->label('Role')
+                                ->options(OwnerUser::ROLES)
+                                ->default($record->role)
+                                ->required()
+                                ->live(),
+
+                            Forms\Components\Placeholder::make('role_desc')
+                                ->label('Quyền hạn')
+                                ->content(fn(Forms\Get $get) => match ($get('role')) {
+                                    'owner'          => '👑 Toàn quyền — quản lý team, inventory, pricing, reports.',
+                                    'manager'        => '🔧 Quản lý inventory & pricing, xem reports.',
+                                    'scheduler'      => '📅 Thêm/sửa screens, import file.',
+                                    'read_only'      => '👁 Chỉ xem screens & sites.',
+                                    'reporting_only' => '📊 Chỉ xem & export reports.',
+                                    'sales_manager'  => '💼 Xem inventory & sales dashboard.',
+                                    default          => '',
+                                }),
+
+                            Forms\Components\CheckboxList::make('allowed_network_ids')
+                                ->label('Giới hạn Networks')
+                                ->options(fn() => \App\Models\Network::where('owner_id', $this->getOwnerRecord()->id)
+                                    ->pluck('name', 'id'))
+                                ->default($record->allowed_network_ids)
+                                ->columns(2)
+                                ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
+                        ])
+                        ->action(function (OwnerUser $record, array $data): void {
+                            $record->update([
+                                'role'                => $data['role'],
+                                'allowed_network_ids' => $data['allowed_network_ids'] ?? null,
+                            ]);
+                            Notification::make()
+                                ->title('Role đã được cập nhật')
+                                ->success()->send();
+                        }),
+
                     Tables\Actions\Action::make('reset_password')
                         ->label('Reset Password')
                         ->icon('heroicon-o-key')

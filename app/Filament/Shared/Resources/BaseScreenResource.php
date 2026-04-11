@@ -512,8 +512,8 @@ abstract class BaseScreenResource extends Resource
             ->filtersFormColumns(3)
             ->recordUrl(fn (Screen $r) => static::getUrl('view', ['record' => $r]))
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('toggle_rtb')
                         ->label(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Disable RTB' : 'Enable RTB')
                         ->icon('heroicon-o-signal')

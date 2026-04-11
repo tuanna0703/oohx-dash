@@ -195,9 +195,9 @@ class UserResource extends Resource
                         : $query),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('impersonate')
                         ->label('Login As')
                         ->icon('heroicon-o-arrow-right-on-rectangle')

@@ -159,8 +159,8 @@ class VenueCategoryResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active')->label('Active'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('toggle_active')
                         ->label(fn (VenueCategory $r) => $r->is_active ? 'Deactivate' : 'Activate')
                         ->icon(fn (VenueCategory $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
