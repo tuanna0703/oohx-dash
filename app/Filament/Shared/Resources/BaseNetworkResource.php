@@ -206,18 +206,20 @@ abstract class BaseNetworkResource extends Resource
             )
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->before(function (Network $record, Tables\Actions\DeleteAction $action) {
-                        $screenCount = ScreenInventory::where('network_id', $record->id)->count();
-                        if ($screenCount > 0) {
-                            Notification::make()
-                                ->title("Không thể xoá — network đang có {$screenCount} screens liên kết")
-                                ->body('Hãy gỡ tất cả screens khỏi network trước khi xoá.')
-                                ->danger()
-                                ->send();
-                            $action->cancel();
-                        }
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Network $record, Tables\Actions\DeleteAction $action) {
+                            $screenCount = ScreenInventory::where('network_id', $record->id)->count();
+                            if ($screenCount > 0) {
+                                Notification::make()
+                                    ->title("Không thể xoá — network đang có {$screenCount} screens liên kết")
+                                    ->body('Hãy gỡ tất cả screens khỏi network trước khi xoá.')
+                                    ->danger()
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

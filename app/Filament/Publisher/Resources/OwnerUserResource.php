@@ -140,7 +140,6 @@ class OwnerUserResource extends Resource
                 Tables\Actions\EditAction::make()
                     ->visible($canManage)
                     ->before(function (OwnerUser $record) {
-                        // Không cho sửa role owner khác nếu không phải super_admin
                         if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
                             Notification::make()
                                 ->title('Không thể sửa quyền Owner')
@@ -149,26 +148,28 @@ class OwnerUserResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('remove')
-                    ->label('Remove')
-                    ->icon('heroicon-o-user-minus')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Remove team member?')
-                    ->modalDescription('User sẽ không còn truy cập được vào owner này.')
-                    ->visible($canManage)
-                    ->action(function (OwnerUser $record) {
-                        if ($record->user_id === auth()->id()) {
-                            Notification::make()->title('Không thể tự xoá chính mình')->danger()->send();
-                            return;
-                        }
-                        if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
-                            Notification::make()->title('Không thể xoá Owner khác')->danger()->send();
-                            return;
-                        }
-                        $record->delete();
-                        Notification::make()->title('Đã xoá khỏi team')->success()->send();
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('remove')
+                        ->label('Remove')
+                        ->icon('heroicon-o-user-minus')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Remove team member?')
+                        ->modalDescription('User sẽ không còn truy cập được vào owner này.')
+                        ->visible($canManage)
+                        ->action(function (OwnerUser $record) {
+                            if ($record->user_id === auth()->id()) {
+                                Notification::make()->title('Không thể tự xoá chính mình')->danger()->send();
+                                return;
+                            }
+                            if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
+                                Notification::make()->title('Không thể xoá Owner khác')->danger()->send();
+                                return;
+                            }
+                            $record->delete();
+                            Notification::make()->title('Đã xoá khỏi team')->success()->send();
+                        }),
+                ]),
             ])
             ->bulkActions([])  // không cho bulk delete để tránh nhầm
             ->emptyStateHeading('Chưa có team member')

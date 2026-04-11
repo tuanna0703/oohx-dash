@@ -126,13 +126,15 @@ class VenueTypesRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\Action::make('unmap')
-                    ->label('Bỏ gán')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn (VenueType $record) => $record->update(['vn_category_id' => null])),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('unmap')
+                        ->label('Bỏ gán')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn (VenueType $record) => $record->update(['vn_category_id' => null])),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('unmap_selected')

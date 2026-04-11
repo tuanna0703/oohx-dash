@@ -74,9 +74,11 @@ class OwnerResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('stats')
-                    ->icon('heroicon-o-chart-bar')
-                    ->url(fn(Owner $r) => static::getUrl('edit', ['record'=>$r])),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('stats')
+                        ->icon('heroicon-o-chart-bar')
+                        ->url(fn(Owner $r) => static::getUrl('edit', ['record'=>$r])),
+                ]),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }

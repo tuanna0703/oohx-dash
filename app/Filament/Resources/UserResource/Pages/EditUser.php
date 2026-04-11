@@ -19,16 +19,17 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];
     }
 
     protected function afterSave(): void
     {
-        $this->syncRoleAndOwner($this->record);
+        $this->syncRoleAndOwners($this->record);
     }
 
-    private function syncRoleAndOwner(\App\Models\User $user): void
+    private function syncRoleAndOwners(\App\Models\User $user): void
     {
         $data = $this->data;
 
@@ -38,16 +39,31 @@ class EditUser extends EditRecord
             $user->syncRoles([$role]);
         }
 
-        // 2. Sync OwnerUser
-        $ownerId   = $data['owner_id'] ?? null;
-        $ownerRole = $data['owner_role'] ?? 'read_only';
+        // 2. Sync Owner memberships — replace all
+        $memberships = $data['owner_memberships'] ?? [];
+        $keepOwnerIds = [];
 
-        if ($ownerId) {
+        foreach ($memberships as $m) {
+            if (empty($m['owner_id'])) continue;
+
             OwnerUser::updateOrCreate(
-                ['owner_id' => $ownerId, 'user_id' => $user->id],
-                ['role' => $ownerRole]
+                ['owner_id' => $m['owner_id'], 'user_id' => $user->id],
+                ['role' => $m['role'] ?? 'read_only']
             );
-            $user->update(['current_owner_id' => $ownerId]);
+
+            $keepOwnerIds[] = $m['owner_id'];
+        }
+
+        // Remove memberships not in the form
+        $user->ownerUsers()
+            ->whereNotIn('owner_id', $keepOwnerIds)
+            ->delete();
+
+        // Fix current_owner_id if it was removed
+        if ($user->current_owner_id && ! in_array($user->current_owner_id, $keepOwnerIds)) {
+            $user->update([
+                'current_owner_id' => $keepOwnerIds[0] ?? null,
+            ]);
         }
     }
 }

@@ -17,7 +17,7 @@ class VietnamProvinceResource extends Resource
 {
     protected static ?string $model            = VietnamProvince::class;
     protected static ?string $navigationIcon   = null;
-    protected static ?string $navigationGroup  = 'Địa giới hành chính';
+    protected static ?string $navigationGroup  = 'System Settings';
     protected static ?string $navigationLabel  = 'Tỉnh / Thành phố';
     protected static ?string $modelLabel       = 'Tỉnh / Thành phố';
     protected static ?string $pluralModelLabel = 'Tỉnh / Thành phố';
@@ -117,18 +117,20 @@ class VietnamProvinceResource extends Resource
                     ->visible(false), // Dùng artisan command: php artisan vietnam:import
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->before(function (VietnamProvince $record, Tables\Actions\DeleteAction $action) {
-                        if ($record->communes()->exists() || $record->sites()->exists()) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Không thể xóa')
-                                ->body('Tỉnh này có phường/xã hoặc sites liên quan.')
-                                ->send();
-                            $action->cancel();
-                        }
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (VietnamProvince $record, Tables\Actions\DeleteAction $action) {
+                            if ($record->communes()->exists() || $record->sites()->exists()) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Không thể xóa')
+                                    ->body('Tỉnh này có phường/xã hoặc sites liên quan.')
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -236,34 +236,36 @@ class OwnerUsersRelationManager extends RelationManager
                             ->success()->send();
                     }),
 
-                Tables\Actions\Action::make('reset_password')
-                    ->label('Reset Password')
-                    ->icon('heroicon-o-key')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Reset mật khẩu?')
-                    ->modalDescription(fn(OwnerUser $record) => "Gửi email reset password đến {$record->user?->email}.")
-                    ->action(function (OwnerUser $record): void {
-                        $user = $record->user;
-                        if ($user) {
-                            \Password::broker()->sendResetLink(['email' => $user->email]);
-                            Notification::make()
-                                ->title("Đã gửi email reset password đến {$user->email}")
-                                ->success()->send();
-                        }
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('reset_password')
+                        ->label('Reset Password')
+                        ->icon('heroicon-o-key')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Reset mật khẩu?')
+                        ->modalDescription(fn(OwnerUser $record) => "Gửi email reset password đến {$record->user?->email}.")
+                        ->action(function (OwnerUser $record): void {
+                            $user = $record->user;
+                            if ($user) {
+                                \Password::broker()->sendResetLink(['email' => $user->email]);
+                                Notification::make()
+                                    ->title("Đã gửi email reset password đến {$user->email}")
+                                    ->success()->send();
+                            }
+                        }),
 
-                Tables\Actions\Action::make('remove')
-                    ->label('Remove')
-                    ->icon('heroicon-o-user-minus')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Remove khỏi Owner?')
-                    ->modalDescription(fn(OwnerUser $record) => "User {$record->user?->email} sẽ mất quyền truy cập owner này.")
-                    ->action(function (OwnerUser $record): void {
-                        $record->delete();
-                        Notification::make()->title('Đã xoá khỏi owner')->success()->send();
-                    }),
+                    Tables\Actions\Action::make('remove')
+                        ->label('Remove')
+                        ->icon('heroicon-o-user-minus')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Remove khỏi Owner?')
+                        ->modalDescription(fn(OwnerUser $record) => "User {$record->user?->email} sẽ mất quyền truy cập owner này.")
+                        ->action(function (OwnerUser $record): void {
+                            $record->delete();
+                            Notification::make()->title('Đã xoá khỏi owner')->success()->send();
+                        }),
+                ]),
             ])
             ->bulkActions([])
             ->emptyStateHeading('Chưa có user nào')

@@ -16,7 +16,7 @@ class VietnamCommuneResource extends Resource
 {
     protected static ?string $model            = VietnamCommune::class;
     protected static ?string $navigationIcon   = null;
-    protected static ?string $navigationGroup  = 'Địa giới hành chính';
+    protected static ?string $navigationGroup  = 'System Settings';
     protected static ?string $navigationLabel  = 'Phường / Xã / Thị trấn';
     protected static ?string $modelLabel       = 'Phường / Xã';
     protected static ?string $pluralModelLabel = 'Phường / Xã / Thị trấn';
@@ -125,8 +125,10 @@ class VietnamCommuneResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

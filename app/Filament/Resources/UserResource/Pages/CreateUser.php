@@ -17,29 +17,35 @@ class CreateUser extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $this->syncRoleAndOwner($this->record);
+        $this->syncRoleAndOwners($this->record);
     }
 
-    private function syncRoleAndOwner(\App\Models\User $user): void
+    private function syncRoleAndOwners(\App\Models\User $user): void
     {
         $data = $this->data;
 
-        // 1. Gán Spatie role
+        // 1. Sync Spatie role
         $role = $data['roles'] ?? 'publisher';
         $user->syncRoles([$role]);
 
-        // 2. Gán vào Owner nếu có chọn
-        $ownerId   = $data['owner_id'] ?? null;
-        $ownerRole = $data['owner_role'] ?? 'read_only';
+        // 2. Sync Owner memberships
+        $memberships = $data['owner_memberships'] ?? [];
+        $firstOwnerId = null;
 
-        if ($ownerId) {
+        foreach ($memberships as $m) {
+            if (empty($m['owner_id'])) continue;
+
             OwnerUser::updateOrCreate(
-                ['owner_id' => $ownerId, 'user_id' => $user->id],
-                ['role' => $ownerRole]
+                ['owner_id' => $m['owner_id'], 'user_id' => $user->id],
+                ['role' => $m['role'] ?? 'read_only']
             );
 
-            // Set current_owner_id
-            $user->update(['current_owner_id' => $ownerId]);
+            $firstOwnerId ??= $m['owner_id'];
+        }
+
+        // Set current_owner_id to first owner if not set
+        if ($firstOwnerId && ! $user->current_owner_id) {
+            $user->update(['current_owner_id' => $firstOwnerId]);
         }
     }
 }

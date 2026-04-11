@@ -17,7 +17,7 @@ class VenueTypeResource extends Resource
 {
     protected static ?string $model          = VenueType::class;
     protected static ?string $navigationIcon = null;
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'System Settings';
     protected static ?string $navigationLabel = 'Venue Taxonomy';
     protected static ?string $modelLabel      = 'Venue Type';
     protected static ?string $pluralModelLabel = 'Venue Taxonomy';
@@ -211,21 +211,22 @@ class VenueTypeResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('toggle_active')
-                    ->label(fn(VenueType $r) => $r->is_active ? 'Deactivate' : 'Activate')
-                    ->icon(fn(VenueType $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
-                    ->color(fn(VenueType $r) => $r->is_active ? 'warning' : 'success')
-                    ->action(fn(VenueType $r) => $r->update(['is_active' => !$r->is_active])),
-                Tables\Actions\DeleteAction::make()
-                    ->before(function (VenueType $record) {
-                        // Không xoá nếu có children
-                        if ($record->children()->exists()) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Không thể xoá — còn ' . $record->children()->count() . ' children')
-                                ->danger()->send();
-                            $this->halt();
-                        }
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('toggle_active')
+                        ->label(fn(VenueType $r) => $r->is_active ? 'Deactivate' : 'Activate')
+                        ->icon(fn(VenueType $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                        ->color(fn(VenueType $r) => $r->is_active ? 'warning' : 'success')
+                        ->action(fn(VenueType $r) => $r->update(['is_active' => !$r->is_active])),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (VenueType $record) {
+                            if ($record->children()->exists()) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Không thể xoá — còn ' . $record->children()->count() . ' children')
+                                    ->danger()->send();
+                                $this->halt();
+                            }
+                        }),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

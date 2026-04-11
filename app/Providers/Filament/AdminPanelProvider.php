@@ -38,8 +38,9 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('AdTRUE SSP')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
-                NavigationGroup::make('Organizations')->icon('heroicon-o-building-office'),
                 NavigationGroup::make('Inventory')->icon('heroicon-o-squares-2x2'),
+                NavigationGroup::make('Organizations')->icon('heroicon-o-building-office'),
+                NavigationGroup::make('System Settings')->icon('heroicon-o-cog-6-tooth'),
                 NavigationGroup::make('Analytics')->icon('heroicon-o-chart-bar'),
                 NavigationGroup::make('Tools')->icon('heroicon-o-wrench-screwdriver'),
             ])

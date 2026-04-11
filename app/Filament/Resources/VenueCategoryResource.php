@@ -16,7 +16,7 @@ class VenueCategoryResource extends Resource
 {
     protected static ?string $model = VenueCategory::class;
     protected static ?string $navigationIcon = null;
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'System Settings';
     protected static ?string $navigationLabel = 'VN Categories';
     protected static ?string $modelLabel = 'VN Category';
     protected static ?string $pluralModelLabel = 'VN DOOH Categories';
@@ -160,11 +160,13 @@ class VenueCategoryResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('toggle_active')
-                    ->label(fn (VenueCategory $r) => $r->is_active ? 'Deactivate' : 'Activate')
-                    ->icon(fn (VenueCategory $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
-                    ->color(fn (VenueCategory $r) => $r->is_active ? 'warning' : 'success')
-                    ->action(fn (VenueCategory $r) => $r->update(['is_active' => ! $r->is_active])),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('toggle_active')
+                        ->label(fn (VenueCategory $r) => $r->is_active ? 'Deactivate' : 'Activate')
+                        ->icon(fn (VenueCategory $r) => $r->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                        ->color(fn (VenueCategory $r) => $r->is_active ? 'warning' : 'success')
+                        ->action(fn (VenueCategory $r) => $r->update(['is_active' => ! $r->is_active])),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

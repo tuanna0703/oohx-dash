@@ -513,20 +513,22 @@ abstract class BaseScreenResource extends Resource
             ->recordUrl(fn (Screen $r) => static::getUrl('view', ['record' => $r]))
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('toggle_rtb')
-                    ->label(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Disable RTB' : 'Enable RTB')
-                    ->icon('heroicon-o-signal')
-                    ->color(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'danger' : 'success')
-                    ->visible($canPricing)
-                    ->requiresConfirmation()
-                    ->action(function (Screen $r) {
-                        $inv = $r->inventory;
-                        if ($inv) {
-                            $inv->update(['programmatic_enabled' => ! $inv->programmatic_enabled]);
-                            Notification::make()->title('Đã cập nhật RTB')->success()->send();
-                        }
-                    }),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('toggle_rtb')
+                        ->label(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Disable RTB' : 'Enable RTB')
+                        ->icon('heroicon-o-signal')
+                        ->color(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'danger' : 'success')
+                        ->visible($canPricing)
+                        ->requiresConfirmation()
+                        ->action(function (Screen $r) {
+                            $inv = $r->inventory;
+                            if ($inv) {
+                                $inv->update(['programmatic_enabled' => ! $inv->programmatic_enabled]);
+                                Notification::make()->title('Đã cập nhật RTB')->success()->send();
+                            }
+                        }),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -8,18 +8,18 @@ use App\Models\OwnerUser;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
-
 
     protected static ?string $navigationGroup = 'Organizations';
     protected static ?string $navigationLabel = 'Users';
@@ -75,52 +75,50 @@ class UserResource extends Resource
                         ->default('publisher')
                         ->helperText('super_admin → /admin | publisher → /publisher')
                         ->live()
-                        // Lấy role hiện tại của user
                         ->afterStateHydrated(function (Forms\Components\Select $component, ?User $record) {
                             if ($record) {
                                 $component->state($record->roles->first()?->name);
                             }
                         })
-                        // Không dehydrate trực tiếp vào user table — xử lý trong saveRelationships
                         ->dehydrated(false),
                 ]),
 
-            Forms\Components\Section::make('Publisher Access')
-                ->description('Gán user vào Media Owner để họ đăng nhập được Publisher panel.')
+            Forms\Components\Section::make('Owner Memberships')
+                ->description('Gán user vào một hoặc nhiều Media Owners.')
                 ->schema([
-                    Forms\Components\Select::make('owner_id')
-                        ->label('Media Owner')
-                        ->options(Owner::active()->pluck('name', 'id'))
-                        ->searchable()
-                        ->nullable()
-                        ->helperText('Chọn owner để tự động tạo OwnerUser record.')
-                        ->live()
-                        ->afterStateHydrated(function (Forms\Components\Select $component, ?User $record) {
-                            if ($record) {
-                                $component->state($record->current_owner_id);
-                            }
-                        })
-                        ->dehydrated(false),
+                    Forms\Components\Repeater::make('owner_memberships')
+                        ->label('')
+                        ->schema([
+                            Forms\Components\Select::make('owner_id')
+                                ->label('Media Owner')
+                                ->options(Owner::active()->pluck('name', 'id'))
+                                ->searchable()
+                                ->required()
+                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                ->columnSpan(1),
 
-                    Forms\Components\Select::make('owner_role')
-                        ->label('Role trong Owner')
-                        ->options(OwnerUser::ROLES)
-                        ->default('read_only')
-                        ->required(fn(Forms\Get $get) => filled($get('owner_id')))
-                        ->visible(fn(Forms\Get $get) => filled($get('owner_id')))
-                        ->helperText(fn(Forms\Get $get) => match ($get('owner_role')) {
-                            'owner'          => '👑 Toàn quyền trong owner này.',
-                            'manager'        => '🔧 Quản lý inventory & pricing.',
-                            'scheduler'      => '📅 Import & quản lý screens.',
-                            'read_only'      => '👁 Chỉ xem.',
-                            'reporting_only' => '📊 Chỉ xem reports.',
-                            'sales_manager'  => '💼 Xem inventory & sales.',
-                            default          => '',
+                            Forms\Components\Select::make('role')
+                                ->label('Role')
+                                ->options(OwnerUser::ROLES)
+                                ->default('read_only')
+                                ->required()
+                                ->columnSpan(1),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(0)
+                        ->addActionLabel('Thêm Owner')
+                        ->reorderable(false)
+                        ->afterStateHydrated(function (Forms\Components\Repeater $component, ?User $record) {
+                            if (! $record) return;
+                            $memberships = $record->ownerUsers()->with('owner')->get()
+                                ->map(fn(OwnerUser $ou) => [
+                                    'owner_id' => $ou->owner_id,
+                                    'role'     => $ou->role,
+                                ])->values()->toArray();
+                            $component->state($memberships);
                         })
-                        ->live()
                         ->dehydrated(false),
                 ]),
-
         ]);
     }
 
@@ -142,23 +140,32 @@ class UserResource extends Resource
                     ->label('System Role')
                     ->badge()
                     ->getStateUsing(fn(User $record) => $record->roles->first()?->name ?? '—')
-                    ->color(fn(string $state) => match($state) {
+                    ->color(fn(string $state) => match ($state) {
                         'super_admin' => 'danger',
                         'publisher'   => 'primary',
                         default       => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('current_owner_name')
-                    ->label('Current Owner')
-                    ->getStateUsing(fn(User $record) => $record->currentOwner?->name ?? '—')
-                    ->placeholder('—'),
+                Tables\Columns\TextColumn::make('owners_list')
+                    ->label('Owners')
+                    ->getStateUsing(function (User $record) {
+                        $items = $record->ownerUsers->map(function (OwnerUser $ou) {
+                            $ownerName = $ou->owner?->name ?? '?';
+                            $roleLabel = OwnerUser::ROLES[$ou->role] ?? $ou->role;
+                            return "{$ownerName} ({$roleLabel})";
+                        });
+                        return $items->isEmpty() ? '—' : $items->implode(', ');
+                    })
+                    ->wrap()
+                    ->limit(80),
 
-                Tables\Columns\TextColumn::make('owner_role')
-                    ->label('Owner Role')
+                Tables\Columns\TextColumn::make('owners_count')
+                    ->label('Owners')
+                    ->counts('ownerUsers')
+                    ->sortable()
                     ->badge()
-                    ->getStateUsing(fn(User $record) => $record->ownerUsers->first()?->role ?? null)
-                    ->formatStateUsing(fn($state) => $state ? (OwnerUser::ROLES[$state] ?? $state) : '—')
-                    ->color('gray'),
+                    ->color(fn(int $state) => $state > 0 ? 'success' : 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -177,36 +184,45 @@ class UserResource extends Resource
                     ->label('Owner')
                     ->options(Owner::active()->pluck('name', 'id'))
                     ->query(fn($query, $data) => $data['value']
-                        ? $query->where('current_owner_id', $data['value'])
+                        ? $query->whereHas('ownerUsers', fn($q) => $q->where('owner_id', $data['value']))
+                        : $query),
+
+                Tables\Filters\SelectFilter::make('owner_role')
+                    ->label('Owner Role')
+                    ->options(OwnerUser::ROLES)
+                    ->query(fn($query, $data) => $data['value']
+                        ? $query->whereHas('ownerUsers', fn($q) => $q->where('role', $data['value']))
                         : $query),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('impersonate')
+                        ->label('Login As')
+                        ->icon('heroicon-o-arrow-right-on-rectangle')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Login as user này?')
+                        ->modalDescription(fn(User $record) => "Bạn sẽ đăng nhập với tài khoản {$record->email}.")
+                        ->action(function (User $record) {
+                            auth()->login($record);
+                            $panel = $record->hasRole('super_admin') ? '/admin' : '/publisher';
+                            return redirect($panel);
+                        }),
 
-                Tables\Actions\Action::make('impersonate')
-                    ->label('Login As')
-                    ->icon('heroicon-o-arrow-right-on-rectangle')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Login as user này?')
-                    ->modalDescription(fn(User $record) => "Bạn sẽ đăng nhập với tài khoản {$record->email}.")
-                    ->action(function (User $record) {
-                        auth()->login($record);
-                        $panel = $record->hasRole('super_admin') ? '/admin' : '/publisher';
-                        return redirect($panel);
-                    }),
-
-                Tables\Actions\Action::make('reset_password')
-                    ->label('Reset Password')
-                    ->icon('heroicon-o-key')
-                    ->color('gray')
-                    ->requiresConfirmation()
-                    ->action(function (User $record) {
-                        \Password::broker()->sendResetLink(['email' => $record->email]);
-                        Notification::make()
-                            ->title("Đã gửi email reset password đến {$record->email}")
-                            ->success()->send();
-                    }),
+                    Tables\Actions\Action::make('reset_password')
+                        ->label('Reset Password')
+                        ->icon('heroicon-o-key')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->action(function (User $record) {
+                            \Password::broker()->sendResetLink(['email' => $record->email]);
+                            Notification::make()
+                                ->title("Đã gửi email reset password đến {$record->email}")
+                                ->success()->send();
+                        }),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -216,13 +232,100 @@ class UserResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    // ── Infolist (View page) ────────────────────────────────────────────────
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+
+            Infolists\Components\Section::make('Account Info')
+                ->columns(3)
+                ->schema([
+                    Infolists\Components\TextEntry::make('name'),
+                    Infolists\Components\TextEntry::make('email')
+                        ->copyable(),
+                    Infolists\Components\TextEntry::make('system_role')
+                        ->label('System Role')
+                        ->badge()
+                        ->getStateUsing(fn(User $record) => $record->roles->first()?->name ?? '—')
+                        ->color(fn(string $state) => match ($state) {
+                            'super_admin' => 'danger',
+                            'publisher'   => 'primary',
+                            default       => 'gray',
+                        }),
+                    Infolists\Components\TextEntry::make('created_at')
+                        ->label('Created')
+                        ->dateTime(),
+                    Infolists\Components\TextEntry::make('email_verified_at')
+                        ->label('Email Verified')
+                        ->dateTime()
+                        ->placeholder('Not verified'),
+                ]),
+
+            Infolists\Components\Section::make('Owner Memberships')
+                ->description('Danh sách tất cả Media Owners mà user thuộc về.')
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('ownerUsers')
+                        ->label('')
+                        ->schema([
+                            Infolists\Components\TextEntry::make('owner.name')
+                                ->label('Owner'),
+                            Infolists\Components\TextEntry::make('role')
+                                ->label('Role')
+                                ->badge()
+                                ->formatStateUsing(fn($state) => OwnerUser::ROLES[$state] ?? $state)
+                                ->color(fn($state) => match ($state) {
+                                    'owner'          => 'danger',
+                                    'manager'        => 'primary',
+                                    'scheduler'      => 'warning',
+                                    'read_only'      => 'gray',
+                                    'reporting_only' => 'info',
+                                    'sales_manager'  => 'success',
+                                    default          => 'gray',
+                                }),
+                            Infolists\Components\TextEntry::make('permissions_list')
+                                ->label('Permissions')
+                                ->getStateUsing(function (OwnerUser $record) {
+                                    return collect(OwnerUser::PERMISSIONS)
+                                        ->filter(fn($roles) => in_array($record->role, $roles))
+                                        ->keys()
+                                        ->implode(', ');
+                                })
+                                ->columnSpan(2),
+                            Infolists\Components\TextEntry::make('allowed_network_ids')
+                                ->label('Network Restriction')
+                                ->getStateUsing(fn(OwnerUser $record) => $record->allowed_network_ids
+                                    ? count($record->allowed_network_ids) . ' networks restricted'
+                                    : 'All networks')
+                                ->badge()
+                                ->color(fn(OwnerUser $record) => $record->allowed_network_ids ? 'warning' : 'success'),
+                        ])
+                        ->columns(5)
+                        ->contained(false),
+                ]),
+
+            Infolists\Components\Section::make('Permission Matrix')
+                ->description('Tổng hợp quyền trên tất cả owners.')
+                ->schema([
+                    Infolists\Components\ViewEntry::make('permission_matrix')
+                        ->view('filament.resources.user-resource.permission-matrix'),
+                ]),
+        ]);
+    }
+
     // ── Pages ─────────────────────────────────────────────────────────────────
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
             'index'  => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
+            'view'   => Pages\ViewUser::route('/{record}'),
             'edit'   => Pages\EditUser::route('/{record}/edit'),
         ];
     }

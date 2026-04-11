@@ -27,7 +27,7 @@ class OwnerPolicy
     {
         if ($user->hasRole('super_admin')) return true;
         $role = $user->getRoleInOwner($owner->id);
-        return in_array($role, ['admin', 'manager']);
+        return in_array($role, ['owner', 'manager']);
     }
 
     public function delete(User $user, Owner $owner): bool
