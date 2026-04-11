@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ScreensRelationManager extends RelationManager
 {
-    protected static string $relationship = 'inventoryScreens';
+    protected static string $relationship = 'screens';
 
     protected static ?string $title = 'Screens';
 

@@ -3,7 +3,7 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Models\Network;
-use App\Models\ScreenInventory;
+use App\Models\Screen;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -161,9 +161,15 @@ abstract class BaseNetworkResource extends Resource
                     ->label('Currency')
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('inventory_screens_count')
+                Tables\Columns\TextColumn::make('sites_count')
+                    ->label('Sites')
+                    ->counts('sites')
+                    ->sortable()
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('screens_count')
                     ->label('Screens')
-                    ->counts('inventoryScreens')
+                    ->counts('screens')
                     ->sortable()
                     ->alignCenter(),
 
@@ -194,8 +200,8 @@ abstract class BaseNetworkResource extends Resource
                 TernaryFilter::make('has_screens')
                     ->label('Có màn hình')
                     ->queries(
-                        true:  fn (Builder $query) => $query->whereHas('inventoryScreens'),
-                        false: fn (Builder $query) => $query->whereDoesntHave('inventoryScreens'),
+                        true:  fn (Builder $query) => $query->whereHas('screens'),
+                        false: fn (Builder $query) => $query->whereDoesntHave('screens'),
                     ),
 
                 ...static::additionalFilters(),
@@ -208,33 +214,21 @@ abstract class BaseNetworkResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\DeleteAction::make()
-                        ->before(function (Network $record, Tables\Actions\DeleteAction $action) {
-                            $screenCount = ScreenInventory::where('network_id', $record->id)->count();
-                            if ($screenCount > 0) {
-                                Notification::make()
-                                    ->title("Không thể xoá — network đang có {$screenCount} screens liên kết")
-                                    ->body('Hãy gỡ tất cả screens khỏi network trước khi xoá.')
-                                    ->danger()
-                                    ->send();
-                                $action->cancel();
+                        ->modalDescription(function (Network $record) {
+                            $siteCount = $record->sites()->count();
+                            $screenCount = Screen::whereIn('site_id', $record->sites()->pluck('id'))->count();
+                            $msg = "Bạn có chắc muốn xoá network \"{$record->name}\"?";
+                            if ($siteCount > 0) {
+                                $msg .= "\n\nSẽ đồng thời xoá {$siteCount} site(s), {$screenCount} screen(s) và toàn bộ dữ liệu liên quan.";
                             }
+                            return $msg;
                         }),
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
-                            $networkIds = $records->pluck('id');
-                            $linkedCount = ScreenInventory::whereIn('network_id', $networkIds)->count();
-                            if ($linkedCount > 0) {
-                                Notification::make()
-                                    ->title("Không thể xoá — {$linkedCount} screens đang liên kết với các networks này")
-                                    ->danger()
-                                    ->send();
-                                $action->cancel();
-                            }
-                        }),
+                        ->modalDescription('Xoá các networks đã chọn sẽ đồng thời xoá tất cả sites, screens và dữ liệu liên quan.'),
                 ]),
             ])
             ->emptyStateHeading('Chưa có network nào')

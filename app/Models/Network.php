@@ -24,6 +24,16 @@ class Network extends Model
         'default_floor_cpm' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Network $network) {
+            if (! $network->isForceDeleting()) {
+                // Cascade: Network → Sites → Screens (each triggers its own cascade)
+                $network->sites()->each(fn (Site $s) => $s->delete());
+            }
+        });
+    }
+
     // ── Relationships ─────────────────────────────────────────────────────────
 
     public function owner(): BelongsTo
@@ -31,32 +41,14 @@ class Network extends Model
         return $this->belongsTo(Owner::class);
     }
 
-    /**
-     * Legacy: screens linked by networks.code ↔ screens.network_code.
-     * Used during Hivestack import to auto-assign screens to networks.
-     * NOT the source of truth for inventory — use inventoryScreens() instead.
-     *
-     * @deprecated Prefer inventoryScreens() for inventory queries.
-     */
-    public function screens(): HasMany
+    public function sites(): HasMany
     {
-        return $this->hasMany(Screen::class, 'network_code', 'code');
+        return $this->hasMany(Site::class);
     }
 
-    /**
-     * SSP source of truth: screens linked via screen_inventory.network_id.
-     * Use this for all inventory counts, listing, and admin display.
-     */
-    public function inventoryScreens(): HasManyThrough
+    public function screens(): HasManyThrough
     {
-        return $this->hasManyThrough(
-            Screen::class,
-            ScreenInventory::class,
-            'network_id',  // FK on screen_inventory → networks.id
-            'id',          // FK on screens referenced by screen_inventory.screen_id
-            'id',          // PK on networks
-            'screen_id',   // FK on screen_inventory → screens.id
-        );
+        return $this->hasManyThrough(Screen::class, Site::class);
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────

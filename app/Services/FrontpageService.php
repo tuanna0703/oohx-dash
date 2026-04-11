@@ -567,7 +567,7 @@ class FrontpageService
                 fn ($q) => $this->applyOrientationFilter($q, $orientations)
             )
             ->when(! empty($networks = $this->resolveArrayParam($request, 'network')),
-                fn ($q) => $q->whereIn('network_code', $networks)
+                fn ($q) => $q->whereHas('site.network', fn ($nq) => $nq->whereIn('code', $networks))
             )
             ->when(! empty($ownerSlugs = $this->resolveArrayParam($request, 'owner')),
                 fn ($q) => $q->whereHas('owner', fn ($oq) => $oq->whereIn('slug', $ownerSlugs))

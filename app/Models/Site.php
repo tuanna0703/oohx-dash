@@ -15,7 +15,7 @@ class Site extends Model
     use HasFactory, HasUlids, HasOwnerScope, SoftDeletes;
 
     protected $fillable = [
-        'owner_id', 'external_id',
+        'owner_id', 'network_id', 'external_id',
         'name', 'description', 'banner', 'lat', 'lon',
         'address', 'city', 'region', 'country', 'status',
         'province_id', 'commune_id',
@@ -26,11 +26,25 @@ class Site extends Model
         'lon' => 'decimal:7',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Site $site) {
+            if (! $site->isForceDeleting()) {
+                $site->screens()->each(fn (Screen $s) => $s->delete());
+            }
+        });
+    }
+
     // ── Relationships ──────────────────────────────────────
 
     public function owner(): BelongsTo
     {
         return $this->belongsTo(Owner::class);
+    }
+
+    public function network(): BelongsTo
+    {
+        return $this->belongsTo(Network::class);
     }
 
     public function province(): BelongsTo

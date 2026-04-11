@@ -56,12 +56,20 @@ class Screen extends Model
         'last_heartbeat_at' => 'datetime',
     ];
 
-    // Auto-generate UUID on create
     protected static function booted(): void
     {
         static::creating(function (Screen $screen) {
             if (empty($screen->uuid)) {
                 $screen->uuid = (string) Str::uuid();
+            }
+        });
+
+        static::deleting(function (Screen $screen) {
+            if (! $screen->isForceDeleting()) {
+                $screen->spec?->delete();
+                $screen->inventory?->delete();
+                $screen->multipliers()->delete();
+                $screen->externalIds()->delete();
             }
         });
     }
@@ -78,9 +86,20 @@ class Screen extends Model
         return $this->belongsTo(Site::class);
     }
 
+    /**
+     * Network via site relationship (Site belongsTo Network).
+     */
     public function network(): BelongsTo
     {
         return $this->belongsTo(Network::class, 'network_code', 'code');
+    }
+
+    /**
+     * Get network through site (preferred).
+     */
+    public function getNetworkViaAttribute(): ?Network
+    {
+        return $this->site?->network;
     }
 
     public function spec(): HasOne

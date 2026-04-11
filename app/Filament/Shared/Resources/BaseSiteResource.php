@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Resources;
 
+use App\Models\Network;
 use App\Models\Site;
 use App\Models\VietnamCommune;
 use App\Models\VietnamProvince;
@@ -71,6 +72,14 @@ abstract class BaseSiteResource extends Resource
             Forms\Components\Section::make('Site Identity')->columns(2)->schema(
                 array_values(array_filter([
                     $ownerField,
+
+                    Forms\Components\Select::make('network_id')
+                        ->label('Network')
+                        ->relationship('network', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->helperText('Network mà site này thuộc về'),
 
                     Forms\Components\TextInput::make('external_id')
                         ->label('Site ID')
@@ -201,6 +210,13 @@ abstract class BaseSiteResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('network.name')
+                    ->label('Network')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('—')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('external_id')
                     ->label('Site ID')
                     ->searchable()
@@ -264,6 +280,12 @@ abstract class BaseSiteResource extends Resource
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(['active' => 'Active', 'paused' => 'Paused', 'closed' => 'Closed']),
+
+                SelectFilter::make('network_id')
+                    ->label('Network')
+                    ->relationship('network', 'name')
+                    ->searchable()
+                    ->preload(),
 
                 SelectFilter::make('city')
                     ->label('Thành phố')
@@ -359,7 +381,15 @@ abstract class BaseSiteResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalDescription(function (Site $record) {
+                            $screenCount = $record->screens()->count();
+                            $msg = "Bạn có chắc muốn xoá site \"{$record->name}\"?";
+                            if ($screenCount > 0) {
+                                $msg .= "\n\nSẽ đồng thời xoá {$screenCount} screen(s) thuộc site này và toàn bộ dữ liệu specs, inventory của chúng.";
+                            }
+                            return $msg;
+                        }),
                 ]),
             ])
             ->bulkActions([
@@ -405,7 +435,8 @@ abstract class BaseSiteResource extends Resource
                                 ->send();
                         }),
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->modalDescription('Xoá các sites đã chọn sẽ đồng thời xoá tất cả screens thuộc chúng và dữ liệu specs, inventory.'),
                 ]),
             ]);
     }

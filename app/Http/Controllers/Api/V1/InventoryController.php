@@ -217,9 +217,11 @@ class InventoryController extends Controller
     {
         $data = Cache::remember('inventory:networks', 1800, function () {
             return DB::table('networks')
-                ->join('screens', 'screens.network_code', '=', 'networks.code')
+                ->join('sites', 'sites.network_id', '=', 'networks.id')
+                ->join('screens', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.active', true)
                 ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
                 ->selectRaw('networks.code, networks.name, count(distinct screens.id) as screen_count')
                 ->groupBy('networks.code', 'networks.name')
                 ->orderByDesc('screen_count')
@@ -468,7 +470,7 @@ class InventoryController extends Controller
                 });
             })
             ->when(!empty($networks = $this->resolveArrayParam($request, 'network')),
-                fn($q) => $q->whereIn('network_code', $networks)
+                fn($q) => $q->whereHas('site.network', fn($nq) => $nq->whereIn('code', $networks))
             )
             ->when(!empty($ownerSlugs = $this->resolveArrayParam($request, 'owner')),
                 fn($q) => $q->whereHas('owner', fn($oq) => $oq->whereIn('slug', $ownerSlugs))

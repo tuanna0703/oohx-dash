@@ -126,7 +126,7 @@ class SiteImportService
                 continue;
             }
 
-            // Resolve network
+            // Resolve network + link to site
             $networkId = null;
             if (! empty($sc['network_name'])) {
                 $network = Network::firstOrCreate(
@@ -134,6 +134,9 @@ class SiteImportService
                     ['code' => Str::slug($sc['network_name']), 'status' => 'active']
                 );
                 $networkId = $network->id;
+
+                // Link site to network if not yet set
+                Site::where('id', $siteId)->whereNull('network_id')->update(['network_id' => $networkId]);
             }
 
             $screen = Screen::updateOrCreate(
