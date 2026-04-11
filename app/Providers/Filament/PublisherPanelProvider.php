@@ -30,7 +30,7 @@ class PublisherPanelProvider extends PanelProvider
         return $panel
             ->id('publisher')
             ->path('publisher')
-            ->domain(config('domains.dash'))
+            ->domain(app()->environment('local') ? null : config('domains.dash'))
             ->login()
             ->colors(['primary' => Color::hex('#E5007D')]) // AdTRUE brand pink
             ->brandName('AdTRUE SSP')
