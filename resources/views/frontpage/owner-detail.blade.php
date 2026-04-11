@@ -2,23 +2,307 @@
 
 @section('title', ($owner->name ?? 'Chi tiết Media Owner') . ' | OOHX')
 
+@php
+    $initials = strtoupper(collect(explode(' ', $owner->name))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->join(''));
+    $defaultCover = 'https://placehold.co/1200x460/E0E0E5/8E8E93?text=' . urlencode($owner->name);
+@endphp
+
+@push('head')
+<style>
+/* ── Facebook-style Page Layout ─────────────────────────── */
+
+/* Cover */
+.fp-cover { position:relative; width:100%; }
+.fp-cover-img { width:100%; height:clamp(200px,28vw,360px); object-fit:cover; display:block; background:var(--bg2); }
+
+/* Avatar overlaps cover bottom-left */
+.fp-cover-inner { position:relative; max-width:var(--mw); margin:0 auto; height:100%; }
+.fp-avatar-wrap { position:absolute; bottom:-40px; left:24px; z-index:3; }
+.fp-avatar { width:140px; height:140px; border-radius:50%; border:5px solid var(--bg1); overflow:hidden; background:linear-gradient(135deg,#1D1D1F,#3A3A3C); display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:800; color:#fff; }
+.fp-avatar img { width:100%; height:100%; object-fit:cover; }
+
+/* Info row beside avatar */
+.fp-header { max-width:var(--mw); margin:0 auto; padding:0 24px; display:flex; align-items:flex-end; gap:20px; min-height:56px; }
+.fp-header-spacer { width:148px; flex-shrink:0; } /* avatar width + gap */
+.fp-header-info { flex:1; min-width:0; padding-top:8px; }
+.fp-name { font-size:clamp(22px,3vw,30px); font-weight:900; color:var(--t1); line-height:1.2; }
+.fp-tagline { font-size:14px; color:var(--t3); margin-top:2px; }
+.fp-meta { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; font-size:13px; color:var(--t3); }
+.fp-meta-item { display:inline-flex; align-items:center; gap:4px; }
+.fp-meta-item svg { width:14px; height:14px; fill:var(--t4); flex-shrink:0; }
+.fp-header-actions { display:flex; gap:8px; flex-shrink:0; padding-bottom:4px; }
+
+/* Divider + Tabs */
+.fp-nav-wrap { max-width:var(--mw); margin:16px auto 0; padding:0 24px; border-bottom:1px solid var(--ln2); }
+.fp-tabs { display:flex; gap:0; overflow-x:auto; }
+.fp-tab { padding:12px 16px; font-size:15px; font-weight:600; color:var(--t3); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; white-space:nowrap; transition:color .15s; border-radius:8px 8px 0 0; }
+.fp-tab:hover { background:var(--bg2); color:var(--t1); }
+.fp-tab.on { color:var(--bl); border-bottom-color:var(--bl); }
+
+/* Content area */
+.fp-content { max-width:var(--mw); margin:0 auto; padding:20px 24px; }
+.fp-panel { display:none; }
+.fp-panel.on { display:block; }
+
+/* ── Tab: Tổng quan (2-column like FB) ──────────────────── */
+.fp-overview { display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start; }
+.fp-sidebar { display:flex; flex-direction:column; gap:16px; }
+.fp-card { background:var(--bg1); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); border:1px solid var(--ln2); }
+.fp-card-title { font-size:16px; font-weight:700; color:var(--t1); margin-bottom:12px; }
+.fp-info-row { display:flex; align-items:flex-start; gap:10px; padding:6px 0; }
+.fp-info-row svg { width:16px; height:16px; fill:var(--t4); flex-shrink:0; margin-top:2px; }
+.fp-info-label { font-size:13px; color:var(--t3); }
+.fp-info-val { font-size:14px; color:var(--t1); font-weight:500; }
+.fp-info-val a { color:var(--bl); text-decoration:none; }
+.fp-info-val a:hover { text-decoration:underline; }
+
+.fp-stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.fp-stat { background:var(--bg2); border-radius:10px; padding:12px; text-align:center; }
+.fp-stat-n { font-size:20px; font-weight:800; color:var(--t1); }
+.fp-stat-n .u { font-size:11px; font-weight:500; color:var(--t4); }
+.fp-stat-l { font-size:11px; color:var(--t4); margin-top:2px; }
+
+.fp-venue-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.fp-venue-tag { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:var(--bl-lt); color:var(--bl); }
+
+/* ── Tab: Inventory ─────────────────────────────────────── */
+.fp-inv-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width:768px) {
+    .fp-cover-img { border-radius:0; height:clamp(160px,30vw,220px); }
+    .fp-avatar-wrap { left:50%; transform:translateX(-50%); bottom:-32px; }
+    .fp-avatar { width:100px; height:100px; font-size:28px; border-width:4px; }
+    .fp-header { flex-direction:column; align-items:center; text-align:center; padding-top:40px; }
+    .fp-header-spacer { display:none; }
+    .fp-header-actions { justify-content:center; }
+    .fp-meta { justify-content:center; }
+    .fp-overview { grid-template-columns:1fr; }
+    .fp-nav-wrap { padding:0 16px; }
+    .fp-content { padding:16px; }
+    .fp-stats-grid { grid-template-columns:repeat(3,1fr); }
+}
+@media (max-width:480px) {
+    .fp-avatar { width:80px; height:80px; font-size:22px; }
+    .fp-header { padding-top:36px; }
+    .fp-name { font-size:20px; }
+    .fp-stats-grid { grid-template-columns:repeat(2,1fr); }
+    .fp-header-actions { flex-direction:column; width:100%; }
+    .fp-header-actions .btn { justify-content:center; }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="cover"><img src="{{ $owner->cover_url ?? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgNTAwIiB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNreTIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzg3Q0VFQiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjQwJSIgc3RvcC1jb2xvcj0iI0I4RDRGMCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNENEU4RjQiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InJvYWQyIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM0QTRBNEEiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjM0EzQTNBIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIFNreSAtLT4KICA8cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0idXJsKCNza3kyKSIvPgogIDwhLS0gQ2xvdWRzIC0tPgogIDxnIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC43KSI+CiAgICA8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iNjAiIHJ4PSI2MCIgcnk9IjIwIi8+CiAgICA8ZWxsaXBzZSBjeD0iMTQwIiBjeT0iNTUiIHJ4PSI1MCIgcnk9IjE4Ii8+CiAgICA8ZWxsaXBzZSBjeD0iNzAiIGN5PSI2NSIgcng9IjQwIiByeT0iMTUiLz4KICAgIDxlbGxpcHNlIGN4PSI2MDAiIGN5PSI1MCIgcng9IjcwIiByeT0iMjIiLz4KICAgIDxlbGxpcHNlIGN4PSI2NTAiIGN5PSI0NSIgcng9IjU1IiByeT0iMTgiLz4KICA8L2c+CiAgPCEtLSBEaXN0YW50IGJ1aWxkaW5ncyAtLT4KICA8ZyBmaWxsPSIjQzhEOEU4IiBvcGFjaXR5PSIwLjYiPgogICAgPHJlY3QgeD0iMCIgeT0iMTQwIiB3aWR0aD0iNTAiIGhlaWdodD0iMjAwIi8+CiAgICA8cmVjdCB4PSI0NSIgeT0iMTIwIiB3aWR0aD0iNjAiIGhlaWdodD0iMjIwIi8+CiAgICA8cmVjdCB4PSIxMDAiIHk9IjE1MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjE5MCIvPgogICAgPHJlY3QgeD0iNjIwIiB5PSIxMzAiIHdpZHRoPSI1NSIgaGVpZ2h0PSIyMTAiLz4KICAgIDxyZWN0IHg9IjY3MCIgeT0iMTE1IiB3aWR0aD0iNjUiIGhlaWdodD0iMjI1Ii8+CiAgICA8cmVjdCB4PSI3MzAiIHk9IjE0MCIgd2lkdGg9IjcwIiBoZWlnaHQ9IjIwMCIvPgogIDwvZz4KICA8IS0tIE1pZCBidWlsZGluZ3MgLS0+CiAgPGcgZmlsbD0iI0FGQkVDOCI+CiAgICA8cmVjdCB4PSIwIiB5PSIyMDAiIHdpZHRoPSI5MCIgaGVpZ2h0PSIyMDAiLz4KICAgIDxyZWN0IHg9Ijg1IiB5PSIxNzUiIHdpZHRoPSI3MCIgaGVpZ2h0PSIyMjUiLz4KICAgIDxyZWN0IHg9IjY1MCIgeT0iMTkwIiB3aWR0aD0iODAiIGhlaWdodD0iMjEwIi8+CiAgICA8cmVjdCB4PSI3MjUiIHk9IjE3NSIgd2lkdGg9Ijc1IiBoZWlnaHQ9IjIyNSIvPgogIDwvZz4KICA8IS0tIE1haW4gcm9hZCAtLT4KICA8cmVjdCB4PSIxNTAiIHk9IjI1MCIgd2lkdGg9IjUwMCIgaGVpZ2h0PSIyNTAiIGZpbGw9InVybCgjcm9hZDIpIi8+CiAgPCEtLSBTaWRld2Fsa3MgLS0+CiAgPHJlY3QgeD0iMTAwIiB5PSIyNTAiIHdpZHRoPSI1NSIgaGVpZ2h0PSIyNTAiIGZpbGw9IiNEMEM4QjgiLz4KICA8cmVjdCB4PSI2NDUiIHk9IjI1MCIgd2lkdGg9IjU1IiBoZWlnaHQ9IjI1MCIgZmlsbD0iI0QwQzhCOCIvPgogIDwhLS0gTGFuZSBtYXJraW5ncyAtLT4KICA8ZyBmaWxsPSIjRjVGNURDIiBvcGFjaXR5PSIwLjciPgogICAgPHJlY3QgeD0iMzkyIiB5PSIyNjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSI0NSIgcng9IjMiLz4KICAgIDxyZWN0IHg9IjM5MiIgeT0iMzMwIiB3aWR0aD0iMTYiIGhlaWdodD0iNDUiIHJ4PSIzIi8+CiAgICA8cmVjdCB4PSIzOTIiIHk9IjQwMCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjQ1IiByeD0iMyIvPgogICAgPHJlY3QgeD0iMzkyIiB5PSI0NzAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIzMCIgcng9IjMiLz4KICA8L2c+CiAgPCEtLSBUcmVlcyBhbG9uZyByb2FkIC0tPgogIDxnPgogICAgPCEtLSBMZWZ0IHRyZWVzIC0tPgogICAgPHJlY3QgeD0iMTE4IiB5PSIyNzAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQwIiBmaWxsPSIjNkI1QTNBIi8+CiAgICA8ZWxsaXBzZSBjeD0iMTIyIiBjeT0iMjY1IiByeD0iMTgiIHJ5PSIyMCIgZmlsbD0iIzRBN0EzQSIvPgogICAgPHJlY3QgeD0iMTQwIiB5PSIzMTAiIHdpZHRoPSI4IiBoZWlnaHQ9IjM1IiBmaWxsPSIjNkI1QTNBIi8+CiAgICA8ZWxsaXBzZSBjeD0iMTQ0IiBjeT0iMzA1IiByeD0iMTYiIHJ5PSIxOCIgZmlsbD0iIzVBOEE0QSIvPgogICAgPCEtLSBSaWdodCB0cmVlcyAtLT4KICAgIDxyZWN0IHg9IjY3MCIgeT0iMjc1IiB3aWR0aD0iOCIgaGVpZ2h0PSIzOCIgZmlsbD0iIzZCNUEzQSIvPgogICAgPGVsbGlwc2UgY3g9IjY3NCIgY3k9IjI3MCIgcng9IjE3IiByeT0iMTkiIGZpbGw9IiM0QTdBM0EiLz4KICAgIDxyZWN0IHg9IjY1NSIgeT0iMzE1IiB3aWR0aD0iOCIgaGVpZ2h0PSIzMiIgZmlsbD0iIzZCNUEzQSIvPgogICAgPGVsbGlwc2UgY3g9IjY1OSIgY3k9IjMxMCIgcng9IjE1IiByeT0iMTciIGZpbGw9IiM1QThBNEEiLz4KICA8L2c+CiAgPCEtLSBCaWxsYm9hcmQgc3RydWN0dXJlIG9uIGxlZnQgLS0+CiAgPHJlY3QgeD0iMTc1IiB5PSIxNTUiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiM4ODgiIHJ4PSIzIi8+CiAgPHJlY3QgeD0iMTYyIiB5PSIxNDgiIHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIHJ4PSI2IiBmaWxsPSIjMUMxQzFFIi8+CiAgPHJlY3QgeD0iMTY2IiB5PSIxNTIiIHdpZHRoPSIxNTIiIGhlaWdodD0iODIiIHJ4PSI0IiBmaWxsPSIjMDA3MUUzIi8+CiAgPHJlY3QgeD0iMTc1IiB5PSIxNjAiIHdpZHRoPSI4MCIgaGVpZ2h0PSI3IiByeD0iMyIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjkpIi8+CiAgPHJlY3QgeD0iMTc1IiB5PSIxNzQiIHdpZHRoPSIxMjAiIGhlaWdodD0iOSIgcng9IjMiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC45NSkiLz4KICA8cmVjdCB4PSIxNzUiIHk9IjE5MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI5IiByeD0iMyIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjkpIi8+CiAgPHJlY3QgeD0iMTc1IiB5PSIyMTAiIHdpZHRoPSI2NSIgaGVpZ2h0PSIxNiIgcng9IjgiIGZpbGw9IiNGRkQ2MEEiLz4KICA8IS0tIEJpbGxib2FyZCBvbiByaWdodCAtLT4KICA8cmVjdCB4PSI2MTUiIHk9IjE2MCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjExNSIgZmlsbD0iIzg4OCIgcng9IjMiLz4KICA8cmVjdCB4PSI1NjUiIHk9IjE1MyIgd2lkdGg9IjE1NSIgaGVpZ2h0PSI4NSIgcng9IjYiIGZpbGw9IiMxQzFDMUUiLz4KICA8cmVjdCB4PSI1NjkiIHk9IjE1NyIgd2lkdGg9IjE0NyIgaGVpZ2h0PSI3NyIgcng9IjQiIGZpbGw9IiNGRjNCMzAiLz4KICA8cmVjdCB4PSI1NzgiIHk9IjE2NSIgd2lkdGg9IjcwIiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuOSkiLz4KICA8cmVjdCB4PSI1NzgiIHk9IjE3OCIgd2lkdGg9IjExMCIgaGVpZ2h0PSI5IiByeD0iMyIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjk1KSIvPgogIDxyZWN0IHg9IjU3OCIgeT0iMTk1IiB3aWR0aD0iOTAiIGhlaWdodD0iOSIgcng9IjMiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC45KSIvPgogIDxyZWN0IHg9IjU3OCIgeT0iMjEzIiB3aWR0aD0iNjAiIGhlaWdodD0iMTQiIHJ4PSI3IiBmaWxsPSIjRkZENjBBIi8+CiAgPCEtLSBDYXJzIG9uIHJvYWQgLS0+CiAgPGc+CiAgICA8cmVjdCB4PSIyMDAiIHk9IjM0MCIgd2lkdGg9IjUyIiBoZWlnaHQ9IjI4IiByeD0iNSIgZmlsbD0iIzAwNzFFMyIvPgogICAgPHJlY3QgeD0iMjA1IiB5PSIzMjgiIHdpZHRoPSIzOCIgaGVpZ2h0PSIxOCIgcng9IjQiIGZpbGw9IiMxQTdGRTAiIG9wYWNpdHk9IjAuOSIvPgogICAgPGNpcmNsZSBjeD0iMjEyIiBjeT0iMzcwIiByPSI3IiBmaWxsPSIjMUMxQzFFIi8+PGNpcmNsZSBjeD0iMjEyIiBjeT0iMzcwIiByPSI0IiBmaWxsPSIjNDQ0Ii8+CiAgICA8Y2lyY2xlIGN4PSIyNDQiIGN5PSIzNzAiIHI9IjciIGZpbGw9IiMxQzFDMUUiLz48Y2lyY2xlIGN4PSIyNDQiIGN5PSIzNzAiIHI9IjQiIGZpbGw9IiM0NDQiLz4KICAgIDxyZWN0IHg9IjQ5MCIgeT0iMzgwIiB3aWR0aD0iNTIiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjRkYzQjMwIi8+CiAgICA8cmVjdCB4PSI0OTUiIHk9IjM2OCIgd2lkdGg9IjM4IiBoZWlnaHQ9IjE4IiByeD0iNCIgZmlsbD0iI0UwMzAzMCIgb3BhY2l0eT0iMC45Ii8+CiAgICA8Y2lyY2xlIGN4PSI1MDIiIGN5PSI0MTAiIHI9IjciIGZpbGw9IiMxQzFDMUUiLz48Y2lyY2xlIGN4PSI1MDIiIGN5PSI0MTAiIHI9IjQiIGZpbGw9IiM0NDQiLz4KICAgIDxjaXJjbGUgY3g9IjUzNCIgY3k9IjQxMCIgcj0iNyIgZmlsbD0iIzFDMUMxRSIvPjxjaXJjbGUgY3g9IjUzNCIgY3k9IjQxMCIgcj0iNCIgZmlsbD0iIzQ0NCIvPgogICAgPHJlY3QgeD0iMzEwIiB5PSI0MzAiIHdpZHRoPSI0NCIgaGVpZ2h0PSIyNCIgcng9IjUiIGZpbGw9IiMzNEM3NTkiLz4KICAgIDxjaXJjbGUgY3g9IjMxOCIgY3k9IjQ1NiIgcj0iNiIgZmlsbD0iIzFDMUMxRSIvPjxjaXJjbGUgY3g9IjMxOCIgY3k9IjQ1NiIgcj0iMyIgZmlsbD0iIzQ0NCIvPgogICAgPGNpcmNsZSBjeD0iMzQ2IiBjeT0iNDU2IiByPSI2IiBmaWxsPSIjMUMxQzFFIi8+PGNpcmNsZSBjeD0iMzQ2IiBjeT0iNDU2IiByPSIzIiBmaWxsPSIjNDQ0Ii8+CiAgPC9nPgogIDwhLS0gUGVkZXN0cmlhbnMgLS0+CiAgPGcgZmlsbD0iIzRBM0EyQSIgb3BhY2l0eT0iMC42Ij4KICAgIDxlbGxpcHNlIGN4PSIxMzUiIGN5PSIzNTAiIHJ4PSI2IiByeT0iMyIvPgogICAgPHJlY3QgeD0iMTMxIiB5PSIzNDYiIHdpZHRoPSI4IiBoZWlnaHQ9IjI1IiByeD0iMyIvPgogICAgPGNpcmNsZSBjeD0iMTM1IiBjeT0iMzQyIiByPSI2Ii8+CiAgICA8ZWxsaXBzZSBjeD0iNjYwIiBjeT0iMzYwIiByeD0iNiIgcnk9IjMiLz4KICAgIDxyZWN0IHg9IjY1NiIgeT0iMzU2IiB3aWR0aD0iOCIgaGVpZ2h0PSIyNSIgcng9IjMiLz4KICAgIDxjaXJjbGUgY3g9IjY2MCIgY3k9IjM1MiIgcj0iNiIvPgogIDwvZz4KICA8dGV4dCB4PSIyMCIgeT0iNDkwIiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9InJnYmEoMCwwLDAsMC4yNSkiIGZvbnQtd2VpZ2h0PSI2MDAiPk9PSFggwrcgU3RyZWV0IFZpZXcgwrcgSMOgIE7hu5lpPC90ZXh0Pgo8L3N2Zz4=' }}" alt="{{ $owner->name }} cover"><div class="cover-ov"></div><div class="cover-actions"><button class="cover-action"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:17px;height:17px;flex-shrink:0"></svg></button><button class="cover-action"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:17px;height:17px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button></div></div><div class="profile-block"><div class="pb-inner"><div class="pb-top">@php $initials = strtoupper(collect(explode(' ', $owner->name))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->join('')); @endphp
-<div class="pb-logo" style="background:linear-gradient(135deg,#1D1D1F,#3A3A3C)">{{ $initials }}</div><div class="pb-info"><div class="pb-name">{{ $owner->name }} <span class="pb-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified</span></div><div class="pb-meta"><div class="pb-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $owner->city_count }} thành phố</div><span>·</span><div class="pb-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg> {{ $owner->founded ? 'Since ' . $owner->founded : 'Member' }}</div><span>·</span><div class="pb-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg> {{ $owner->screen_count }} inventory</div></div></div><div class="pb-actions"><button class="btn btn-s btn-sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> Liên hệ</button><button class="btn btn-p btn-sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M17 3H7c-1.1 0-2 .9-2 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg> Xem booking</button></div></div><div class="stats-strip"><div class="ss-item"><div class="ss-n">{{ $owner->screen_count }}<span class="unit">+</span></div><div class="ss-l">Inventory</div></div><div class="ss-item"><div class="ss-n">{{ $owner->city_count }}</div><div class="ss-l">Cities</div></div><div class="ss-item"><div class="ss-n">{{ count($owner->venue_types_list ?? []) }}</div><div class="ss-l">Formats</div></div><div class="ss-item"><div class="ss-n">—</div><div class="ss-l">Response rate</div></div><div class="ss-item"><div class="ss-n">{{ $owner->founded ? now()->year - $owner->founded : '—' }}<span class="unit">{{ $owner->founded ? 'yr' : '' }}</span></div><div class="ss-l">Kinh nghiệm</div></div></div></div><div class="mob-pb-actions"><button class="btn btn-s"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> Liên hệ</button><button class="btn btn-p"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg> Xem inventory</button></div></div><div class="tabs-bar"><div class="tabs-bar-in"><div class="titem on" onclick="sw(this,'tp-inv')">Inventory ({{ $owner->screen_count }})</div><div class="titem" onclick="sw(this,'tp-about')">Giới thiệu</div><div class="titem" onclick="sw(this,'tp-stats')">Thống kê</div><div class="titem" onclick="sw(this,'tp-rv')">Đánh giá (48)</div></div></div><div class="w"><div class="main-layout"><div><div id="tp-inv" class="tp on" style="padding-top:4px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px"><div class="avail-badge"><div class="avail-dot"></div>{{ $ownerScreens->total() }} vị trí</div><div style="margin-left:auto;display:flex;gap:8px"><select style="height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;font-family:var(--font);font-size:13px;color:var(--t2);outline:none;appearance:none;-webkit-appearance:none;padding-right:28px"><option>Tất cả format</option><option>LED Outdoor</option><option>Billboard</option></select><select style="height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;font-family:var(--font);font-size:13px;color:var(--t2);outline:none;appearance:none;-webkit-appearance:none;padding-right:28px"><option>Available first</option><option>Giá tăng dần</option><option>Giá giảm dần</option></select></div></div><div class="inv-grid">
-@foreach($ownerScreens as $screen)
-@include('frontpage.partials.screen-card', ['screen' => $screen])
-@endforeach
+
+{{-- ═══ Cover + Avatar ═══ --}}
+<div class="fp-cover">
+    <img class="fp-cover-img" src="{{ $owner->cover_url ?? $defaultCover }}" alt="{{ $owner->name }}">
+    <div class="fp-cover-inner"><div class="fp-avatar-wrap">
+        <div class="fp-avatar">
+            @if($owner->logo_url)
+                <img src="{{ $owner->logo_url }}" alt="{{ $owner->name }}">
+            @else
+                {{ $initials }}
+            @endif
+        </div>
+    </div>
+    </div>{{-- /fp-cover-inner --}}
 </div>
-{{ $ownerScreens->links() }}
+
+{{-- ═══ Header: Name + Meta + Actions ═══ --}}
+<div class="fp-header">
+    <div class="fp-header-spacer"></div>
+    <div class="fp-header-info">
+        <div class="fp-name">{{ $owner->name }}</div>
+        @if($owner->tagline)
+            <div class="fp-tagline">{{ $owner->tagline }}</div>
+        @endif
+        <div class="fp-meta">
+            <span class="fp-meta-item">
+                <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+                {{ $owner->screen_count }} màn hình
+            </span>
+            <span class="fp-meta-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+                {{ $owner->city_count }} tỉnh/thành
+            </span>
+            @if($owner->type)
+            <span class="fp-meta-item">
+                <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                {{ ucfirst(str_replace('_', ' ', $owner->type)) }}
+            </span>
+            @endif
+        </div>
+    </div>
+    <div class="fp-header-actions">
+        @if($owner->phone)
+            <a href="tel:{{ $owner->phone }}" class="btn btn-s btn-sm">
+                <svg viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                Liên hệ
+            </a>
+        @endif
+        @if($owner->email)
+            <a href="mailto:{{ $owner->email }}" class="btn btn-p btn-sm">
+                <svg viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                Gửi email
+            </a>
+        @endif
+    </div>
+</div>
+
+{{-- ═══ Tab Navigation ═══ --}}
+<div class="fp-nav-wrap">
+    <div class="fp-tabs">
+        <div class="fp-tab on" onclick="fpTab(this,'fp-overview')">Tổng quan</div>
+        <div class="fp-tab" onclick="fpTab(this,'fp-inventory')">Màn hình <span style="font-weight:400;color:var(--t4)">({{ $owner->screen_count }})</span></div>
+    </div>
+</div>
+
+{{-- ═══ Content Panels ═══ --}}
+<div class="fp-content">
+
+    {{-- Panel: Tổng quan (Facebook 2-column layout) --}}
+    <div id="fp-overview" class="fp-panel on">
+        <div class="fp-overview">
+
+            {{-- Left sidebar --}}
+            <div class="fp-sidebar">
+
+                {{-- Card: Giới thiệu --}}
+                <div class="fp-card">
+                    <div class="fp-card-title">Giới thiệu</div>
+
+                    @if($owner->about)
+                        <div style="font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:12px">{!! nl2br(e($owner->about)) !!}</div>
+                    @endif
+
+                    @if($owner->website)
+                    <div class="fp-info-row">
+                        <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 00-1.38-3.56A8.03 8.03 0 0118.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 015.08 16zm2.95-8H5.08a7.987 7.987 0 014.33-3.56A15.65 15.65 0 008.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 01-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+                        <div>
+                            <div class="fp-info-val"><a href="{{ $owner->website }}" target="_blank">{{ preg_replace('#^https?://(www\.)?#', '', $owner->website) }}</a></div>
+                            <div class="fp-info-label">Website</div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($owner->email)
+                    <div class="fp-info-row">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <div>
+                            <div class="fp-info-val"><a href="mailto:{{ $owner->email }}">{{ $owner->email }}</a></div>
+                            <div class="fp-info-label">Email</div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($owner->phone)
+                    <div class="fp-info-row">
+                        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                        <div>
+                            <div class="fp-info-val">{{ $owner->phone }}</div>
+                            <div class="fp-info-label">Điện thoại</div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($owner->founded)
+                    <div class="fp-info-row">
+                        <svg viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
+                        <div>
+                            <div class="fp-info-val">Từ {{ $owner->founded }}</div>
+                            <div class="fp-info-label">Năm thành lập</div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Card: Thống kê --}}
+                <div class="fp-card">
+                    <div class="fp-card-title">Thống kê</div>
+                    <div class="fp-stats-grid">
+                        <div class="fp-stat">
+                            <div class="fp-stat-n">{{ $owner->screen_count }}<span class="u">+</span></div>
+                            <div class="fp-stat-l">Màn hình</div>
+                        </div>
+                        <div class="fp-stat">
+                            <div class="fp-stat-n">{{ $owner->city_count }}</div>
+                            <div class="fp-stat-l">Tỉnh/Thành</div>
+                        </div>
+                        <div class="fp-stat">
+                            <div class="fp-stat-n">{{ count($owner->venue_types_list ?? []) }}</div>
+                            <div class="fp-stat-l">Loại địa điểm</div>
+                        </div>
+                        @if($owner->founded)
+                        <div class="fp-stat">
+                            <div class="fp-stat-n">{{ now()->year - $owner->founded }}<span class="u"> năm</span></div>
+                            <div class="fp-stat-l">Kinh nghiệm</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Card: Loại địa điểm --}}
+                @if(!empty($owner->venue_types_list))
+                <div class="fp-card">
+                    <div class="fp-card-title">Loại địa điểm</div>
+                    <div class="fp-venue-tags">
+                        @foreach($owner->venue_types_list as $vt)
+                            <span class="fp-venue-tag">{{ $vt }}</span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            {{-- Right: Featured screens (carousel) --}}
+            <div style="min-width:0">
+                <div class="fp-card" style="padding:16px 0 16px 16px">
+                    <div class="fp-card-title" style="padding-right:16px">Màn hình nổi bật</div>
+                    <div class="hs">
+                        @foreach($ownerScreens->take(6) as $screen)
+                            @include('frontpage.partials.screen-card', ['screen' => $screen])
+                        @endforeach
+                    </div>
+                    @if($ownerScreens->total() > 6)
+                        <div style="text-align:center;margin-top:12px;padding-right:16px">
+                            <a href="javascript:void(0)" onclick="fpTab(document.querySelectorAll('.fp-tab')[1],'fp-inventory')" class="btn btn-s btn-sm" style="display:inline-flex">
+                                Xem tất cả {{ $ownerScreens->total() }} màn hình
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- Panel: Inventory (full list) --}}
+    <div id="fp-inventory" class="fp-panel">
+        <div class="fp-inv-header">
+            <div class="avail-badge"><div class="avail-dot"></div>{{ $ownerScreens->total() }} vị trí</div>
+        </div>
+        <div class="inv-grid">
+            @foreach($ownerScreens as $screen)
+                @include('frontpage.partials.screen-card', ['screen' => $screen])
+            @endforeach
+        </div>
+        <div style="margin-top:20px">{{ $ownerScreens->links() }}</div>
+    </div>
+
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
-function sw(el,id){
-  document.querySelectorAll('.titem').forEach(function(t){t.classList.remove('on');});
-  document.querySelectorAll('.tp').forEach(function(p){p.classList.remove('on');});
-  el.classList.add('on');
-  document.getElementById(id).classList.add('on');
+function fpTab(el, id) {
+    document.querySelectorAll('.fp-tab').forEach(function(t) { t.classList.remove('on'); });
+    document.querySelectorAll('.fp-panel').forEach(function(p) { p.classList.remove('on'); });
+    el.classList.add('on');
+    document.getElementById(id).classList.add('on');
+    window.scrollTo({ top: document.querySelector('.fp-nav-wrap').offsetTop - 60, behavior: 'smooth' });
 }
 </script>
 @endpush

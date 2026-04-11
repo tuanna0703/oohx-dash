@@ -40,6 +40,8 @@ class FrontpageService
             $totalCities = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
                 ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
@@ -68,6 +70,7 @@ class FrontpageService
                 ->join('screen_inventory', 'screens.id', '=', 'screen_inventory.screen_id')
                 ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
                 ->where('venue_categories.is_active', true)
                 ->selectRaw('
                     venue_categories.slug as type,
@@ -125,6 +128,8 @@ class FrontpageService
             $rawCityCounts = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
                 ->selectRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1)) as province, count(*) as count")
@@ -191,13 +196,17 @@ class FrontpageService
     {
         return Cache::remember('fp:featured_screens', 900, function () use ($limit) {
             return Screen::withoutGlobalScope('owner_scope')->where('active', true)
-                ->whereHas('spec', fn ($q) => $q->whereNotNull('photo_url')->where('photo_url', '!=', ''))
+                ->whereHas('spec', fn ($q) => $q->where(fn ($sq) =>
+                    $sq->whereNotNull('photos')->where('photos', '!=', '[]')
+                       ->orWhere(fn ($sq2) => $sq2->whereNotNull('photo_url')->where('photo_url', '!=', ''))
+                ))
                 ->whereHas('inventory', fn ($q) => $q->where('floor_cpm', '>', 0))
                 ->with([
-                    'spec:screen_id,photo_url,width_cm,height_cm',
+                    'spec:screen_id,photo_url,photos,width_cm,height_cm',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                     'owner:id,name,slug',
-                    'site:id,city,address',
+                    'site:id,network_id,name,city,address',
+                    'site.network:id,name',
                 ])
                 ->inRandomOrder()
                 ->limit($limit)
@@ -267,6 +276,8 @@ class FrontpageService
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
                 ->where('screens.owner_id', $owner->id)
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
                 ->whereNotNull('sites.city')
                 ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
                 ->value('cnt');
@@ -276,6 +287,7 @@ class FrontpageService
                 ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
                 ->where('screens.owner_id', $owner->id)
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
                 ->selectRaw('DISTINCT COALESCE(venue_categories.name_vi, venue_categories.name) as label')
                 ->orderBy('label')
                 ->pluck('label')
@@ -291,9 +303,11 @@ class FrontpageService
         return Screen::withoutGlobalScope('owner_scope')->where('owner_id', $ownerId)
             ->where('active', true)
             ->with([
-                'spec:screen_id,photo_url,width_cm,height_cm',
+                'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
-                'site:id,city,address',
+                'owner:id,name,slug',
+                'site:id,network_id,name,city,address',
+                'site.network:id,name',
             ])
             ->orderByDesc('updated_at')
             ->paginate($perPage);
@@ -305,10 +319,11 @@ class FrontpageService
     {
         $query = $this->buildScreenQuery($request)
             ->with([
-                'spec:screen_id,photo_url,width_cm,height_cm',
+                'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                 'owner:id,name,slug',
-                'site:id,city,address',
+                'site:id,network_id,name,city,address',
+                'site.network:id,name',
             ]);
 
         $query = $this->applySort($query, $request);
@@ -326,6 +341,7 @@ class FrontpageService
             $priceRange = DB::table('screen_inventory')
                 ->join('screens', 'screen_inventory.screen_id', '=', 'screens.id')
                 ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
                 ->where('screen_inventory.floor_cpm', '>', 0)
                 ->selectRaw('MIN(screen_inventory.floor_cpm) as min_price, MAX(screen_inventory.floor_cpm) as max_price')
                 ->first();
@@ -346,10 +362,11 @@ class FrontpageService
         return Cache::remember("fp:screen:{$id}", 300, function () use ($id) {
             return Screen::withoutGlobalScope('owner_scope')->where('active', true)
                 ->with([
-                    'spec:screen_id,photo_url,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
+                    'spec:screen_id,photo_url,photos,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                     'owner:id,name,slug',
-                    'site:id,city,address,lat,lon',
+                    'site:id,network_id,name,city,address,lat,lon',
+                    'site.network:id,name',
                 ])
                 ->where(function ($q) use ($id) {
                     $q->where('id', $id)
@@ -370,9 +387,11 @@ class FrontpageService
                       ->orWhereHas('inventory', fn ($iq) => $iq->where('venue_type', $screen->inventory?->venue_type));
                 })
                 ->with([
-                    'spec:screen_id,photo_url,width_cm,height_cm',
+                    'spec:screen_id,photo_url,photos,width_cm,height_cm',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
-                    'site:id,city,address',
+                    'owner:id,name,slug',
+                    'site:id,network_id,name,city,address',
+                    'site.network:id,name',
                 ])
                 ->inRandomOrder()
                 ->limit($limit)
@@ -386,7 +405,7 @@ class FrontpageService
     {
         return $this->buildScreenQuery($request)
             ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')->where('lat', '!=', 0)->where('lon', '!=', 0))
-            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'site:id,lat,lon,city,address'])
+            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'owner:id,name,slug', 'site:id,network_id,name,lat,lon,city,address', 'site.network:id,name'])
             ->get();
     }
 
@@ -408,7 +427,7 @@ class FrontpageService
         }
 
         $screens = $query
-            ->with(['spec:screen_id,photo_url', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'site:id,lat,lon,city,address'])
+            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'owner:id,name,slug', 'site:id,network_id,name,lat,lon,city,address', 'site.network:id,name'])
             ->inRandomOrder()
             ->limit($limit)
             ->get();
@@ -420,7 +439,7 @@ class FrontpageService
             'lng'   => (float) ($s->site?->lon ?? 0),
             'city'  => $s->site?->city ?? '',
             'addr'  => $s->site?->address ?? '',
-            'photo' => $s->spec?->photo_url ?? '',
+            'photo' => $s->spec?->photo ?? '',
             'price' => (float) ($s->inventory?->floor_cpm ?? 0),
             'type'  => $s->inventory?->venue_type ?? '',
         ])->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
@@ -500,6 +519,8 @@ class FrontpageService
             ->join('sites', 'screens.site_id', '=', 'sites.id')
             ->whereIn('screens.owner_id', $ownerIds)
             ->where('screens.active', true)
+            ->whereNull('screens.deleted_at')
+            ->whereNull('sites.deleted_at')
             ->whereNotNull('sites.city')
             ->where('sites.city', '!=', '')
             ->selectRaw("screens.owner_id, COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as city_count")
@@ -511,6 +532,7 @@ class FrontpageService
             ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
             ->whereIn('screens.owner_id', $ownerIds)
             ->where('screens.active', true)
+            ->whereNull('screens.deleted_at')
             ->selectRaw('screens.owner_id, COALESCE(venue_categories.name_vi, venue_categories.name) as label')
             ->distinct()
             ->get()

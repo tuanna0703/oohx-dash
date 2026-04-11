@@ -1,9 +1,11 @@
 @php
     $record = $getRecord();
-    $site = $record->relationLoaded('site') ? $record->site : $record->site()->first();
+    // Support cả Screen ($record->site) và Site ($record chính là site)
+    $isSite = $record instanceof \App\Models\Site;
+    $site = $isSite ? $record : ($record->relationLoaded('site') ? $record->site : $record->site()->first());
     $lat = $site?->lat ?? $record->lat ?? null;
     $lon = $site?->lon ?? $record->lon ?? null;
-    $screenName = e($record->name ?? 'Screen');
+    $screenName = e($record->name ?? 'Location');
     $hasLocation = $lat && $lon;
 @endphp
 

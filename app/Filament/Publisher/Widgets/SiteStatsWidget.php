@@ -9,6 +9,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class SiteStatsWidget extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
     protected static ?int $sort = -1;
 
     // ─────────────────────────────────────────────────────────────────────────

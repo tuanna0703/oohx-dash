@@ -6,6 +6,28 @@
         'sun' => 'Chủ nhật',
     ];
 
+    // Parse time value: supports "HH:MM", decimal (0.416 = 10:00), or int hour
+    $parseTime = function ($v) {
+        if ($v === null || $v === '') return null;
+        $v = (string) $v;
+        // Already HH:MM
+        if (preg_match('/^\d{1,2}:\d{2}$/', $v)) return $v;
+        // Decimal fraction of day (Excel format: 0.416 ≈ 10:00)
+        if (is_numeric($v) && (float) $v >= 0 && (float) $v < 1) {
+            $totalMinutes = round((float) $v * 24 * 60);
+            // Round to nearest 15 minutes for cleaner display
+            $totalMinutes = (int) (round($totalMinutes / 15) * 15);
+            $h = (int) floor($totalMinutes / 60);
+            $m = $totalMinutes % 60;
+            return str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . str_pad($m, 2, '0', STR_PAD_LEFT);
+        }
+        // Integer hour
+        if (is_numeric($v) && (int) $v >= 0 && (int) $v <= 24) {
+            return str_pad((int) $v, 2, '0', STR_PAD_LEFT) . ':00';
+        }
+        return $v;
+    };
+
     $rows = [];
     foreach ($dayLabels as $key => $label) {
         $val = $hours[$key] ?? null;
@@ -13,9 +35,10 @@
         if ($val === 'closed' || empty($val)) {
             $rows[] = ['label' => $label, 'active' => false, 'time' => ''];
         } elseif (is_array($val) && !array_is_list($val) && isset($val['open'], $val['close'])) {
-            $rows[] = ['label' => $label, 'active' => true, 'time' => $val['open'] . ' – ' . $val['close']];
+            $open  = $parseTime($val['open']);
+            $close = $parseTime($val['close']);
+            $rows[] = ['label' => $label, 'active' => true, 'time' => $open . ' – ' . $close];
         } elseif (is_array($val) && array_is_list($val)) {
-            // Hour array format → derive range
             $sorted = collect($val)->sort()->values();
             if ($sorted->isEmpty()) {
                 $rows[] = ['label' => $label, 'active' => false, 'time' => ''];
@@ -43,10 +66,10 @@
                 <div class="w-2.5 h-2.5 rounded-full bg-gray-300"></div>
             @endif
         </div>
-        <div class="w-20 text-sm font-medium {{ $row['active'] ? 'text-gray-800' : 'text-gray-400' }}">
+        <div class="w-20 text-sm font-medium {{ $row['active'] ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500' }}">
             {{ $row['label'] }}
         </div>
-        <div class="text-sm {{ $row['active'] ? 'text-gray-600' : 'text-gray-400 italic' }}">
+        <div class="text-sm {{ $row['active'] ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600 italic' }}">
             {{ $row['active'] ? $row['time'] : 'Đóng cửa' }}
         </div>
     </div>

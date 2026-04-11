@@ -3,15 +3,15 @@
 namespace App\Filament\Publisher\Resources\SiteResource\Pages;
 
 use App\Filament\Publisher\Resources\SiteResource;
-use App\Filament\Shared\Pages\BaseViewSite;
-use App\Models\Screen;
+use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
-class ViewSite extends BaseViewSite
+class ViewSite extends ViewRecord
 {
     protected static string $resource = SiteResource::class;
 
-    protected function screenViewUrl(Screen $screen): string
+    protected function getHeaderActions(): array
     {
-        return \App\Filament\Publisher\Resources\ScreenResource::getUrl('view', ['record' => $screen->id]);
+        return [Actions\EditAction::make()];
     }
 }

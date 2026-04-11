@@ -2,60 +2,169 @@
 
 @section('title', 'Khám phá OOH/DOOH Inventory | OOHX')
 
+@php
+    $activeVenueTypes = request()->input('venue_type', []);
+    if (is_string($activeVenueTypes)) $activeVenueTypes = [$activeVenueTypes];
+    $activeCities = request()->input('city', []);
+    if (is_string($activeCities)) $activeCities = [$activeCities];
+    $activeSort = request()->input('sort', '');
+    $activeQ = request()->input('q', '');
+    $hasFilters = !empty($activeVenueTypes) || !empty($activeCities) || !empty($activeQ) || !empty($activeSort);
+@endphp
+
 @section('content')
-<div class="ph"><div class="w"><div class="ph-top"><div class="ph-title">Khám phá Inventory</div><div class="ph-count">{{ number_format($screens->total()) }} vị trí</div><a href="{{ route('fp.map') }}" class="btn btn-s btn-sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> Bản đồ</a></div><div class="ph-search"><div class="ph-search-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t4)" style="width:18px;height:18px;flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div><input placeholder="Tìm theo khu vực, loại biển, campaign…" id="sq"><button class="btn btn-p btn-sm" style="margin:6px;border-radius:8px;flex-shrink:0">Tìm</button></div><div class="fchips"><div class="fchip on">Tất cả ({{ $screens->total() }})</div>@foreach(($filters['formats'] ?? collect())->take(5) as $f)<a href="{{ route('fp.listing', ['venue_type' => $f['type']]) }}" class="fchip">{{ $f['label'] }} ({{ $f['count'] }})</a>@endforeach</div></div></div><div class="w"><div class="listing-layout"><div class="sidebar"><div class="sb-card"><div class="sb-title">Format</div><div class="sb-group">@foreach(($filters['formats'] ?? collect()) as $f)<div class="sb-item" onclick="this.classList.toggle('on')"><div class="sb-checkbox"></div><span>{{ $f['label'] }}</span><span class="sb-count">{{ $f['count'] }}</span></div>@endforeach</div></div><div class="sb-card"><div class="sb-title">Thành phố</div><div class="sb-group">@foreach(($filters['cities'] ?? collect())->take(8) as $city)<div class="sb-item" onclick="this.classList.toggle('on')"><div class="sb-checkbox"></div><span>{{ $city['name'] }}</span><span class="sb-count">{{ $city['count'] }}</span></div>@endforeach</div></div><div class="sb-card"><div class="sb-title">Ngân sách</div><div class="range-labels"><span>{{ number_format(($filters['min_price'] ?? 0)/1000000) }}M</span><span>{{ number_format(($filters['max_price'] ?? 0)/1000000) }}M+</span></div><div class="range-wrap"><input type="range" min="{{ ($filters['min_price'] ?? 0)/1000000 }}" max="{{ ($filters['max_price'] ?? 0)/1000000 }}" value="{{ ($filters['max_price'] ?? 0)/1000000 * 0.75 }}"></div><div class="range-inputs"><input class="range-inp" placeholder="Từ" value="{{ number_format(($filters['min_price'] ?? 0)/1000000) }}M"><input class="range-inp" placeholder="Đến" value="{{ number_format(($filters['max_price'] ?? 0)/1000000) }}M"></div></div><div class="sb-card"><div class="sb-title">Availability</div><div class="sb-group"><div class="sb-item on" onclick="this.classList.toggle('on')"><div class="sb-checkbox"></div><span>Available now</span></div><div class="sb-item" onclick="this.classList.toggle('on')"><div class="sb-checkbox"></div><span>Next 2 weeks</span></div><div class="sb-item" onclick="this.classList.toggle('on')"><div class="sb-checkbox"></div><span>Next month</span></div></div></div><button class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg> Áp dụng</button></div><div><div class="results-header"><div class="rh-count">Hiển thị <strong>{{ number_format($screens->total()) }}</strong> kết quả</div><div class="rh-right"><select class="sort-sel"><option>Phổ biến nhất</option><option>Giá thấp nhất</option><option>Giá cao nhất</option><option>Traffic cao nhất</option><option>Mới nhất</option></select><div class="view-btn on" id="vg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg></div><div class="view-btn" id="vl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></div></div></div><div class="inv-grid" id="inv-grid">
-  @forelse($screens as $screen)
-  <a href="{{ route('fp.detail', $screen->uuid ?? $screen->id) }}" class="inv-card">
-    <div class="ic-photo">
-      <img src="{{ $screen->spec?->photo_url ?? 'https://placehold.co/400x300/F5F5F7/6E6E73?text=No+Photo' }}" loading="lazy">
-      <div class="ic-badges"><span class="badge b-grn">Available</span></div>
+<div class="ph"><div class="w">
+    <div class="ph-top">
+        <div class="ph-title">Khám phá Inventory</div>
+        <div class="ph-count">{{ number_format($screens->total()) }} vị trí</div>
+        <a href="{{ route('fp.map') }}" class="btn btn-s btn-sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> Bản đồ</a>
     </div>
-    <div class="ic-content">
-      <div class="ic-body">
-        <div class="ic-title">{{ $screen->name }}</div>
-        <div class="ic-loc">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>{{ $screen->site?->city ?? '' }}
-        </div>
-        <div class="ic-specs">
-          <div><div class="sp-l">Format</div><div class="sp-v">{{ ($vnCatLabels ?? [])[$screen->inventory?->vn_category_id] ?? '—' }}</div></div>
-          <div><div class="sp-l">Size</div><div class="sp-v">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'x'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div></div>
-        </div>
-        <div class="ic-price-row">
-          <div class="ic-price">{{ $screen->inventory?->floor_cpm >= 1000000 ? number_format($screen->inventory->floor_cpm / 1000000).'M' : number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') }}<sup>đ</sup></div>
-          <div class="ic-price-l">/ tháng</div>
-        </div>
-      </div>
-      <div class="ic-foot">
-        <div>
-          <div class="ic-price">{{ $screen->inventory?->floor_cpm >= 1000000 ? number_format($screen->inventory->floor_cpm / 1000000).'M' : number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') }}<sup>đ</sup></div>
-          <div class="ic-price-l">/ tháng</div>
-        </div>
-        <div class="ic-foot-actions"><span class="btn btn-p btn-sm">Chi tiết</span></div>
-      </div>
+
+    {{-- Quick filter chips --}}
+    <div class="fchips">
+        <a href="{{ route('fp.listing') }}" class="fchip {{ !$hasFilters ? 'on' : '' }}">Tất cả ({{ $screens->total() }})</a>
+        @foreach(($filters['formats'] ?? collect())->take(6) as $f)
+            <a href="{{ route('fp.listing', ['venue_type' => $f['type']]) }}" class="fchip {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">{{ $f['label'] }} ({{ $f['count'] }})</a>
+        @endforeach
     </div>
-  </a>
-  @empty
-  <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--t4)">Không tìm thấy inventory phù hợp</div>
-  @endforelse
-</div><div class="load-more">{{ $screens->withQueryString()->links() }}</div></div></div></div>
+</div></div>
+
+<div class="w"><div class="listing-layout">
+
+    {{-- ═══ SIDEBAR — wrapped in <form> ═══ --}}
+    <form method="GET" action="{{ route('fp.listing') }}" class="sidebar" id="filter-form">
+
+        {{-- Search --}}
+        <div class="sb-card">
+            <div class="sb-title">Tìm kiếm</div>
+            <div style="display:flex;gap:6px">
+                <input type="text" name="q" value="{{ $activeQ }}" placeholder="Tên, địa chỉ, khu vực..." class="sb-search-inp" style="flex:1;height:36px;padding:0 10px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;font-family:var(--font);font-size:13px;color:var(--t2);outline:none">
+            </div>
+        </div>
+
+        {{-- Địa điểm (venue_type) --}}
+        <div class="sb-card">
+            <div class="sb-title">Địa điểm</div>
+            <div class="sb-group">
+                @foreach(($filters['formats'] ?? collect()) as $f)
+                    <label class="sb-item {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">
+                        <input type="checkbox" name="venue_type[]" value="{{ $f['type'] }}" {{ in_array($f['type'], $activeVenueTypes) ? 'checked' : '' }} style="display:none">
+                        <div class="sb-checkbox"></div>
+                        <span>{{ $f['label'] }}</span>
+                        <span class="sb-count">{{ $f['count'] }}</span>
+                    </label>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Tỉnh/Thành (city) --}}
+        <div class="sb-card">
+            <div class="sb-title">Tỉnh/Thành</div>
+            <div class="sb-group">
+                @foreach(($filters['cities'] ?? collect())->take(12) as $city)
+                    <label class="sb-item {{ in_array($city['code'], $activeCities) ? 'on' : '' }}">
+                        <input type="checkbox" name="city[]" value="{{ $city['code'] }}" {{ in_array($city['code'], $activeCities) ? 'checked' : '' }} style="display:none">
+                        <div class="sb-checkbox"></div>
+                        <span>{{ $city['name'] }}</span>
+                        <span class="sb-count">{{ $city['count'] }}</span>
+                    </label>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Sort (hidden, synced from dropdown) --}}
+        <input type="hidden" name="sort" id="sort-input" value="{{ $activeSort }}">
+
+        {{-- Áp dụng --}}
+        <button type="submit" class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg> Áp dụng
+        </button>
+
+        @if($hasFilters)
+            <a href="{{ route('fp.listing') }}" class="btn btn-s" style="width:100%;justify-content:center;border-radius:10px;margin-top:6px;text-decoration:none">
+                Xoá bộ lọc
+            </a>
+        @endif
+    </form>
+
+    {{-- ═══ MAIN CONTENT ═══ --}}
+    <div>
+        <div class="results-header">
+            <div class="rh-count">Hiển thị <strong>{{ number_format($screens->total()) }}</strong> kết quả</div>
+            <div class="rh-right">
+                <select class="sort-sel" id="sort-sel" onchange="document.getElementById('sort-input').value=this.value; document.getElementById('filter-form').dispatchEvent(new Event('submit'));">
+                    <option value="" {{ $activeSort === '' ? 'selected' : '' }}>Mặc định</option>
+                    <option value="price_asc" {{ $activeSort === 'price_asc' ? 'selected' : '' }}>Giá thấp nhất</option>
+                    <option value="price_desc" {{ $activeSort === 'price_desc' ? 'selected' : '' }}>Giá cao nhất</option>
+                    <option value="newest" {{ $activeSort === 'newest' ? 'selected' : '' }}>Mới nhất</option>
+                </select>
+                <div class="view-btn on" id="vg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:18px;height:18px;flex-shrink:0"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg></div>
+                <div class="view-btn" id="vl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></div>
+            </div>
+        </div>
+
+        <div class="inv-grid" id="inv-grid">
+            @forelse($screens as $screen)
+                @include('frontpage.partials.screen-card', ['screen' => $screen])
+            @empty
+            <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--t4)">Không tìm thấy inventory phù hợp</div>
+            @endforelse
+        </div>
+
+        <div class="load-more">{{ $screens->withQueryString()->links() }}</div>
+    </div>
+</div></div>
 @endsection
 
 @push('scripts')
 <script>
-function toggleChip(el){
-  var chips=document.querySelectorAll('.fchip');
-  if(el===chips[0]){chips.forEach(function(c){c.classList.remove('on');});el.classList.add('on');}
-  else{chips[0].classList.remove('on');el.classList.toggle('on');}
-}
 (function(){
-  document.getElementById('vg').addEventListener('click',function(){
-    this.classList.add('on');document.getElementById('vl').classList.remove('on');
-    document.getElementById('inv-grid').classList.remove('list-view');
-  });
-  document.getElementById('vl').addEventListener('click',function(){
-    this.classList.add('on');document.getElementById('vg').classList.remove('on');
-    document.getElementById('inv-grid').classList.add('list-view');
-  });
+    // Grid/List toggle with localStorage persistence
+    var grid = document.getElementById('inv-grid');
+    var vg = document.getElementById('vg');
+    var vl = document.getElementById('vl');
+    var saved = localStorage.getItem('listing_view');
+    if (saved === 'list') { grid.classList.add('list-view'); vl.classList.add('on'); vg.classList.remove('on'); }
+
+    vg.addEventListener('click', function(){
+        vg.classList.add('on'); vl.classList.remove('on');
+        grid.classList.remove('list-view');
+        localStorage.setItem('listing_view', 'grid');
+    });
+    vl.addEventListener('click', function(){
+        vl.classList.add('on'); vg.classList.remove('on');
+        grid.classList.add('list-view');
+        localStorage.setItem('listing_view', 'list');
+    });
+
+    // Sidebar checkbox — sync .on class with native checkbox state
+    // <label> already toggles checkbox natively, just sync the CSS class
+    document.querySelectorAll('.sb-item input[type="checkbox"]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+            cb.closest('.sb-item').classList.toggle('on', cb.checked);
+        });
+    });
+
+    // Form submit — strip empty params for clean URL
+    var form = document.getElementById('filter-form');
+    form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var parts = [];
+        new FormData(form).forEach(function(val, key){
+            if (val !== '' && val !== null) {
+                parts.push(encodeURIComponent(key).replace(/%5B/gi,'[').replace(/%5D/gi,']') + '=' + encodeURIComponent(val));
+            }
+        });
+        window.location.href = form.action + (parts.length ? '?' + parts.join('&') : '');
+    });
+
+    // Search on Enter
+    var qInput = document.querySelector('input[name="q"]');
+    if (qInput) {
+        qInput.addEventListener('keydown', function(e){
+            if (e.key === 'Enter') { e.preventDefault(); form.dispatchEvent(new Event('submit')); }
+        });
+    }
 })();
 </script>
 @endpush

@@ -9,6 +9,8 @@ use App\Models\VietnamProvince;
 use App\Services\GeocodingService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -98,7 +100,17 @@ abstract class BaseSiteResource extends Resource
                 ]))
             ),
 
-            Forms\Components\Section::make('Hình ảnh')->schema([
+            Forms\Components\Section::make('Hình ảnh')->columns(2)->schema([
+                Forms\Components\FileUpload::make('logo')
+                    ->label('Logo')
+                    ->image()
+                    ->directory('sites/logos')
+                    ->disk('public')
+                    ->imageResizeTargetWidth('400')
+                    ->imageResizeTargetHeight('400')
+                    ->maxSize(1024)
+                    ->helperText('Logo site. Khuyến nghị 400×400px, tối đa 1MB.'),
+
                 Forms\Components\FileUpload::make('banner')
                     ->label('Banner')
                     ->image()
@@ -109,7 +121,7 @@ abstract class BaseSiteResource extends Resource
                     ->imageResizeTargetWidth('1200')
                     ->imageResizeTargetHeight('514')
                     ->maxSize(2048)
-                    ->helperText('Ảnh bìa hiển thị trên trang chi tiết site. Khuyến nghị 1200×514px, tối đa 2MB.'),
+                    ->helperText('Ảnh bìa. Khuyến nghị 1200×514px, tối đa 2MB.'),
             ]),
 
             Forms\Components\Section::make('Location')->columns(2)->schema([
@@ -210,39 +222,15 @@ abstract class BaseSiteResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('network.name')
-                    ->label('Network')
-                    ->sortable()
-                    ->searchable()
-                    ->placeholder('—')
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('external_id')
                     ->label('Site ID')
                     ->searchable()
                     ->copyable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('province.name')
-                    ->label('Tỉnh/Thành')
-                    ->sortable()
-                    ->searchable()
-                    ->placeholder('⚠ Chưa có')
-                    ->color(fn($record) => $record->province_id ? null : 'danger'),
-
-                Tables\Columns\TextColumn::make('commune.name')
-                    ->label('Phường/Xã')
-                    ->searchable()
-                    ->placeholder('⚠ Chưa có')
-                    ->color(fn($record) => $record->commune_id ? null : 'warning')
-                    ->toggleable(isToggledHiddenByDefault: false),
-
                 Tables\Columns\TextColumn::make('city')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('region')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('screens_count')
                     ->label('Screens')
@@ -439,5 +427,110 @@ abstract class BaseSiteResource extends Resource
                         ->modalDescription('Xoá các sites đã chọn sẽ đồng thời xoá tất cả screens thuộc chúng và dữ liệu specs, inventory.'),
                 ]),
             ]);
+    }
+
+    // ── Infolist (View page) ────────────────────────────────────────────────
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+
+            // ── Section 1: Thông tin chung ──────────────────────────────────
+            Infolists\Components\Section::make('Thông tin chung')
+                ->columns(3)
+                ->schema([
+                    Infolists\Components\ImageEntry::make('logo')
+                        ->label('')
+                        ->disk('public')
+                        ->height(60)
+                        ->circular()
+                        ->visible(fn (Site $r) => filled($r->logo)),
+
+                    Infolists\Components\TextEntry::make('name')
+                        ->label('Tên site'),
+
+                    Infolists\Components\TextEntry::make('external_id')
+                        ->label('Site ID')
+                        ->copyable()
+                        ->fontFamily('mono'),
+
+                    Infolists\Components\TextEntry::make('status')
+                        ->label('Trạng thái')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => ucfirst($state ?? 'unknown'))
+                        ->color(fn ($state) => match ($state) {
+                            'active' => 'success',
+                            'paused' => 'warning',
+                            'closed' => 'danger',
+                            default  => 'gray',
+                        }),
+
+                    Infolists\Components\TextEntry::make('owner.name')
+                        ->label('Owner')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('network.name')
+                        ->label('Network')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('screens_count')
+                        ->label('Screens')
+                        ->getStateUsing(fn (Site $r) => $r->screens()->count()),
+
+                    Infolists\Components\TextEntry::make('city')
+                        ->label('Thành phố')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('province.full_name')
+                        ->label('Tỉnh/Thành')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('commune.full_name')
+                        ->label('Phường/Xã')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('address')
+                        ->label('Địa chỉ')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+
+                    Infolists\Components\TextEntry::make('description')
+                        ->label('Mô tả')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+            // ── Section 2: Vị trí & Map ─────────────────────────────────────
+            Infolists\Components\Section::make('Vị trí')
+                ->collapsible()
+                ->columns(3)
+                ->schema([
+                    Infolists\Components\TextEntry::make('lat')
+                        ->label('Latitude')
+                        ->fontFamily('mono')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('lon')
+                        ->label('Longitude')
+                        ->fontFamily('mono')
+                        ->placeholder('—'),
+
+                    Infolists\Components\TextEntry::make('country')
+                        ->label('Quốc gia')
+                        ->formatStateUsing(fn ($state) => match ($state) {
+                            'VN' => 'Vietnam',
+                            'SG' => 'Singapore',
+                            'TH' => 'Thailand',
+                            'ID' => 'Indonesia',
+                            default => $state ?? '—',
+                        }),
+
+                    Infolists\Components\ViewEntry::make('site_map')
+                        ->label('')
+                        ->view('filament.components.screen-map')
+                        ->columnSpanFull()
+                        ->visible(fn (Site $r) => $r->lat !== null && $r->lon !== null),
+                ]),
+        ]);
     }
 }

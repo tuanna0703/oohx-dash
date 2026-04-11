@@ -29,13 +29,7 @@ class ScreenResource extends BaseScreenResource
 
     protected static function additionalTableColumns(): array
     {
-        return [
-            Tables\Columns\TextColumn::make('owner.name')
-                ->label('Owner')
-                ->sortable()
-                ->searchable()
-                ->toggleable(),
-        ];
+        return [];
     }
 
     // ── Owner filter trong table ──────────────────────────────────────────────

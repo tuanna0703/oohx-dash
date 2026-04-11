@@ -409,6 +409,8 @@ ul{list-style:none}
 .hs::-webkit-scrollbar{display:none}
 @media(min-width:768px){.hs{gap:16px}}
 @media(min-width:1024px){.hs{gap:18px}}
+.hs>.sc-card,.hs>.inv-card{min-width:260px;max-width:300px;flex-shrink:0}
+@media(min-width:768px){.hs>.sc-card,.hs>.inv-card{min-width:280px;max-width:320px}}
 
 /* Inventory card (index.html long names) */
 .inv-photo{position:relative;height:180px;overflow:hidden;background:var(--bg2)}
@@ -674,6 +676,7 @@ input[type=range]{width:100%;accent-color:var(--bl);cursor:pointer}
 @media(min-width:520px){.inv-grid{grid-template-columns:repeat(2,1fr);gap:14px}}
 @media(min-width:768px){.inv-grid{gap:16px}}
 @media(min-width:1024px){.inv-grid{grid-template-columns:repeat(3,1fr);gap:18px}}
+@media(min-width:1200px){.inv-grid:not(.listing-layout .inv-grid){grid-template-columns:repeat(4,1fr)}}
 .sort-sel{height:36px;padding:0 28px 0 12px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;font-family:var(--font);font-size:13px;color:var(--t2);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-repeat:no-repeat;background-position:right 8px center;background-size:16px}
 /* List view mode */
 .inv-grid.list-view{grid-template-columns:1fr !important;gap:10px}
@@ -1339,3 +1342,45 @@ body.page-map{overflow:hidden}
 .avail-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.25);border-radius:980px;padding:6px 14px;font-size:13px;font-weight:600;color:#248A3D}
 .avail-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:lpulse 2s ease-in-out infinite}
 @keyframes lpulse{0%,100%{box-shadow:0 0 0 3px rgba(52,199,89,.18)}50%{box-shadow:0 0 0 6px rgba(52,199,89,.06)}}
+
+/* ── Unified Screen Card (.sc-card) ─────────────────────── */
+.sc-card{display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--ln2);box-shadow:var(--sh1);transition:all 240ms var(--ease);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
+.sc-card:hover{transform:translateY(-4px);box-shadow:var(--sh3);border-color:transparent}
+.sc-card:active{transform:scale(.98)}
+.sc-photo{position:relative;width:100%;height:180px;overflow:hidden;background:var(--bg2)}
+.sc-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s;display:block}
+.sc-card:hover .sc-photo img{transform:scale(1.05)}
+.sc-badge{position:absolute;top:10px;left:10px;padding:3px 10px;border-radius:980px;font-size:11px;font-weight:600;background:rgba(52,199,89,.14);color:#248A3D;backdrop-filter:blur(6px)}
+.sc-body{padding:14px 14px 0;flex:1;min-width:0}
+.sc-title{font-size:15px;font-weight:700;color:var(--t1);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sc-loc{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--bl);margin-top:4px}
+.sc-loc-icon{width:12px;height:12px;flex-shrink:0}
+.sc-specs{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.sc-spec{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.sc-spec-l{color:var(--t4);flex-shrink:0}
+.sc-spec-v{color:var(--t2);font-weight:500;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-top:1px solid var(--ln2);margin-top:12px}
+.sc-price{font-size:18px;font-weight:800;color:var(--t1);line-height:1}
+.sc-price sup{font-size:11px;font-weight:600}
+.sc-price-sub{font-size:11px;color:var(--t4);margin-top:1px}
+.sc-btn{flex-shrink:0}
+
+/* Compact variant (similar/featured — no specs, smaller) */
+.sc-compact .sc-photo{height:140px}
+.sc-compact .sc-body{padding:10px 12px 0}
+.sc-compact .sc-title{font-size:14px;-webkit-line-clamp:1}
+.sc-compact .sc-foot{padding:8px 12px;margin-top:8px}
+.sc-compact .sc-price{font-size:15px}
+.sc-compact .sc-btn{display:none}
+
+/* List view variant */
+.inv-grid.list-view .sc-card{flex-direction:row}
+.inv-grid.list-view .sc-photo{width:200px;height:auto;min-height:160px}
+.inv-grid.list-view .sc-body{display:flex;flex-direction:column}
+.inv-grid.list-view .sc-foot{border-top:0;margin-top:auto;border-left:1px solid var(--ln2);flex-direction:column;align-items:flex-end;padding:14px}
+@media(max-width:640px){
+    .inv-grid.list-view .sc-card{flex-direction:column}
+    .inv-grid.list-view .sc-photo{width:100%;min-height:140px}
+    .inv-grid.list-view .sc-foot{border-left:0;border-top:1px solid var(--ln2);flex-direction:row}
+}
+@media(min-width:768px){.sc-photo{height:190px}}

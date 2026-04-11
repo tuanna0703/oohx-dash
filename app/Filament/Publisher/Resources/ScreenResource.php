@@ -42,6 +42,17 @@ class ScreenResource extends BaseScreenResource
             ->orderBy('name')->pluck('name', 'id')->toArray();
     }
 
+    protected static function sitesByNetwork(?string $networkId): array
+    {
+        $ownerId = auth()->user()?->current_owner_id;
+        if (! $networkId) return static::siteFormOptions();
+        return Site::where('owner_id', $ownerId)
+            ->where('network_id', $networkId)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
     protected static function networkFormOptions(): array
     {
         return Network::where('owner_id', auth()->user()?->current_owner_id)

@@ -37,7 +37,7 @@ class ScreenSpec extends Model
     protected $fillable = [
         // Marketplace
         'screen_id', 'width_px', 'height_px', 'width_cm', 'height_cm',
-        'photo_url', 'allow_image', 'allow_video',
+        'photo_url', 'photos', 'allow_image', 'allow_video',
 
         // AdOps (Phase 2)
         'resolution_preset', 'width_unit', 'height_unit',
@@ -47,14 +47,15 @@ class ScreenSpec extends Model
     ];
 
     protected $casts = [
-        'allow_image'      => 'boolean',
-        'allow_video'      => 'boolean',
-        'allow_html'       => 'boolean',
-        'allow_zip'        => 'boolean',
-        'allow_vast'       => 'boolean',
+        'allow_image'       => 'boolean',
+        'allow_video'       => 'boolean',
+        'allow_html'        => 'boolean',
+        'allow_zip'         => 'boolean',
+        'allow_vast'        => 'boolean',
         'allowed_languages' => 'array',
-        'width_cm'         => 'decimal:1',
-        'height_cm'        => 'decimal:1',
+        'photos'            => 'array',
+        'width_cm'          => 'decimal:1',
+        'height_cm'         => 'decimal:1',
     ];
 
     // ── Relationships ───────────────────────────────────────
@@ -65,6 +66,38 @@ class ScreenSpec extends Model
     }
 
     // ── Accessors ───────────────────────────────────────────
+
+    /**
+     * Get the first photo as a full public URL.
+     * Supports: photos array, photo_url string, full URL, or relative storage path.
+     */
+    public function getPhotoAttribute(): ?string
+    {
+        $path = collect($this->photos)->first() ?? $this->photo_url;
+        if (! $path) return null;
+
+        // Already a full URL
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('storage/' . $path);
+    }
+
+    /**
+     * Get all photos as full public URLs.
+     */
+    public function getPhotoUrlsAttribute(): array
+    {
+        $paths = $this->photos ?? ($this->photo_url ? [$this->photo_url] : []);
+
+        return collect($paths)->map(function ($path) {
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            return asset('storage/' . $path);
+        })->all();
+    }
 
     public function getOrientationAttribute(): string
     {

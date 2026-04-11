@@ -3,9 +3,15 @@
 namespace App\Filament\Resources\SiteResource\Pages;
 
 use App\Filament\Resources\SiteResource;
-use App\Filament\Shared\Pages\BaseViewSite;
+use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
-class ViewSite extends BaseViewSite
+class ViewSite extends ViewRecord
 {
     protected static string $resource = SiteResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [Actions\EditAction::make()];
+    }
 }

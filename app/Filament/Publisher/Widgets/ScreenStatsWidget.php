@@ -10,6 +10,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ScreenStatsWidget extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
     protected static ?int $sort = -1;
 
     // ─────────────────────────────────────────────────────────────────────────

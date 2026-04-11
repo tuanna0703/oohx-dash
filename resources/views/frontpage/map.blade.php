@@ -50,7 +50,7 @@
                 @foreach(($filters['formats'] ?? collect())->take(3) as $f)
                 <div class="mpc-chip" data-type="{{ $f['type'] }}">{{ $f['label'] }}</div>
                 @endforeach
-                <div class="mpc-chip" data-type="available">Available</div>
+                <div class="mpc-chip" data-type="available">Còn trống</div>
             </div>
         </div>
         <div class="mp-count">Hiển thị <strong id="pin-count">{{ number_format($pins->count()) }}</strong> kết quả</div>
@@ -59,7 +59,7 @@
             @if($pin->site?->lat && $pin->site?->lon)
             <div class="mp-card" data-uuid="{{ $pin->uuid }}" data-lat="{{ $pin->site->lat }}" data-lng="{{ $pin->site->lon }}">
                 <div class="mp-card-img">
-                    <img src="{{ $pin->spec?->photo_url ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=No+Photo' }}" loading="lazy" alt="{{ $pin->name }}">
+                    <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=No+Photo' }}" loading="lazy" alt="{{ $pin->name }}">
                 </div>
                 <div class="mp-card-info">
                     <div class="mp-card-nm">{{ $pin->name }}</div>
@@ -69,7 +69,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
-                        <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Available</span>
+                        <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Còn trống</span>
                     </div>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                     <span id="popup-city"></span>
                 </div>
-                <span class="badge b-grn" style="display:inline-flex;margin-bottom:8px">Available</span>
+                <span class="badge b-grn" style="display:inline-flex;margin-bottom:8px">Còn trống</span>
                 <div class="mpop-price" id="popup-price"></div>
                 <div class="mpop-actions">
                     <a href="#" id="popup-link" class="btn btn-p btn-sm" style="flex:1;justify-content:center">Xem chi tiết</a>

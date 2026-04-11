@@ -3,7 +3,6 @@
 namespace App\Filament\Publisher\Resources\SiteResource\Pages;
 
 use App\Filament\Publisher\Resources\SiteResource;
-use App\Filament\Publisher\Widgets\SiteStatsWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -22,13 +21,6 @@ class ListSite extends ListRecords
                 ->openUrlInNewTab(false),
 
             Actions\CreateAction::make(),
-        ];
-    }
-
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            SiteStatsWidget::class,
         ];
     }
 }

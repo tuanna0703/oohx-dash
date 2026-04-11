@@ -39,7 +39,7 @@ class ScreenResource extends JsonResource
             'price_per_slot_vnd' => $inventory?->floor_cpm ? (int) $inventory->floor_cpm : 0,
             'operating_hours'    => $this->resolveOperatingHours($inventory),
             'min_booking_days'   => 7,
-            'photos'             => $spec?->photo_url ? [$spec->photo_url] : [],
+            'photos'             => $spec?->photo_urls ?? [],
             'status'             => $this->active ? 'active' : 'inactive',
             'updated_at'         => $this->updated_at?->toIso8601String(),
         ];

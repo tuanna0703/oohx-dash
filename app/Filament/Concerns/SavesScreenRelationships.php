@@ -10,7 +10,9 @@ trait SavesScreenRelationships
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if (empty($data['owner_id'])) {
-            $data['owner_id'] = auth()->user()->current_owner_id;
+            // Lấy owner_id từ site đã chọn (admin không có current_owner_id)
+            $data['owner_id'] = auth()->user()->current_owner_id
+                ?? \App\Models\Site::find($data['site_id'] ?? null)?->owner_id;
         }
         return $this->extractNestedData($data);
     }
@@ -36,14 +38,22 @@ trait SavesScreenRelationships
     {
         $this->specData      = $data['spec']      ?? [];
         $this->inventoryData = $data['inventory'] ?? [];
-        $this->siteData      = $data['site']      ?? [];
+
+        // Site lat/lon: from virtual fields _site_lat/_site_lon or legacy site.lat/site.lon
+        $this->siteData = [];
+        if (isset($data['_site_lat']) || isset($data['_site_lon'])) {
+            $this->siteData['lat'] = $data['_site_lat'] ?? null;
+            $this->siteData['lon'] = $data['_site_lon'] ?? null;
+        } elseif (isset($data['site'])) {
+            $this->siteData = $data['site'];
+        }
 
         unset(
             $data['spec'], $data['inventory'], $data['site'],
+            $data['_site_lat'], $data['_site_lon'],
+            $data['network_filter'],
             $data['resolution_preset'], $data['allowed_content'],
             $data['allow_different_durations'], $data['selective_listing'],
-            // frequency_cap, strict_frequency_capping, screen_count_override đã chuyển
-            // sang inventory.* nên không còn ở root data — bỏ khỏi danh sách unset thủ công
             $data['override_screen_count']
         );
 
@@ -65,7 +75,8 @@ trait SavesScreenRelationships
                 'height_cm'        => $s['height_cm']        ?? null,
                 'height_unit'      => $s['height_unit']      ?? 'cm',
                 'facing_direction' => $s['facing_direction'] ?? null,
-                'photo_url'        => $s['photo_url']        ?? null,
+                'photos'           => isset($s['photos']) ? array_values($s['photos']) : null,
+                'photo_url'        => isset($s['photos']) ? (collect($s['photos'])->first() ?? null) : ($s['photo_url'] ?? null),
                 'allow_image'      => $s['allow_image']      ?? true,
                 'allow_video'      => $s['allow_video']      ?? true,
                 'allow_html'       => $s['allow_html']       ?? false,

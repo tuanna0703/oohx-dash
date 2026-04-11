@@ -204,8 +204,8 @@
     <div class="sec-head">
       <div class="sec-head-row">
         <div>
-          <span class="eyebrow">INVENTORY TYPE</span>
-          <h2 class="section-hed">Browse by Format</h2>
+          <span class="eyebrow">LOẠI ĐỊA ĐIỂM</span>
+          <h2 class="section-hed">Duyệt theo Địa điểm</h2>
           <p class="section-sub" style="margin-top:10px;font-size:16px">Outdoor, indoor, digital hay static — tất cả trên một nền tảng.</p>
         </div>
         <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
@@ -261,7 +261,7 @@
             <h2 class="section-hed">Đang còn trống</h2>
             <p class="section-sub" style="margin-top:10px;font-size:16px">Ảnh thực địa · Traffic data xác thực · Đặt booking nhanh</p>
           </div>
-          <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">View all <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
+          <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
         </div>
       </div>
     <div class="hs" style="margin-left:-22px;margin-right:-22px;padding-left:22px;padding-right:22px">
@@ -337,7 +337,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
               <span id="hp-popup-city"></span>
             </div>
-            <span class="badge b-grn" style="display:inline-flex;margin-bottom:6px;font-size:11px;padding:2px 8px">Available</span>
+            <span class="badge b-grn" style="display:inline-flex;margin-bottom:6px;font-size:11px;padding:2px 8px">Còn trống</span>
             <div class="hmpop-price" id="hp-popup-price"></div>
           </div>
           <div class="hmpop-action">

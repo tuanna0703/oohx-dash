@@ -43,10 +43,10 @@ class EditScreen extends EditRecord
             }
         }
 
-        // Flatten site lat/lon
+        // Flatten site lat/lon into virtual fields
         if ($screen->site) {
-            $data['site']['lat'] = $screen->site->lat;
-            $data['site']['lon'] = $screen->site->lon;
+            $data['_site_lat'] = $screen->site->lat;
+            $data['_site_lon'] = $screen->site->lon;
         }
 
         return $data;

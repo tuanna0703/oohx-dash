@@ -16,7 +16,7 @@ class Site extends Model
 
     protected $fillable = [
         'owner_id', 'network_id', 'external_id',
-        'name', 'description', 'banner', 'lat', 'lon',
+        'name', 'description', 'logo', 'banner', 'lat', 'lon',
         'address', 'city', 'region', 'country', 'status',
         'province_id', 'commune_id',
     ];

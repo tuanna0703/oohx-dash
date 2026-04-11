@@ -24,24 +24,25 @@ Route::domain($fpDomain)->group(function () {
     Route::get('/owners',             [FrontpageController::class, 'owners'])->name('fp.owners');
     Route::get('/owners/{owner}',     [FrontpageController::class, 'ownerDetail'])->name('fp.owner-detail');
 
-    // Proxy Nominatim geocoding — tránh CSP/CORS khi gọi từ browser
-    Route::get('/geocode/search', function () {
-        $q = request()->input('q', '');
-        if (! $q) {
-            return response()->json([]);
-        }
+});
 
-        $response = Http::withHeaders([
-            'User-Agent' => 'AdTRUE-SSP/1.0',
-            'Accept-Language' => 'vi,en',
-        ])->get('https://nominatim.openstreetmap.org/search', [
-            'format' => 'json',
-            'limit'  => 5,
-            'q'      => $q,
-        ]);
+// ── Geocode proxy (accessible from all domains — admin, publisher, frontpage) ──
+Route::get('/geocode/search', function () {
+    $q = request()->input('q', '');
+    if (! $q) {
+        return response()->json([]);
+    }
 
-        return response()->json($response->json());
-    });
+    $response = Http::withHeaders([
+        'User-Agent' => 'AdTRUE-SSP/1.0',
+        'Accept-Language' => 'vi,en',
+    ])->get('https://nominatim.openstreetmap.org/search', [
+        'format' => 'json',
+        'limit'  => 5,
+        'q'      => $q,
+    ]);
+
+    return response()->json($response->json());
 });
 
 // ── Fallback: nếu không match domain nào (www.oohx.net, IP, etc.)

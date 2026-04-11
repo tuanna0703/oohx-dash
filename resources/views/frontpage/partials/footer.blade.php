@@ -38,11 +38,11 @@
                 </ul>
             </div>
             <div class="ft-col">
-                <h4>Owner</h4>
+                <h4>Chủ sở hữu</h4>
                 <ul class="ft-ls">
-                    <li><a href="{{ route('fp.owners') }}">List inventory</a></li>
-                    <li><a href="#">Dashboard</a></li>
-                    <li><a href="#">Support</a></li>
+                    <li><a href="{{ route('fp.owners') }}">Danh sách màn hình</a></li>
+                    <li><a href="#">Bảng điều khiển</a></li>
+                    <li><a href="#">Hỗ trợ</a></li>
                 </ul>
             </div>
         </div>

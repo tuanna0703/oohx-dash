@@ -8,6 +8,8 @@ use App\Models\Site;
 use App\Models\VenueCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -38,6 +40,15 @@ abstract class BaseScreenResource extends Resource
     protected static function siteFormOptions(): array
     {
         return Site::orderBy('name')->pluck('name', 'id')->toArray();
+    }
+
+    protected static function sitesByNetwork(?string $networkId): array
+    {
+        if (! $networkId) return static::siteFormOptions();
+        return Site::where('network_id', $networkId)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
     }
 
     protected static function networkFormOptions(): array
@@ -97,19 +108,27 @@ abstract class BaseScreenResource extends Resource
                                 ->maxLength(199)
                                 ->columnSpan(2),
 
+                            Forms\Components\Select::make('network_filter')
+                                ->label('Network')
+                                ->placeholder('Chọn network')
+                                ->options(fn () => static::networkFormOptions())
+                                ->searchable()
+                                ->live()
+                                ->afterStateHydrated(function (Forms\Components\Select $component, ?Screen $record) {
+                                    if ($record) {
+                                        $component->state($record->site?->network_id);
+                                    }
+                                })
+                                ->afterStateUpdated(fn (callable $set) => $set('site_id', null))
+                                ->dehydrated(false),
+
                             Forms\Components\Select::make('site_id')
                                 ->label('Site')
                                 ->required()
-                                ->placeholder('Chọn site')
-                                ->options(fn () => static::siteFormOptions())
-                                ->searchable(),
-
-                            Forms\Components\Select::make('inventory.network_id')
-                                ->label('Network')
-                                ->required()
-                                ->placeholder('Chọn network')
-                                ->options(fn () => static::networkFormOptions())
-                                ->searchable(),
+                                ->placeholder(fn (callable $get) => $get('network_filter') ? 'Chọn site' : 'Chọn network trước')
+                                ->options(fn (callable $get) => static::sitesByNetwork($get('network_filter')))
+                                ->searchable()
+                                ->live(),
 
                             Forms\Components\Select::make('inventory.vn_category_id')
                                 ->label('Loại biển')
@@ -152,9 +171,12 @@ abstract class BaseScreenResource extends Resource
                         ->icon('heroicon-o-tv')
                         ->columns(2)
                         ->schema([
-                            Forms\Components\FileUpload::make('spec.photo_url')
+                            Forms\Components\FileUpload::make('spec.photos')
                                 ->label('Ảnh màn hình')
                                 ->image()
+                                ->multiple()
+                                ->reorderable()
+                                ->maxFiles(10)
                                 ->disk('public')
                                 ->directory('screen-photos')
                                 ->imagePreviewHeight('160')
@@ -219,15 +241,23 @@ abstract class BaseScreenResource extends Resource
                         ->icon('heroicon-o-map-pin')
                         ->columns(3)
                         ->schema([
-                            Forms\Components\TextInput::make('site.lat')
+                            Forms\Components\TextInput::make('_site_lat')
                                 ->label('Latitude')
                                 ->numeric()
-                                ->step(0.0000001),
+                                ->step(0.0000001)
+                                ->live(debounce: 800)
+                                ->afterStateHydrated(fn ($component, $record) =>
+                                    $component->state($record?->site?->lat))
+                                ->dehydrated(false),
 
-                            Forms\Components\TextInput::make('site.lon')
+                            Forms\Components\TextInput::make('_site_lon')
                                 ->label('Longitude')
                                 ->numeric()
-                                ->step(0.0000001),
+                                ->step(0.0000001)
+                                ->live(debounce: 800)
+                                ->afterStateHydrated(fn ($component, $record) =>
+                                    $component->state($record?->site?->lon))
+                                ->dehydrated(false),
 
                             Forms\Components\Select::make('inventory.timezone')
                                 ->label('Múi giờ')
@@ -235,6 +265,9 @@ abstract class BaseScreenResource extends Resource
                                     ->mapWithKeys(fn ($tz) => [$tz => $tz]))
                                 ->searchable()
                                 ->default('Asia/Ho_Chi_Minh'),
+
+                            Forms\Components\View::make('filament.forms.components.screen-map-picker')
+                                ->columnSpan(3),
                         ]),
 
                 ])
@@ -352,122 +385,28 @@ abstract class BaseScreenResource extends Resource
             ->columns([
                 ...static::additionalTableColumns(),
 
-                // ── Identity ─────────────────────────────────────────────────
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên')
                     ->searchable()
-                    ->sortable()
-                    ->wrap()
-                    ->extraAttributes(['x-init' => '
-                        $nextTick(() => {
-                            const td = $el.closest("td"); if (!td) return;
-                            const cb = td.previousElementSibling;
-                            if (cb) {
-                                cb.style.cssText += ";position:sticky;left:0;z-index:2;background-color:white";
-                                td.style.cssText  = "position:sticky;left:" + cb.offsetWidth + "px;z-index:2;background-color:white;box-shadow:inset -1px 0 0 #e5e7eb";
-                            } else {
-                                td.style.cssText  = "position:sticky;left:0;z-index:2;background-color:white;box-shadow:inset -1px 0 0 #e5e7eb";
-                            }
-                        })
-                    '])
-                    ->extraHeaderAttributes(['x-init' => '
-                        $nextTick(() => {
-                            const th = $el;
-                            const cb = th.previousElementSibling;
-                            if (cb) {
-                                cb.style.cssText += ";position:sticky;left:0;z-index:3;background-color:#f9fafb";
-                                th.style.cssText  = "position:sticky;left:" + cb.offsetWidth + "px;z-index:3;background-color:#f9fafb;box-shadow:inset -1px 0 0 #e5e7eb";
-                            } else {
-                                th.style.cssText  = "position:sticky;left:0;z-index:3;background-color:#f9fafb;box-shadow:inset -1px 0 0 #e5e7eb";
-                            }
-                        })
-                    ']),
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('external_id')
                     ->label('Screen ID')
                     ->searchable()
-                    ->copyable()
-                    ->sortable(),
+                    ->copyable(),
 
-                // ── Status ───────────────────────────────────────────────────
                 Tables\Columns\IconColumn::make('active')
                     ->label('Active')
                     ->boolean(),
 
                 Tables\Columns\BadgeColumn::make('status')
-                    ->label('Device')
+                    ->label('Status')
                     ->colors([
                         'success' => 'online',
                         'danger'  => 'offline',
                         'warning' => 'maintenance',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state ?? 'unknown')),
-
-                // ── Location ─────────────────────────────────────────────────
-                Tables\Columns\TextColumn::make('site.name')
-                    ->label('Site')
-                    ->sortable()
-                    ->searchable()
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('network_name')
-                    ->label('Network')
-                    ->getStateUsing(fn (Screen $r) => $r->inventory?->network?->name ?? $r->inventory?->network_name ?? '—')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('inventory.vnCategory.name_vi')
-                    ->label('Loại biển')
-                    ->sortable()
-                    ->placeholder('—')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('site_location')
-                    ->label('Thành phố')
-                    ->getStateUsing(fn (Screen $r) => $r->site?->city ?? '—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                // ── Specs ────────────────────────────────────────────────────
-                Tables\Columns\TextColumn::make('resolution')
-                    ->label('Resolution')
-                    ->getStateUsing(fn (Screen $r) => $r->spec
-                        ? "{$r->spec->width_px}×{$r->spec->height_px}"
-                        : '—')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('physical_size')
-                    ->label('Kích thước')
-                    ->getStateUsing(fn (Screen $r) => $r->spec?->width_cm
-                        ? "{$r->spec->width_cm}×{$r->spec->height_cm} cm"
-                        : '—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                // ── Commercial ───────────────────────────────────────────────
-                Tables\Columns\TextColumn::make('inventory.floor_cpm')
-                    ->label('Floor CPM')
-                    ->formatStateUsing(fn ($state, Screen $r) => $state
-                        ? number_format((float) $state, 0, '.', ',') . ' ' . ($r->inventory?->floor_cpm_currency ?? 'VND')
-                        : '—')
-                    ->visible($canPricing)
-                    ->sortable()
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('inventory.weekly_impressions')
-                    ->label('Impr./tuần')
-                    ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\IconColumn::make('inventory.programmatic_enabled')
-                    ->label('RTB')
-                    ->boolean()
-                    ->visible($canPricing)
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                // ── Timestamps ───────────────────────────────────────────────
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Updated')
-                    ->since()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('active')
@@ -510,9 +449,23 @@ abstract class BaseScreenResource extends Resource
                 ...static::additionalFilters(),
             ])
             ->filtersFormColumns(3)
-            ->recordUrl(fn (Screen $r) => static::getUrl('view', ['record' => $r]))
+            ->recordAction('quick_detail')
+            ->recordUrl(null)
             ->actions([
+                Tables\Actions\Action::make('quick_detail')
+                    ->label('Chi tiết')
+                    ->icon('heroicon-o-information-circle')
+                    ->color('gray')
+                    ->modalHeading(fn (Screen $record) => $record->name)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Đóng')
+                    ->modalWidth('4xl')
+                    ->modalContent(fn (Screen $record) => view(
+                        'filament.shared.components.screen-detail-modal',
+                        ['screen' => $record->load(['owner', 'site.network', 'spec', 'inventory.vnCategory'])]
+                    )),
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('toggle_rtb')
                         ->label(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Disable RTB' : 'Enable RTB')
@@ -535,5 +488,222 @@ abstract class BaseScreenResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    // ── Infolist (View page) ────────────────────────────────────────────────
+
+    /**
+     * Admin override để thêm section AdOps nâng cao.
+     */
+    protected static function showAdOpsSection(): bool
+    {
+        return config('oohx.show_adops_fields', false);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        $showAdOps = static::showAdOpsSection();
+
+        return $infolist->schema([
+
+            Infolists\Components\Tabs::make('screen_detail_tabs')
+                ->persistTabInQueryString('tab')
+                ->columnSpanFull()
+                ->tabs(array_filter([
+
+                    // ── Tab 1: Thông tin chung ──────────────────────────────
+                    Infolists\Components\Tabs\Tab::make('Thông tin')
+                        ->icon('heroicon-o-information-circle')
+                        ->columns(3)
+                        ->schema([
+                            Infolists\Components\TextEntry::make('external_id')
+                                ->label('Screen ID')
+                                ->copyable()
+                                ->fontFamily('mono'),
+
+                            Infolists\Components\TextEntry::make('active_status')
+                                ->label('Trạng thái')
+                                ->badge()
+                                ->getStateUsing(fn (Screen $r) => $r->active ? 'Active' : 'Inactive')
+                                ->color(fn ($state) => $state === 'Active' ? 'success' : 'danger'),
+
+                            Infolists\Components\TextEntry::make('status')
+                                ->label('Device')
+                                ->badge()
+                                ->formatStateUsing(fn ($state) => ucfirst($state ?? 'unknown'))
+                                ->color(fn ($state) => match ($state) {
+                                    'online'      => 'success',
+                                    'maintenance' => 'warning',
+                                    default       => 'danger',
+                                }),
+
+                            Infolists\Components\TextEntry::make('owner.name')
+                                ->label('Owner')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('site.name')
+                                ->label('Site')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('site.network.name')
+                                ->label('Network')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('inventory.vnCategory.name_vi')
+                                ->label('Loại biển')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('site.city')
+                                ->label('Thành phố')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('updated_at')
+                                ->label('Cập nhật')
+                                ->since(),
+                        ]),
+
+                    // ── Tab 2: Kỹ thuật & Giá ──────────────────────────────
+                    Infolists\Components\Tabs\Tab::make('Kỹ thuật & Giá')
+                        ->icon('heroicon-o-cog-6-tooth')
+                        ->columns(4)
+                        ->schema([
+                            Infolists\Components\TextEntry::make('resolution')
+                                ->label('Resolution')
+                                ->getStateUsing(fn (Screen $r) => $r->spec
+                                    ? "{$r->spec->width_px}×{$r->spec->height_px} px"
+                                    : '—'),
+
+                            Infolists\Components\TextEntry::make('physical_size')
+                                ->label('Kích thước')
+                                ->getStateUsing(fn (Screen $r) => $r->spec?->width_cm
+                                    ? "{$r->spec->width_cm}×{$r->spec->height_cm} cm"
+                                    : '—'),
+
+                            Infolists\Components\TextEntry::make('content_types')
+                                ->label('Content')
+                                ->getStateUsing(fn (Screen $r) => implode(', ', array_filter([
+                                    $r->spec?->allow_image ? 'Image' : null,
+                                    $r->spec?->allow_video ? 'Video' : null,
+                                ])) ?: '—'),
+
+                            Infolists\Components\TextEntry::make('inventory.spot_length')
+                                ->label('Spot')
+                                ->formatStateUsing(fn ($state) => ($state ?? 15) . 's'),
+
+                            Infolists\Components\TextEntry::make('floor_cpm_display')
+                                ->label('Floor CPM')
+                                ->getStateUsing(fn (Screen $r) => $r->inventory?->floor_cpm
+                                    ? number_format((float) $r->inventory->floor_cpm, 0, '.', ',') . ' ' . ($r->inventory->floor_cpm_currency ?? 'VND')
+                                    : '—'),
+
+                            Infolists\Components\TextEntry::make('inventory.weekly_impressions')
+                                ->label('Impressions/tuần')
+                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
+
+                            Infolists\Components\TextEntry::make('programmatic_display')
+                                ->label('Programmatic')
+                                ->badge()
+                                ->getStateUsing(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Enabled' : 'Disabled')
+                                ->color(fn ($state) => $state === 'Enabled' ? 'success' : 'gray'),
+
+                            Infolists\Components\TextEntry::make('inventory.timezone')
+                                ->label('Timezone')
+                                ->placeholder('—'),
+                        ]),
+
+                    // ── Tab 3: Hình ảnh ─────────────────────────────────────
+                    Infolists\Components\Tabs\Tab::make('Hình ảnh')
+                        ->icon('heroicon-o-photo')
+                        ->schema([
+                            Infolists\Components\ImageEntry::make('spec.photos')
+                                ->label('')
+                                ->disk('public')
+                                ->height(200)
+                                ->stacked(false)
+                                ->visible(fn (Screen $r) => ! empty($r->spec?->photos)),
+
+                            Infolists\Components\TextEntry::make('no_photos')
+                                ->label('')
+                                ->getStateUsing(fn () => 'Chưa có hình ảnh.')
+                                ->visible(fn (Screen $r) => empty($r->spec?->photos)),
+                        ]),
+
+                    // ── Tab 4: Lịch hoạt động ───────────────────────────────
+                    Infolists\Components\Tabs\Tab::make('Lịch hoạt động')
+                        ->icon('heroicon-o-clock')
+                        ->schema([
+                            Infolists\Components\ViewEntry::make('operating_hours_grid')
+                                ->label('')
+                                ->view('filament.publisher.components.operating-hours-view')
+                                ->getStateUsing(fn (Screen $r) => $r->inventory?->operating_hours ?? []),
+                        ]),
+
+                    // ── Tab 6: AdOps (admin only) ───────────────────────────
+                    $showAdOps ? Infolists\Components\Tabs\Tab::make('AdOps')
+                        ->icon('heroicon-o-wrench-screwdriver')
+                        ->columns(3)
+                        ->schema([
+                            Infolists\Components\TextEntry::make('uuid')
+                                ->label('Ad request UUID')
+                                ->copyable()
+                                ->fontFamily('mono')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('unit_id')
+                                ->label('Unit ID')
+                                ->placeholder('—'),
+
+                            Infolists\Components\TextEntry::make('player_type')
+                                ->label('Player type')
+                                ->formatStateUsing(fn ($state) => match ($state) {
+                                    'adtrue_android' => 'AdTRUE Android',
+                                    'adtrue_webview' => 'AdTRUE WebView',
+                                    'third_party'    => '3rd Party',
+                                    'vast_only'      => 'VAST Only',
+                                    default          => $state ?? '—',
+                                }),
+
+                            Infolists\Components\TextEntry::make('share_of_voice')
+                                ->label('Max SOV')
+                                ->getStateUsing(fn (Screen $r) => ($r->inventory?->share_of_voice_max_pct ?? 100) . '%'),
+
+                            Infolists\Components\TextEntry::make('frequency_cap_display')
+                                ->label('Frequency cap')
+                                ->getStateUsing(fn (Screen $r) => $r->inventory?->frequency_cap
+                                    ? $r->inventory->frequency_cap . 's'
+                                    : 'Unlimited'),
+
+                            Infolists\Components\TextEntry::make('internal_notes')
+                                ->label('Ghi chú nội bộ')
+                                ->placeholder('—')
+                                ->columnSpanFull(),
+                        ]) : null,
+
+                ])),
+
+            // ── Section: Vị trí & Map (ngoài tabs) ──────────────────────────
+            Infolists\Components\Section::make('Vị trí')
+                ->icon('heroicon-o-map-pin')
+                ->collapsible()
+                ->columns(3)
+                ->schema([
+                    Infolists\Components\TextEntry::make('site.address')
+                        ->label('Địa chỉ')
+                        ->placeholder('—')
+                        ->columnSpan(2),
+
+                    Infolists\Components\TextEntry::make('coordinates')
+                        ->label('Tọa độ')
+                        ->getStateUsing(fn (Screen $r) => $r->site?->lat
+                            ? number_format((float) $r->site->lat, 7) . ', ' . number_format((float) $r->site->lon, 7)
+                            : '—'),
+
+                    Infolists\Components\ViewEntry::make('screen_map')
+                        ->label('')
+                        ->view('filament.components.screen-map')
+                        ->columnSpanFull()
+                        ->visible(fn (Screen $r) => $r->site?->lat !== null),
+                ]),
+        ]);
     }
 }
