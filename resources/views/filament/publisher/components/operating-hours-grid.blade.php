@@ -61,30 +61,44 @@
             <template x-if="day.active">
                 <div class="flex items-center gap-2 flex-1 min-w-0">
                     {{-- Bar track --}}
-                    <div class="flex-1 relative h-7 bg-gray-100 rounded-md overflow-hidden cursor-pointer select-none"
+                    <div class="flex-1 relative h-9 bg-gray-100 rounded-lg cursor-pointer select-none"
                          @mousedown="barMouseDown($event, idx)"
                          @touchstart.passive="barTouchStart($event, idx)"
                          :data-idx="idx">
                         {{-- Active segment --}}
-                        <div class="absolute top-0 bottom-0 bg-primary-500/20 border-y-2 border-primary-500 transition-all duration-75"
+                        <div class="absolute top-0 bottom-0 bg-primary-500 rounded-lg transition-all duration-75"
                             :style="'left:' + (day.openH/24*100) + '%;right:' + ((24-day.closeH)/24*100) + '%'">
+                            {{-- Time label inside bar --}}
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span class="text-[11px] font-semibold text-white drop-shadow-sm"
+                                    x-text="fmt(day.openH) + ' – ' + fmt(day.closeH)"
+                                    x-show="(day.closeH - day.openH) >= 4">
+                                </span>
+                            </div>
                         </div>
                         {{-- Open handle --}}
-                        <div class="absolute top-0 bottom-0 w-2 bg-primary-600 rounded-l cursor-ew-resize z-10 hover:bg-primary-700"
-                            :style="'left:' + (day.openH/24*100) + '%'"
+                        <div class="absolute top-0 bottom-0 flex items-center cursor-ew-resize z-10"
+                            :style="'left:calc(' + (day.openH/24*100) + '% - 7px)'"
                             @mousedown.stop="handleDown($event, idx, 'open')"
                             @touchstart.stop.passive="handleTouchDown($event, idx, 'open')">
+                            <div class="w-[14px] h-6 bg-white border-2 border-primary-600 rounded shadow-sm flex items-center justify-center hover:border-primary-800 hover:shadow-md transition-all">
+                                <div class="w-[2px] h-3 bg-primary-400 rounded-full"></div>
+                            </div>
                         </div>
                         {{-- Close handle --}}
-                        <div class="absolute top-0 bottom-0 w-2 bg-primary-600 rounded-r cursor-ew-resize z-10 hover:bg-primary-700"
-                            :style="'right:' + ((24-day.closeH)/24*100) + '%'"
+                        <div class="absolute top-0 bottom-0 flex items-center cursor-ew-resize z-10"
+                            :style="'left:calc(' + (day.closeH/24*100) + '% - 7px)'"
                             @mousedown.stop="handleDown($event, idx, 'close')"
                             @touchstart.stop.passive="handleTouchDown($event, idx, 'close')">
+                            <div class="w-[14px] h-6 bg-white border-2 border-primary-600 rounded shadow-sm flex items-center justify-center hover:border-primary-800 hover:shadow-md transition-all">
+                                <div class="w-[2px] h-3 bg-primary-400 rounded-full"></div>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Time label --}}
-                    <div class="shrink-0 text-xs font-mono text-gray-600 w-[90px] text-right"
+                    {{-- Time label (visible when bar too short) --}}
+                    <div class="shrink-0 text-xs font-mono text-gray-500 w-[90px] text-right"
+                        x-show="(day.closeH - day.openH) < 4"
                         x-text="fmt(day.openH) + ' – ' + fmt(day.closeH)">
                     </div>
                 </div>
