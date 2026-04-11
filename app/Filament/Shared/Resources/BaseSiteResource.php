@@ -96,6 +96,20 @@ abstract class BaseSiteResource extends Resource
                 ]))
             ),
 
+            Forms\Components\Section::make('Hình ảnh')->schema([
+                Forms\Components\FileUpload::make('banner')
+                    ->label('Banner')
+                    ->image()
+                    ->directory('sites/banners')
+                    ->disk('public')
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('21:9')
+                    ->imageResizeTargetWidth('1200')
+                    ->imageResizeTargetHeight('514')
+                    ->maxSize(2048)
+                    ->helperText('Ảnh bìa hiển thị trên trang chi tiết site. Khuyến nghị 1200×514px, tối đa 2MB.'),
+            ]),
+
             Forms\Components\Section::make('Location')->columns(2)->schema([
 
                 // ── Địa giới hành chính Việt Nam ──────────────────────────

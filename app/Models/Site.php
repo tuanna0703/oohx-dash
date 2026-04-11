@@ -16,7 +16,7 @@ class Site extends Model
 
     protected $fillable = [
         'owner_id', 'external_id', 'hivestack_site_id',
-        'name', 'description', 'lat', 'lon',
+        'name', 'description', 'banner', 'lat', 'lon',
         'address', 'city', 'region', 'country', 'status',
         'province_id', 'commune_id',
     ];
