@@ -29,7 +29,10 @@ class AppServiceProvider extends ServiceProvider
             if ($port && $port !== 80 && $port !== 443) {
                 $url .= ':' . $port;
             }
-            config(['app.url' => $url]);
+            config([
+                'app.url' => $url,
+                'filesystems.disks.public.url' => $url . '/storage',
+            ]);
             url()->forceRootUrl($url);
 
             if ($scheme === 'https') {
