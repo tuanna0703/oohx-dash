@@ -9,14 +9,15 @@ return [
     | Cho phép oohx.net frontend gọi API từ browser.
     */
 
-    'paths' => ['api/*'],
+    'paths' => ['api/*', 'livewire/*'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
         'https://oohx.net',
         'https://www.oohx.net',
-        // Thêm staging/localhost khi dev:
+        'http://oohx.test',
+        'http://dash.oohx.test',
         'http://localhost:3000',
         'http://localhost:5173',
     ],
