@@ -6,4 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ft = document.getElementById('logo-ft');
     if (ft) ft.src = LOGO;
+
+    const menu = document.getElementById('logo-menu');
+    if (menu) menu.src = LOGO;
 });
