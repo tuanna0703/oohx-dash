@@ -223,13 +223,14 @@
     </div>
     <div class="cat-grid">
       @foreach($venueTypes->take(5) as $vt)
-      <a href="/explore?venue_type[]={{ $vt['type'] }}" class="cat-card" style="text-decoration:none;color:inherit">
+      <a href="/explore?venue_type[]={{ $vt['type'] }}" class="cat-card">
         <div class="cat-img">
           @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
+          <div class="cat-icon"><span class="material-icons">{{ $vt['icon'] ?? 'tv' }}</span></div>
         </div>
         <div class="cat-body">
           <div class="cat-name">{{ $vt['label'] }}</div>
-          <div class="cat-count">{{ $vt['count'] }}</div>
+          <div class="cat-meta">{{ $vt['count'] }} vị trí <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
         </div>
       </a>
       @endforeach
@@ -249,13 +250,24 @@
         <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">All markets <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
       </div>
     </div>
+    @php
+      $cityGradients = [
+          ['#1C3A5E','#2A4FF6'], ['#1A3A2A','#34C759'], ['#3A1A3A','#AF52DE'],
+          ['#3A1C1A','#FF3B30'], ['#1A2A3A','#0071E3'], ['#1D1D1F','#3A3A3C'],
+          ['#2D1B4E','#7C3AED'], ['#1A3A3A','#06B6D4'],
+      ];
+    @endphp
     <div class="city-grid">
       @foreach($topCities as $i => $city)
-      <a href="/explore?city[]={{ $city['code'] }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }}" style="text-decoration:none;color:inherit">
-        <div class="city-img"></div>
+      @php $cg = $cityGradients[$i % count($cityGradients)]; @endphp
+      <a href="/explore?city[]={{ $city['code'] }}" class="city-card">
+        <div class="city-bg" style="background:linear-gradient(135deg,{{ $cg[0] }},{{ $cg[1] }})"></div>
         <div class="city-info">
           <div class="city-name">{{ $city['name'] }}</div>
-          <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
+          <div class="city-count">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+            {{ $city['count'] }} vị trí
+          </div>
         </div>
       </a>
       @endforeach
@@ -377,9 +389,9 @@
         <a href="{{ route('fp.owners') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">All owners <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
       </div>
     </div>
-    <div class="owner-grid">
+    <div class="oc-grid">
     @foreach($featuredOwners as $owner)
-        @include('frontpage.partials.owner-card-mini', ['owner' => $owner])
+        @include('frontpage.partials.owner-card', ['owner' => $owner, 'variant' => 'compact'])
     @endforeach
     </div>
       </div>
