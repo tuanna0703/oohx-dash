@@ -66,11 +66,12 @@ class VietnamProvinceResource extends Resource
                     ->image()
                     ->directory('provinces')
                     ->disk('public')
+                    ->maxSize(51200)
                     ->imageResizeMode('cover')
                     ->imageCropAspectRatio('4:3')
                     ->imageResizeTargetWidth('800')
                     ->imageResizeTargetHeight('600')
-                    ->helperText('Ảnh đại diện tỉnh/thành (4:3, tối đa 2MB)'),
+                    ->helperText('Ảnh đại diện tỉnh/thành (4:3, tối đa 50MB)'),
 
             ]),
         ]);
