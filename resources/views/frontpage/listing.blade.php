@@ -15,16 +15,22 @@
 @section('content')
 <div class="ph"><div class="w">
     <div class="ph-top">
-        <div class="ph-title">Khám phá Inventory</div>
+        <div class="ph-title">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" class="ph-icon"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            Khám phá Inventory
+        </div>
         <div class="ph-count">{{ number_format($screens->total()) }} vị trí</div>
-        <a href="{{ route('fp.map') }}" class="btn btn-s btn-sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> Bản đồ</a>
+        <a href="{{ route('fp.map') }}" class="ph-map-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+            <span>Bản đồ</span>
+        </a>
     </div>
 
-    {{-- Quick filter chips --}}
+    {{-- Quick filter chips — horizontal scroll gesture --}}
     <div class="fchips">
-        <a href="{{ route('fp.listing') }}" class="fchip {{ !$hasFilters ? 'on' : '' }}">Tất cả ({{ $screens->total() }})</a>
+        <a href="{{ route('fp.listing') }}" class="fchip {{ !$hasFilters ? 'on' : '' }}">Tất cả</a>
         @foreach(($filters['formats'] ?? collect())->take(6) as $f)
-            <a href="{{ route('fp.listing', ['venue_type' => $f['type']]) }}" class="fchip {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">{{ $f['label'] }} ({{ $f['count'] }})</a>
+            <a href="{{ route('fp.listing', ['venue_type' => $f['type']]) }}" class="fchip {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">{{ $f['label'] }} <span class="fchip-count">{{ $f['count'] }}</span></a>
         @endforeach
     </div>
 </div></div>
