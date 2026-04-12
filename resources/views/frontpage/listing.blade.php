@@ -31,8 +31,19 @@
 
 <div class="w"><div class="listing-layout">
 
+    {{-- Backdrop for mobile drawer --}}
+    <div class="filter-backdrop" id="filter-backdrop" onclick="closeFilterDrawer()"></div>
+
     {{-- ═══ SIDEBAR — wrapped in <form> ═══ --}}
     <form method="GET" action="{{ route('fp.listing') }}" class="sidebar" id="filter-form">
+
+        {{-- Drawer header (mobile only) --}}
+        <div class="drawer-close">
+            <span class="drawer-close-title">Bộ lọc</span>
+            <button type="button" class="drawer-close-btn" onclick="closeFilterDrawer()">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        </div>
 
         {{-- Search --}}
         <div class="sb-card">
@@ -92,6 +103,11 @@
         <div class="results-header">
             <div class="rh-count">Hiển thị <strong>{{ number_format($screens->total()) }}</strong> kết quả</div>
             <div class="rh-right">
+                <button type="button" class="filter-trigger" onclick="openFilterDrawer()">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+                    Bộ lọc
+                    @if($hasFilters)<span class="filter-count">{{ count($activeVenueTypes) + count($activeCities) + ($activeQ ? 1 : 0) }}</span>@endif
+                </button>
                 <select class="sort-sel" id="sort-sel" onchange="document.getElementById('sort-input').value=this.value; document.getElementById('filter-form').dispatchEvent(new Event('submit'));">
                     <option value="" {{ $activeSort === '' ? 'selected' : '' }}>Mặc định</option>
                     <option value="price_asc" {{ $activeSort === 'price_asc' ? 'selected' : '' }}>Giá thấp nhất</option>
@@ -165,6 +181,17 @@
             if (e.key === 'Enter') { e.preventDefault(); form.dispatchEvent(new Event('submit')); }
         });
     }
+    // Mobile filter drawer
+    window.openFilterDrawer = function() {
+        document.getElementById('filter-form').classList.add('open');
+        document.getElementById('filter-backdrop').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeFilterDrawer = function() {
+        document.getElementById('filter-form').classList.remove('open');
+        document.getElementById('filter-backdrop').classList.remove('open');
+        document.body.style.overflow = '';
+    };
 })();
 </script>
 @endpush
