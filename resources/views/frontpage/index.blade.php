@@ -261,7 +261,11 @@
       @foreach($topCities as $i => $city)
       @php $cg = $cityGradients[$i % count($cityGradients)]; @endphp
       <a href="/explore?city[]={{ $city['code'] }}" class="city-card">
-        <div class="city-bg" style="background:linear-gradient(135deg,{{ $cg[0] }},{{ $cg[1] }})"></div>
+        <div class="city-bg" style="background:linear-gradient(135deg,{{ $cg[0] }},{{ $cg[1] }})">
+          @if(!empty($city['photo']))
+          <img src="{{ $city['photo'] }}" alt="{{ $city['name'] }}" loading="lazy">
+          @endif
+        </div>
         <div class="city-info">
           <div class="city-name">{{ $city['name'] }}</div>
           <div class="city-count">

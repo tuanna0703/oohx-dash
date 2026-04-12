@@ -59,8 +59,18 @@ class VietnamProvinceResource extends Resource
                     ->label('Vùng kinh tế')
                     ->options(fn() => VietnamRegion::orderBy('sort')->pluck('full_name', 'id'))
                     ->searchable()
-                    ->nullable()
-                    ->columnSpan(2),
+                    ->nullable(),
+
+                Forms\Components\FileUpload::make('photo_url')
+                    ->label('Ảnh đại diện')
+                    ->image()
+                    ->directory('provinces')
+                    ->disk('public')
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('4:3')
+                    ->imageResizeTargetWidth('800')
+                    ->imageResizeTargetHeight('600')
+                    ->helperText('Ảnh đại diện tỉnh/thành (4:3, tối đa 2MB)'),
 
             ]),
         ]);
@@ -72,6 +82,13 @@ class VietnamProvinceResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('photo_url')
+                    ->label('Ảnh')
+                    ->disk('public')
+                    ->width(48)
+                    ->height(36)
+                    ->defaultImageUrl('https://placehold.co/48x36/F5F5F7/999?text=—'),
+
                 Tables\Columns\TextColumn::make('code')
                     ->label('Mã')->sortable()->searchable()->badge()->color('gray'),
 

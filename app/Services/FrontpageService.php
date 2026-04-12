@@ -138,10 +138,18 @@ class FrontpageService
                 ->limit($limit)
                 ->get();
 
+            // Load province photos
+            $provincePhotos = DB::table('vietnam_provinces')
+                ->whereNotNull('photo_url')
+                ->pluck('photo_url', 'name');
+
             return $rawCityCounts->map(fn ($r) => [
                 'code'  => $this->cityToSlug($r->province),
                 'name'  => $r->province,
                 'count' => (int) $r->count,
+                'photo' => isset($provincePhotos[$r->province])
+                    ? asset('storage/' . $provincePhotos[$r->province])
+                    : null,
             ]);
         });
     }

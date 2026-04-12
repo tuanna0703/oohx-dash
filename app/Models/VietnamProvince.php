@@ -9,8 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class VietnamProvince extends Model
 {
     protected $fillable = [
-        'code', 'name', 'full_name', 'type', 'region', 'region_id',
+        'code', 'name', 'full_name', 'type', 'region', 'region_id', 'photo_url',
     ];
+
+    public function getPhotoAttribute(): ?string
+    {
+        return $this->photo_url ? asset('storage/' . $this->photo_url) : null;
+    }
 
     public function region(): BelongsTo
     {
