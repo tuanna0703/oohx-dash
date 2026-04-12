@@ -9,7 +9,7 @@ return [
     | Cho phép oohx.net frontend gọi API từ browser.
     */
 
-    'paths' => ['api/*', 'livewire/*'],
+    'paths' => ['api/*', 'livewire/*', 'storage/*'],
 
     'allowed_methods' => ['*'],
 
