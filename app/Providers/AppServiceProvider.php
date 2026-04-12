@@ -18,5 +18,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Screen::observe(ScreenObserver::class);
+
+        // Fix Livewire upload CORS: set APP_URL to match current request domain
+        // so Livewire uploads go to the same origin (oohx.test or dash.oohx.test)
+        if ($this->app->runningInConsole() === false && request()->getHost()) {
+            $scheme = request()->getScheme();
+            $host = request()->getHost();
+            $port = request()->getPort();
+            $url = $scheme . '://' . $host;
+            if ($port && $port !== 80 && $port !== 443) {
+                $url .= ':' . $port;
+            }
+            config(['app.url' => $url]);
+            url()->forceRootUrl($url);
+        }
     }
 }
