@@ -36,6 +36,7 @@ class PublisherPanelProvider extends PanelProvider
             ->brandName('AdTRUE SSP')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
+                NavigationGroup::make('Bookings')->icon('heroicon-o-clipboard-document-list'),
                 NavigationGroup::make('Inventory')->icon('heroicon-o-squares-2x2'),
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-bar'),
                 NavigationGroup::make('Tools')->icon('heroicon-o-wrench-screwdriver'),

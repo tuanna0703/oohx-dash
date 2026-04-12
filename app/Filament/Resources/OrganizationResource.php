@@ -1,0 +1,215 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\OrganizationResource\Pages;
+use App\Models\Organization;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+
+class OrganizationResource extends Resource
+{
+    protected static ?string $model = Organization::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+
+    protected static ?string $navigationGroup = 'Marketplace';
+
+    protected static ?string $navigationLabel = 'Organizations';
+
+    protected static ?int $navigationSort = 3;
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            Forms\Components\Section::make('Thông tin cơ bản')->schema([
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->label('Tên tổ chức')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('slug')
+                        ->label('Slug')
+                        ->required()
+                        ->unique(ignoreRecord: true),
+                ]),
+                Forms\Components\Grid::make(3)->schema([
+                    Forms\Components\Select::make('type')
+                        ->label('Loại hình')
+                        ->options([
+                            'agency' => 'Agency',
+                            'brand'  => 'Brand',
+                            'client' => 'Client',
+                        ])
+                        ->required(),
+                    Forms\Components\Select::make('status')
+                        ->label('Trạng thái')
+                        ->options([
+                            'active'    => 'Active',
+                            'suspended' => 'Suspended',
+                        ])
+                        ->required(),
+                    Forms\Components\TextInput::make('tax_id')
+                        ->label('MST'),
+                ]),
+            ]),
+            Forms\Components\Section::make('Thanh toán')->schema([
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\TextInput::make('billing_email')
+                        ->label('Email thanh toán')
+                        ->email(),
+                    Forms\Components\TextInput::make('billing_phone')
+                        ->label('Điện thoại')
+                        ->maxLength(30),
+                ]),
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\TextInput::make('credit_limit')
+                        ->label('Hạn mức tín dụng (₫)')
+                        ->numeric()
+                        ->prefix('₫'),
+                    Forms\Components\TextInput::make('payment_terms_days')
+                        ->label('Kỳ thanh toán (ngày)')
+                        ->numeric()
+                        ->default(30),
+                ]),
+                Forms\Components\Textarea::make('billing_address')
+                    ->label('Địa chỉ')
+                    ->rows(2),
+            ]),
+            Forms\Components\Section::make('Khác')->schema([
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\TextInput::make('website')
+                        ->label('Website')
+                        ->url(),
+                    Forms\Components\TextInput::make('logo_url')
+                        ->label('Logo URL'),
+                ]),
+            ])->collapsible(),
+        ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Thông tin cơ bản')->schema([
+                Infolists\Components\Grid::make(3)->schema([
+                    Infolists\Components\TextEntry::make('name')->label('Tên'),
+                    Infolists\Components\TextEntry::make('type')->label('Loại')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'agency' => 'info', 'brand' => 'success', default => 'gray',
+                        }),
+                    Infolists\Components\TextEntry::make('status')->label('Trạng thái')
+                        ->badge()
+                        ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
+                ]),
+                Infolists\Components\Grid::make(3)->schema([
+                    Infolists\Components\TextEntry::make('tax_id')->label('MST')->default('—'),
+                    Infolists\Components\TextEntry::make('billing_email')->label('Email TT')->default('—'),
+                    Infolists\Components\TextEntry::make('billing_phone')->label('SĐT')->default('—'),
+                ]),
+            ]),
+            Infolists\Components\Section::make('Thống kê')->schema([
+                Infolists\Components\Grid::make(4)->schema([
+                    Infolists\Components\TextEntry::make('campaigns_count')
+                        ->label('Campaigns')
+                        ->getStateUsing(fn (Organization $r) => $r->campaigns()->count()),
+                    Infolists\Components\TextEntry::make('active_campaigns')
+                        ->label('Đang chạy')
+                        ->getStateUsing(fn (Organization $r) => $r->campaigns()->where('status', 'active')->count())
+                        ->color('success'),
+                    Infolists\Components\TextEntry::make('total_paid')
+                        ->label('Đã thanh toán')
+                        ->getStateUsing(fn (Organization $r) => $r->payments()->where('status', 'completed')->sum('amount'))
+                        ->money('VND'),
+                    Infolists\Components\TextEntry::make('users_count')
+                        ->label('Thành viên')
+                        ->getStateUsing(fn (Organization $r) => $r->organizationUsers()->count()),
+                ]),
+            ]),
+            Infolists\Components\Section::make('Thành viên')->schema([
+                Infolists\Components\RepeatableEntry::make('organizationUsers')
+                    ->label('')
+                    ->schema([
+                        Infolists\Components\Grid::make(3)->schema([
+                            Infolists\Components\TextEntry::make('user.name')->label('Tên'),
+                            Infolists\Components\TextEntry::make('user.email')->label('Email'),
+                            Infolists\Components\TextEntry::make('role')->label('Vai trò')->badge(),
+                        ]),
+                    ]),
+            ])->collapsible(),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Tên')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Loại')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'agency' => 'info', 'brand' => 'success', default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('organization_users_count')
+                    ->label('Users')
+                    ->counts('organizationUsers')
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('campaigns_count')
+                    ->label('Campaigns')
+                    ->counts('campaigns')
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
+
+                Tables\Columns\TextColumn::make('credit_limit')
+                    ->label('Hạn mức')
+                    ->money('VND')
+                    ->default('—'),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Ngày tạo')
+                    ->date('d/m/Y')
+                    ->sortable(),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('type')
+                    ->options(['agency' => 'Agency', 'brand' => 'Brand', 'client' => 'Client']),
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(['active' => 'Active', 'suspended' => 'Suspended']),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index'  => Pages\ListOrganizations::route('/'),
+            'create' => Pages\CreateOrganization::route('/create'),
+            'view'   => Pages\ViewOrganization::route('/{record}'),
+            'edit'   => Pages\EditOrganization::route('/{record}/edit'),
+        ];
+    }
+}

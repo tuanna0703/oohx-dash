@@ -19,6 +19,7 @@ class User extends Authenticatable
         'email',
         'password',
         'current_owner_id',
+        'current_organization_id',
     ];
 
     protected $hidden = [
@@ -50,6 +51,39 @@ class User extends Authenticatable
     public function currentOwner(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Owner::class, 'current_owner_id');
+    }
+
+    // ── Organization (buyer) relationships ──
+
+    public function organizationUsers(): HasMany
+    {
+        return $this->hasMany(OrganizationUser::class);
+    }
+
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'organization_users')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    public function currentOrganization(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'current_organization_id');
+    }
+
+    public function switchOrganization(string $orgId): bool
+    {
+        $hasAccess = $this->organizations()->where('organizations.id', $orgId)->exists()
+            || $this->hasRole('super_admin');
+        if (! $hasAccess) return false;
+        $this->update(['current_organization_id' => $orgId]);
+        return true;
+    }
+
+    public function isBuyer(): bool
+    {
+        return $this->organizations()->exists();
     }
 
     public function switchOwner(string $ownerId): bool

@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('payments', function (Blueprint $table) {
+            $table->ulid('id')->primary();
+            $table->ulid('campaign_id');
+            $table->ulid('organization_id');
+            $table->decimal('amount', 15, 2);
+            $table->string('currency', 3)->default('VND');
+            $table->enum('method', ['bank_transfer', 'vnpay', 'momo'])->default('bank_transfer');
+            $table->string('transaction_ref')->nullable();
+            $table->string('gateway_ref')->nullable();
+            $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'refunded'])->default('pending');
+            $table->timestamp('paid_at')->nullable();
+            $table->date('due_date')->nullable();
+            $table->string('invoice_number')->nullable();
+            $table->string('invoice_url')->nullable();
+            $table->text('notes')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+
+            $table->foreign('campaign_id')->references('id')->on('campaigns')->cascadeOnDelete();
+            $table->foreign('organization_id')->references('id')->on('organizations')->cascadeOnDelete();
+            $table->index(['campaign_id', 'status']);
+            $table->index(['organization_id', 'status']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('payments');
+    }
+};

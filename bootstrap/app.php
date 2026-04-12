@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'ability' => \App\Http\Middleware\CheckTokenAbility::class,
+            'buyer'   => \App\Http\Middleware\EnsureBuyerAuth::class,
         ]);
         $middleware->encryptCookies(except: ['oohx_city']);
     })

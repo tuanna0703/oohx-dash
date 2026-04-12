@@ -22,6 +22,10 @@
 
     @include('frontpage.partials.mobile-nav')
 
+    <button class="stt" id="stt" aria-label="Scroll to top">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+    </button>
+
     @stack('scripts')
 </body>
 </html>
