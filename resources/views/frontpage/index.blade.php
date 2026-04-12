@@ -34,13 +34,13 @@
 
       <!-- Search box with inline filters -->
       <div class="search-box">
-        <button class="sf-inline" id="sf-loc" onclick="toggleDrop('loc')">
+        <button class="sf-inline" id="sf-loc">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           <span id="sf-loc-label">Vị trí</span>
           <span class="sf-badge" id="sf-loc-badge" style="display:none">0</span>
           <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
-        <button class="sf-inline" id="sf-type" onclick="toggleDrop('type')">
+        <button class="sf-inline" id="sf-type">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
           <span id="sf-type-label">Loại biển</span>
           <span class="sf-badge" id="sf-type-badge" style="display:none">0</span>
@@ -48,7 +48,7 @@
         </button>
         <div class="sb-divider"></div>
         <input class="search-input" id="q" type="text" placeholder="Tìm theo tên đường, tòa nhà, hoặc mô tả campaign…">
-        <button class="search-btn" onclick="doSearch()">
+        <button class="search-btn" id="search-btn">
           <svg viewBox="0 0 24 24" fill="#fff"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <span class="search-btn-text">Tìm ngay</span>
         </button>
@@ -57,13 +57,13 @@
       <div id="active-tags" class="search-active-tags"></div>
     </div><!-- /search-wrap -->
 
-    <div class="drop-backdrop" id="backdrop" onclick="closeDrop()"></div>
+    <div class="drop-backdrop" id="backdrop"></div>
     {{-- Mega dropdowns — inside hero .w but outside search-wrap (no transform parent) --}}
     <div class="mega-anchor" id="mega-anchor">
       <div class="mega-drop" id="drop-loc">
         <div class="mega-head">
           <div class="mega-head-title">Chọn vị trí</div>
-          <span class="mega-head-clear" onclick="clearLoc()">Xoá tất cả</span>
+          <span class="mega-head-clear" id="clear-loc">Xoá tất cả</span>
         </div>
         <div class="mega-body">
           <div class="loc-cols">
@@ -71,7 +71,7 @@
             <div class="loc-region">
               <div class="loc-region-title">{{ $regionName }}</div>
               @foreach($provinces as $p)
-              <div class="loc-item" data-code="{{ $p['code'] }}" onclick="selectCity(this,'{{ $p['code'] }}')"><div class="loc-check"></div><span>{{ $p['name'] }}</span><span class="loc-count">{{ $p['count'] }}</span></div>
+              <div class="loc-item" data-code="{{ $p['code'] }}"><div class="loc-check"></div><span>{{ $p['name'] }}</span><span class="loc-count">{{ $p['count'] }}</span></div>
               @endforeach
             </div>
             @endforeach
@@ -82,8 +82,8 @@
           </div>
         </div>
         <div class="mega-foot">
-          <button class="btn btn-s btn-sm" onclick="closeDrop()">Đóng</button>
-          <button class="btn btn-p btn-sm" onclick="applyLoc()">
+          <button class="btn btn-s btn-sm btn-close-drop">Đóng</button>
+          <button class="btn btn-p btn-sm" id="apply-loc">
             <svg viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             Áp dụng
           </button>
@@ -93,12 +93,12 @@
       <div class="mega-drop" id="drop-type">
         <div class="mega-head">
           <div class="mega-head-title">Chọn loại biển quảng cáo</div>
-          <span class="mega-head-clear" onclick="clearType()">Xoá tất cả</span>
+          <span class="mega-head-clear" id="clear-type">Xoá tất cả</span>
         </div>
         <div class="mega-body">
           <div class="type-grid" id="type-grid">
             @foreach($venueTypes->take(6) as $vt)
-            <div class="type-card" data-slug="{{ $vt['type'] }}" onclick="toggleType(this,'{{ $vt['type'] }}')">
+            <div class="type-card" data-slug="{{ $vt['type'] }}">
               <div class="type-icon"><span class="material-icons" style="font-size:20px;color:var(--bl)">{{ $vt['icon'] ?? 'tv' }}</span></div>
               <div>
                 <div class="type-name">{{ $vt['label'] }}</div>
@@ -109,8 +109,8 @@
           </div>
         </div>
         <div class="mega-foot">
-          <button class="btn btn-s btn-sm" onclick="closeDrop()">Đóng</button>
-          <button class="btn btn-p btn-sm" onclick="applyType()">
+          <button class="btn btn-s btn-sm btn-close-drop">Đóng</button>
+          <button class="btn btn-p btn-sm" id="apply-type">
             <svg viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             Áp dụng
           </button>
@@ -131,7 +131,7 @@
         }
       @endphp
       @foreach($chips->take(4) as $chip)
-        <span class="schip" onclick="setQ('{{ e($chip) }}')">{{ $chip }}</span>
+        <span class="schip" data-q="{{ e($chip) }}">{{ $chip }}</span>
       @endforeach
     </div>
 
@@ -223,14 +223,13 @@
     </div>
     <div class="cat-grid">
       @foreach($venueTypes->take(5) as $vt)
-      <a href="/explore?venue_type={{ $vt['type'] }}" class="cat-card rv">
-        <div class="cat-card-inner">
-          <div class="cat-img">
-            @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
-            <div class="cat-img-ov"></div>
-            <div class="cat-count">{{ $vt['count'] }}</div>
-          </div>
-          <div class="cat-body"><div class="cat-name">{{ $vt['label'] }}</div></div>
+      <a href="/explore?venue_type[]={{ $vt['type'] }}" class="cat-card" style="text-decoration:none;color:inherit">
+        <div class="cat-img">
+          @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
+        </div>
+        <div class="cat-body">
+          <div class="cat-name">{{ $vt['label'] }}</div>
+          <div class="cat-count">{{ $vt['count'] }}</div>
         </div>
       </a>
       @endforeach
@@ -252,13 +251,11 @@
     </div>
     <div class="city-grid">
       @foreach($topCities as $i => $city)
-      <a href="/explore?city={{ $city['code'] }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }} rv">
-        <div class="city-card-inner">
-          <div class="city-img"><div class="city-ov"></div></div>
-          <div class="city-info">
-            <div class="city-name">{{ $city['name'] }}</div>
-            <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
-          </div>
+      <a href="/explore?city[]={{ $city['code'] }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }}" style="text-decoration:none;color:inherit">
+        <div class="city-img"></div>
+        <div class="city-info">
+          <div class="city-name">{{ $city['name'] }}</div>
+          <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
         </div>
       </a>
       @endforeach
@@ -676,187 +673,205 @@
   }
 })();
 
-// ── SEARCH FILTER DROPDOWNS ────────────────────────────────────────
-var selCities = [];
-var selTypes  = [];
-var activeDrop = null;
+// ── SEARCH FILTER DROPDOWNS (all event-driven, no inline onclick) ──
+(function(){
+  var selCities = [];
+  var selTypes  = [];
+  var activeDrop = null;
 
-var CODE_TO_NAME = @json(collect($locationsByRegion)->flatten(1)->pluck('name', 'code'));
+  var CODE_TO_NAME = @json(collect($locationsByRegion)->flatten(1)->pluck('name', 'code'));
 
-var DISTRICTS = {
-  'Hà Nội': ['Ba Đình','Hoàn Kiếm','Hai Bà Trưng','Đống Đa','Tây Hồ','Cầu Giấy','Thanh Xuân','Hoàng Mai','Long Biên','Nam Từ Liêm','Bắc Từ Liêm','Hà Đông'],
-  'TP. Hồ Chí Minh': ['Quận 1','Quận 3','Quận 5','Quận 7','Quận 10','Bình Thạnh','Tân Bình','Phú Nhuận','Bình Chánh','Thủ Đức'],
-  'Đà Nẵng': ['Hải Châu','Thanh Khê','Sơn Trà','Ngũ Hành Sơn','Liên Chiểu','Cẩm Lệ'],
-  'Hải Phòng': ['Hồng Bàng','Ngô Quyền','Lê Chân','Dương Kinh','Đồ Sơn'],
-};
+  var DISTRICTS = {
+    'Hà Nội': ['Ba Đình','Hoàn Kiếm','Hai Bà Trưng','Đống Đa','Tây Hồ','Cầu Giấy','Thanh Xuân','Hoàng Mai','Long Biên','Nam Từ Liêm','Bắc Từ Liêm','Hà Đông'],
+    'TP. Hồ Chí Minh': ['Quận 1','Quận 3','Quận 5','Quận 7','Quận 10','Bình Thạnh','Tân Bình','Phú Nhuận','Bình Chánh','Thủ Đức'],
+    'Đà Nẵng': ['Hải Châu','Thanh Khê','Sơn Trà','Ngũ Hành Sơn','Liên Chiểu','Cẩm Lệ'],
+    'Hải Phòng': ['Hồng Bàng','Ngô Quyền','Lê Chân','Dương Kinh','Đồ Sơn'],
+  };
 
-var EXPLORE_URL = '/explore';
+  function buildExploreUrl() {
+    var parts = [];
+    var q = document.getElementById('q').value.trim();
+    if (q) parts.push('q=' + encodeURIComponent(q));
+    selTypes.forEach(function(t) { parts.push('venue_type[]=' + encodeURIComponent(t)); });
+    selCities.forEach(function(c) { parts.push('city[]=' + encodeURIComponent(c)); });
+    return '/explore' + (parts.length ? '?' + parts.join('&') : '');
+  }
 
-function buildExploreUrl() {
-  var parts = [];
-  var q = document.getElementById('q').value.trim();
-  if (q) parts.push('q=' + encodeURIComponent(q));
-  selTypes.forEach(function(t) { parts.push('venue_type[]=' + encodeURIComponent(t)); });
-  selCities.forEach(function(c) { parts.push('city[]=' + encodeURIComponent(c)); });
-  return EXPLORE_URL + (parts.length ? '?' + parts.join('&') : '');
-}
+  function doSearch() { window.location.href = buildExploreUrl(); }
 
-function doSearch() { window.location.href = buildExploreUrl(); }
+  function toggleDrop(id) {
+    var target = 'drop-' + id;
+    var btn = id === 'loc' ? document.getElementById('sf-loc') : document.getElementById('sf-type');
+    if (activeDrop === target) { closeDrop(); return; }
+    if (activeDrop) {
+      document.getElementById(activeDrop).classList.remove('open');
+      document.getElementById('sf-loc').classList.remove('on');
+      document.getElementById('sf-type').classList.remove('on');
+    }
+    document.getElementById(target).classList.add('open');
+    document.getElementById('backdrop').classList.add('open');
+    btn.classList.add('on');
+    activeDrop = target;
+  }
 
-function setQ(txt) {
-  document.getElementById('q').value = txt;
-  doSearch();
-}
-
-// Enter key on search input
-document.getElementById('q').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
-});
-
-function toggleDrop(id) {
-  var target = 'drop-' + id;
-  var btn = id === 'loc' ? document.getElementById('sf-loc') : document.getElementById('sf-type');
-  if (activeDrop === target) { closeDrop(); return; }
-  if (activeDrop) {
-    document.getElementById(activeDrop).classList.remove('open');
+  function closeDrop() {
+    if (activeDrop) document.getElementById(activeDrop).classList.remove('open');
+    document.getElementById('backdrop').classList.remove('open');
     document.getElementById('sf-loc').classList.remove('on');
     document.getElementById('sf-type').classList.remove('on');
+    activeDrop = null;
   }
-  var drop = document.getElementById(target);
-  drop.classList.add('open');
-  document.getElementById('backdrop').classList.add('open');
-  btn.classList.add('on');
-  activeDrop = target;
-}
 
-function closeDrop() {
-  if (activeDrop) document.getElementById(activeDrop).classList.remove('open');
-  document.getElementById('backdrop').classList.remove('open');
-  document.getElementById('sf-loc').classList.remove('on');
-  document.getElementById('sf-type').classList.remove('on');
-  activeDrop = null;
-}
-
-// ── Location logic ─────────────────────────────────────────────────
-function selectCity(el, code) {
-  el.classList.toggle('on');
-  var idx = selCities.indexOf(code);
-  if (idx > -1) selCities.splice(idx, 1); else selCities.push(code);
-  // Show district sub-panel if exactly 1 city & has districts
-  var panel = document.getElementById('dist-panel');
-  var cityName = el.querySelector('span') ? el.querySelector('span').textContent : '';
-  var distCities = selCities.filter(function(c) { return DISTRICTS[CODE_TO_NAME[c]]; });
-  if (distCities.length === 1) {
-    renderDistricts(CODE_TO_NAME[distCities[0]]);
-    panel.classList.add('open');
-  } else {
-    panel.classList.remove('open');
+  function selectCity(el) {
+    var code = el.dataset.code;
+    el.classList.toggle('on');
+    var idx = selCities.indexOf(code);
+    if (idx > -1) selCities.splice(idx, 1); else selCities.push(code);
+    var panel = document.getElementById('dist-panel');
+    var distCities = selCities.filter(function(c) { return DISTRICTS[CODE_TO_NAME[c]]; });
+    if (distCities.length === 1) {
+      renderDistricts(CODE_TO_NAME[distCities[0]]);
+      panel.classList.add('open');
+    } else {
+      panel.classList.remove('open');
+    }
+    updateLocBadge();
   }
-  updateLocBadge();
-}
 
-function renderDistricts(city) {
-  document.getElementById('dist-panel-title').textContent = 'Chọn quận / huyện · ' + city;
-  var grid = document.getElementById('dist-grid');
-  grid.innerHTML = '';
-  (DISTRICTS[city] || []).forEach(function(d) {
-    var t = document.createElement('div');
-    t.className = 'loc-dis-tag';
-    t.textContent = d;
-    t.onclick = function() { t.classList.toggle('on'); updateLocBadge(); };
-    grid.appendChild(t);
+  function renderDistricts(city) {
+    document.getElementById('dist-panel-title').textContent = 'Chọn quận / huyện · ' + city;
+    var grid = document.getElementById('dist-grid');
+    grid.innerHTML = '';
+    (DISTRICTS[city] || []).forEach(function(d) {
+      var t = document.createElement('div');
+      t.className = 'loc-dis-tag';
+      t.textContent = d;
+      t.addEventListener('click', function() { t.classList.toggle('on'); updateLocBadge(); });
+      grid.appendChild(t);
+    });
+  }
+
+  function updateLocBadge() {
+    var distSel = document.querySelectorAll('.loc-dis-tag.on').length;
+    var total = selCities.length + distSel;
+    var badge = document.getElementById('sf-loc-badge');
+    var label = document.getElementById('sf-loc-label');
+    if (total > 0) {
+      badge.textContent = total; badge.style.display = 'inline-flex';
+      label.textContent = selCities.length === 1 ? (CODE_TO_NAME[selCities[0]] || selCities[0]) : 'Vị trí';
+    } else {
+      badge.style.display = 'none';
+      label.textContent = 'Vị trí';
+    }
+    renderActiveTags();
+  }
+
+  function clearLoc() {
+    selCities = [];
+    document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { e.classList.remove('on'); });
+    document.querySelectorAll('.loc-dis-tag').forEach(function(e) { e.classList.remove('on'); });
+    document.getElementById('dist-panel').classList.remove('open');
+    updateLocBadge();
+  }
+
+  function toggleType(el) {
+    var slug = el.dataset.slug;
+    el.classList.toggle('on');
+    var idx = selTypes.indexOf(slug);
+    if (idx > -1) selTypes.splice(idx, 1); else selTypes.push(slug);
+    updateTypeBadge();
+  }
+
+  function updateTypeBadge() {
+    var badge = document.getElementById('sf-type-badge');
+    var label = document.getElementById('sf-type-label');
+    if (selTypes.length > 0) {
+      badge.textContent = selTypes.length; badge.style.display = 'inline-flex';
+      var firstCard = document.querySelector('.type-card.on .type-name');
+      label.textContent = selTypes.length === 1 && firstCard ? firstCard.textContent : 'Loại biển';
+    } else {
+      badge.style.display = 'none';
+      label.textContent = 'Loại biển';
+    }
+    renderActiveTags();
+  }
+
+  function clearType() {
+    selTypes = [];
+    document.querySelectorAll('.type-card').forEach(function(e) { e.classList.remove('on'); });
+    updateTypeBadge();
+  }
+
+  function renderActiveTags() {
+    var container = document.getElementById('active-tags');
+    container.innerHTML = '';
+    var all = [];
+    selCities.forEach(function(c) { all.push({label: CODE_TO_NAME[c] || c, value: c, type: 'loc'}); });
+    document.querySelectorAll('.loc-dis-tag.on').forEach(function(t) { all.push({label: t.textContent, value: t.textContent, type: 'dist'}); });
+    selTypes.forEach(function(slug) {
+      var card = document.querySelector('.type-card[data-slug="'+slug+'"] .type-name');
+      all.push({label: card ? card.textContent : slug, value: slug, type: 'type'});
+    });
+    all.forEach(function(item) {
+      var tag = document.createElement('div');
+      tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;border-radius:980px;background:var(--bl-lt);color:var(--bl);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;border:1.5px solid var(--bl);';
+      tag.innerHTML = item.label + '<svg viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      tag.addEventListener('click', function() {
+        if (item.type === 'loc') {
+          var ci = selCities.indexOf(item.value);
+          if (ci > -1) { selCities.splice(ci, 1); document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { if (e.dataset.code === item.value) e.classList.remove('on'); }); }
+          updateLocBadge();
+        } else if (item.type === 'dist') {
+          document.querySelectorAll('.loc-dis-tag').forEach(function(e) { if (e.textContent === item.value) e.classList.remove('on'); });
+          updateLocBadge();
+        } else {
+          var ti = selTypes.indexOf(item.value);
+          if (ti > -1) selTypes.splice(ti, 1);
+          document.querySelectorAll('.type-card').forEach(function(e) { if (e.dataset.slug === item.value) e.classList.remove('on'); });
+          updateTypeBadge();
+        }
+      });
+      container.appendChild(tag);
+    });
+  }
+
+  // ── Bind all events ──────────────────────────────────────────────
+  document.getElementById('sf-loc').addEventListener('click', function() { toggleDrop('loc'); });
+  document.getElementById('sf-type').addEventListener('click', function() { toggleDrop('type'); });
+  document.getElementById('search-btn').addEventListener('click', doSearch);
+  document.getElementById('backdrop').addEventListener('click', closeDrop);
+  document.getElementById('clear-loc').addEventListener('click', clearLoc);
+  document.getElementById('clear-type').addEventListener('click', clearType);
+  document.getElementById('apply-loc').addEventListener('click', function() { closeDrop(); doSearch(); });
+  document.getElementById('apply-type').addEventListener('click', function() { closeDrop(); doSearch(); });
+  document.getElementById('q').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
   });
-}
 
-function updateLocBadge() {
-  var distSel = document.querySelectorAll('.loc-dis-tag.on').length;
-  var total = selCities.length + distSel;
-  var badge = document.getElementById('sf-loc-badge');
-  var label = document.getElementById('sf-loc-label');
-  if (total > 0) {
-    badge.textContent = total; badge.style.display = 'inline-flex';
-    label.textContent = selCities.length === 1 ? (CODE_TO_NAME[selCities[0]] || selCities[0]) : 'Vị trí';
-  } else {
-    badge.style.display = 'none';
-    label.textContent = 'Vị trí';
-  }
-  renderActiveTags();
-}
-
-function clearLoc() {
-  selCities = [];
-  document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { e.classList.remove('on'); });
-  document.querySelectorAll('.loc-dis-tag').forEach(function(e) { e.classList.remove('on'); });
-  document.getElementById('dist-panel').classList.remove('open');
-  updateLocBadge();
-}
-
-function applyLoc() { closeDrop(); doSearch(); }
-
-// ── Type logic ─────────────────────────────────────────────────────
-function toggleType(el, slug) {
-  el.classList.toggle('on');
-  var idx = selTypes.indexOf(slug);
-  if (idx > -1) selTypes.splice(idx, 1); else selTypes.push(slug);
-  updateTypeBadge();
-}
-
-function updateTypeBadge() {
-  var badge = document.getElementById('sf-type-badge');
-  var label = document.getElementById('sf-type-label');
-  if (selTypes.length > 0) {
-    badge.textContent = selTypes.length; badge.style.display = 'inline-flex';
-    // Show label of first selected type
-    var firstCard = document.querySelector('.type-card.on .type-name');
-    label.textContent = selTypes.length === 1 && firstCard ? firstCard.textContent : 'Loại biển';
-  } else {
-    badge.style.display = 'none';
-    label.textContent = 'Loại biển';
-  }
-  renderActiveTags();
-}
-
-function clearType() {
-  selTypes = [];
-  document.querySelectorAll('.type-card').forEach(function(e) { e.classList.remove('on'); });
-  updateTypeBadge();
-}
-
-function applyType() { closeDrop(); doSearch(); }
-
-// ── Active tags ─────────────────────────────────────────────────────
-function renderActiveTags() {
-  var container = document.getElementById('active-tags');
-  container.innerHTML = '';
-  var all = [];
-  selCities.forEach(function(c) { all.push({label: CODE_TO_NAME[c] || c, value: c, type: 'loc'}); });
-  document.querySelectorAll('.loc-dis-tag.on').forEach(function(t) { all.push({label: t.textContent, value: t.textContent, type: 'dist'}); });
-  selTypes.forEach(function(slug) {
-    var card = document.querySelector('.type-card[data-slug="'+slug+'"] .type-name');
-    all.push({label: card ? card.textContent : slug, value: slug, type: 'type'});
+  // Close drop buttons
+  document.querySelectorAll('.btn-close-drop').forEach(function(btn) {
+    btn.addEventListener('click', closeDrop);
   });
-  all.forEach(function(item) {
-    var tag = document.createElement('div');
-    tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;border-radius:980px;background:var(--bl-lt);color:var(--bl);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;border:1.5px solid var(--bl);';
-    tag.innerHTML = item.label + '<svg viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-    tag.onclick = function() {
-      if (item.type === 'loc') {
-        var ci = selCities.indexOf(item.value);
-        if (ci > -1) { selCities.splice(ci, 1); document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { if (e.dataset.code === item.value) e.classList.remove('on'); }); }
-        updateLocBadge();
-      } else if (item.type === 'dist') {
-        document.querySelectorAll('.loc-dis-tag').forEach(function(e) { if (e.textContent === item.value) e.classList.remove('on'); });
-        updateLocBadge();
-      } else {
-        var ti = selTypes.indexOf(item.value);
-        if (ti > -1) selTypes.splice(ti, 1);
-        document.querySelectorAll('.type-card').forEach(function(e) { if (e.dataset.slug === item.value) e.classList.remove('on'); });
-        updateTypeBadge();
-      }
-    };
-    container.appendChild(tag);
+
+  // Location items
+  document.querySelectorAll('#drop-loc .loc-item').forEach(function(el) {
+    el.addEventListener('click', function() { selectCity(el); });
   });
-}
+
+  // Type cards
+  document.querySelectorAll('.type-card[data-slug]').forEach(function(el) {
+    el.addEventListener('click', function() { toggleType(el); });
+  });
+
+  // Search chips
+  document.querySelectorAll('.schip[data-q]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.getElementById('q').value = el.dataset.q;
+      doSearch();
+    });
+  });
+})();
+
 
 </script>
 @endpush

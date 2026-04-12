@@ -26,7 +26,7 @@
     <div class="fchips">
         <a href="{{ route('fp.listing') }}" class="fchip {{ !$hasFilters ? 'on' : '' }}">Tất cả</a>
         @foreach(($filters['formats'] ?? collect())->take(6) as $f)
-            <a href="{{ route('fp.listing', ['venue_type' => $f['type']]) }}" class="fchip {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">{{ $f['label'] }} <span class="fchip-count">{{ $f['count'] }}</span></a>
+            <a href="/explore?venue_type[]={{ $f['type'] }}" class="fchip {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}">{{ $f['label'] }} <span class="fchip-count">{{ $f['count'] }}</span></a>
         @endforeach
     </div>
 </div></div>
