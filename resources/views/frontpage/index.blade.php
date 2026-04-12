@@ -48,7 +48,7 @@
         </button>
         <div class="sb-divider"></div>
         <input class="search-input" id="q" type="text" placeholder="Tìm theo tên đường, tòa nhà, hoặc mô tả campaign…">
-        <button class="search-btn">
+        <button class="search-btn" onclick="doSearch()">
           <svg viewBox="0 0 24 24" fill="#fff"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <span class="search-btn-text">Tìm ngay</span>
         </button>
@@ -71,7 +71,7 @@
             <div class="loc-region">
               <div class="loc-region-title">{{ $regionName }}</div>
               @foreach($provinces as $p)
-              <div class="loc-item" onclick="selectCity(this,'{{ $p['name'] }}')"><div class="loc-check"></div><span>{{ $p['name'] }}</span><span class="loc-count">{{ $p['count'] }}</span></div>
+              <div class="loc-item" data-code="{{ $p['code'] }}" onclick="selectCity(this,'{{ $p['code'] }}')"><div class="loc-check"></div><span>{{ $p['name'] }}</span><span class="loc-count">{{ $p['count'] }}</span></div>
               @endforeach
             </div>
             @endforeach
@@ -98,7 +98,7 @@
         <div class="mega-body">
           <div class="type-grid" id="type-grid">
             @foreach($venueTypes->take(6) as $vt)
-            <div class="type-card" onclick="toggleType(this,'{{ $vt['label'] }}')">
+            <div class="type-card" data-slug="{{ $vt['type'] }}" onclick="toggleType(this,'{{ $vt['type'] }}')">
               <div class="type-icon"><span class="material-icons" style="font-size:20px;color:var(--bl)">{{ $vt['icon'] ?? 'tv' }}</span></div>
               <div>
                 <div class="type-name">{{ $vt['label'] }}</div>
@@ -119,10 +119,20 @@
     </div>
 
     <div class="search-chips">
-      <span class="schip" onclick="setQ('LED Hà Nội premium')">LED Hà Nội premium</span>
-      <span class="schip" onclick="setQ('Mall TP.HCM')">Mall TP.HCM</span>
-      <span class="schip" onclick="setQ('Transit sân bay')">Transit sân bay</span>
-      <span class="schip" onclick="setQ('Billboard tháng 6')">Billboard tháng 6</span>
+      @php
+        $chips = collect();
+        $cityNames = $topCities->take(2)->pluck('name');
+        foreach ($venueTypes->take(3) as $i => $vt) {
+            $city = $cityNames[$i] ?? $cityNames[0] ?? '';
+            $chips->push($vt['label'] . ($city ? ' ' . $city : ''));
+        }
+        if ($venueTypes->count() > 3) {
+            $chips->push($venueTypes[3]['label']);
+        }
+      @endphp
+      @foreach($chips->take(4) as $chip)
+        <span class="schip" onclick="setQ('{{ e($chip) }}')">{{ $chip }}</span>
+      @endforeach
     </div>
 
     <!-- CTA buttons -->
@@ -213,13 +223,15 @@
     </div>
     <div class="cat-grid">
       @foreach($venueTypes->take(5) as $vt)
-      <a href="{{ route('fp.listing', ['venue_type' => $vt['type']]) }}" class="cat-card rv">
-        <div class="cat-img">
-          @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
-          <div class="cat-img-ov"></div>
-          <div class="cat-count">{{ $vt['count'] }}</div>
+      <a href="/explore?venue_type={{ $vt['type'] }}" class="cat-card rv">
+        <div class="cat-card-inner">
+          <div class="cat-img">
+            @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
+            <div class="cat-img-ov"></div>
+            <div class="cat-count">{{ $vt['count'] }}</div>
+          </div>
+          <div class="cat-body"><div class="cat-name">{{ $vt['label'] }}</div></div>
         </div>
-        <div class="cat-body"><div class="cat-name">{{ $vt['label'] }}</div></div>
       </a>
       @endforeach
     </div>
@@ -240,11 +252,13 @@
     </div>
     <div class="city-grid">
       @foreach($topCities as $i => $city)
-      <a href="{{ route('fp.listing', ['city' => $city['code']]) }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }} rv">
-        <div class="city-img"><div class="city-ov"></div></div>
-        <div class="city-info">
-          <div class="city-name">{{ $city['name'] }}</div>
-          <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
+      <a href="/explore?city={{ $city['code'] }}" class="city-card{{ $i < 2 ? ' city-card--lg' : '' }} rv">
+        <div class="city-card-inner">
+          <div class="city-img"><div class="city-ov"></div></div>
+          <div class="city-info">
+            <div class="city-name">{{ $city['name'] }}</div>
+            <div class="city-meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,.72)" style="width:12px;height:12px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $city['count'] }} inventory</div>
+          </div>
         </div>
       </a>
       @endforeach
@@ -667,6 +681,8 @@ var selCities = [];
 var selTypes  = [];
 var activeDrop = null;
 
+var CODE_TO_NAME = @json(collect($locationsByRegion)->flatten(1)->pluck('name', 'code'));
+
 var DISTRICTS = {
   'Hà Nội': ['Ba Đình','Hoàn Kiếm','Hai Bà Trưng','Đống Đa','Tây Hồ','Cầu Giấy','Thanh Xuân','Hoàng Mai','Long Biên','Nam Từ Liêm','Bắc Từ Liêm','Hà Đông'],
   'TP. Hồ Chí Minh': ['Quận 1','Quận 3','Quận 5','Quận 7','Quận 10','Bình Thạnh','Tân Bình','Phú Nhuận','Bình Chánh','Thủ Đức'],
@@ -674,7 +690,28 @@ var DISTRICTS = {
   'Hải Phòng': ['Hồng Bàng','Ngô Quyền','Lê Chân','Dương Kinh','Đồ Sơn'],
 };
 
-function setQ(txt) { document.getElementById('q').value = txt; }
+var EXPLORE_URL = '/explore';
+
+function buildExploreUrl() {
+  var parts = [];
+  var q = document.getElementById('q').value.trim();
+  if (q) parts.push('q=' + encodeURIComponent(q));
+  selTypes.forEach(function(t) { parts.push('venue_type[]=' + encodeURIComponent(t)); });
+  selCities.forEach(function(c) { parts.push('city[]=' + encodeURIComponent(c)); });
+  return EXPLORE_URL + (parts.length ? '?' + parts.join('&') : '');
+}
+
+function doSearch() { window.location.href = buildExploreUrl(); }
+
+function setQ(txt) {
+  document.getElementById('q').value = txt;
+  doSearch();
+}
+
+// Enter key on search input
+document.getElementById('q').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
+});
 
 function toggleDrop(id) {
   var target = 'drop-' + id;
@@ -701,15 +738,16 @@ function closeDrop() {
 }
 
 // ── Location logic ─────────────────────────────────────────────────
-function selectCity(el, city) {
+function selectCity(el, code) {
   el.classList.toggle('on');
-  var idx = selCities.indexOf(city);
-  if (idx > -1) selCities.splice(idx, 1); else selCities.push(city);
+  var idx = selCities.indexOf(code);
+  if (idx > -1) selCities.splice(idx, 1); else selCities.push(code);
   // Show district sub-panel if exactly 1 city & has districts
   var panel = document.getElementById('dist-panel');
-  var distCities = selCities.filter(function(c) { return DISTRICTS[c]; });
+  var cityName = el.querySelector('span') ? el.querySelector('span').textContent : '';
+  var distCities = selCities.filter(function(c) { return DISTRICTS[CODE_TO_NAME[c]]; });
   if (distCities.length === 1) {
-    renderDistricts(distCities[0]);
+    renderDistricts(CODE_TO_NAME[distCities[0]]);
     panel.classList.add('open');
   } else {
     panel.classList.remove('open');
@@ -737,7 +775,7 @@ function updateLocBadge() {
   var label = document.getElementById('sf-loc-label');
   if (total > 0) {
     badge.textContent = total; badge.style.display = 'inline-flex';
-    label.textContent = selCities.length === 1 ? selCities[0] : 'Vị trí';
+    label.textContent = selCities.length === 1 ? (CODE_TO_NAME[selCities[0]] || selCities[0]) : 'Vị trí';
   } else {
     badge.style.display = 'none';
     label.textContent = 'Vị trí';
@@ -753,13 +791,13 @@ function clearLoc() {
   updateLocBadge();
 }
 
-function applyLoc() { closeDrop(); renderActiveTags(); }
+function applyLoc() { closeDrop(); doSearch(); }
 
 // ── Type logic ─────────────────────────────────────────────────────
-function toggleType(el, type) {
+function toggleType(el, slug) {
   el.classList.toggle('on');
-  var idx = selTypes.indexOf(type);
-  if (idx > -1) selTypes.splice(idx, 1); else selTypes.push(type);
+  var idx = selTypes.indexOf(slug);
+  if (idx > -1) selTypes.splice(idx, 1); else selTypes.push(slug);
   updateTypeBadge();
 }
 
@@ -768,7 +806,9 @@ function updateTypeBadge() {
   var label = document.getElementById('sf-type-label');
   if (selTypes.length > 0) {
     badge.textContent = selTypes.length; badge.style.display = 'inline-flex';
-    label.textContent = selTypes.length === 1 ? selTypes[0] : 'Loại biển';
+    // Show label of first selected type
+    var firstCard = document.querySelector('.type-card.on .type-name');
+    label.textContent = selTypes.length === 1 && firstCard ? firstCard.textContent : 'Loại biển';
   } else {
     badge.style.display = 'none';
     label.textContent = 'Loại biển';
@@ -782,30 +822,35 @@ function clearType() {
   updateTypeBadge();
 }
 
-function applyType() { closeDrop(); renderActiveTags(); }
+function applyType() { closeDrop(); doSearch(); }
 
 // ── Active tags ─────────────────────────────────────────────────────
 function renderActiveTags() {
   var container = document.getElementById('active-tags');
   container.innerHTML = '';
   var all = [];
-  selCities.forEach(function(c) { all.push({label: c, type: 'loc'}); });
-  document.querySelectorAll('.loc-dis-tag.on').forEach(function(t) { all.push({label: t.textContent, type: 'loc'}); });
-  selTypes.forEach(function(t) { all.push({label: t, type: 'type'}); });
+  selCities.forEach(function(c) { all.push({label: CODE_TO_NAME[c] || c, value: c, type: 'loc'}); });
+  document.querySelectorAll('.loc-dis-tag.on').forEach(function(t) { all.push({label: t.textContent, value: t.textContent, type: 'dist'}); });
+  selTypes.forEach(function(slug) {
+    var card = document.querySelector('.type-card[data-slug="'+slug+'"] .type-name');
+    all.push({label: card ? card.textContent : slug, value: slug, type: 'type'});
+  });
   all.forEach(function(item) {
     var tag = document.createElement('div');
     tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;border-radius:980px;background:var(--bl-lt);color:var(--bl);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;border:1.5px solid var(--bl);';
     tag.innerHTML = item.label + '<svg viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     tag.onclick = function() {
       if (item.type === 'loc') {
-        var ci = selCities.indexOf(item.label);
-        if (ci > -1) { selCities.splice(ci, 1); document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { if (e.querySelector('span') && e.querySelector('span').textContent === item.label) e.classList.remove('on'); }); }
-        else { document.querySelectorAll('.loc-dis-tag').forEach(function(e) { if (e.textContent === item.label) e.classList.remove('on'); }); }
+        var ci = selCities.indexOf(item.value);
+        if (ci > -1) { selCities.splice(ci, 1); document.querySelectorAll('#drop-loc .loc-item').forEach(function(e) { if (e.dataset.code === item.value) e.classList.remove('on'); }); }
+        updateLocBadge();
+      } else if (item.type === 'dist') {
+        document.querySelectorAll('.loc-dis-tag').forEach(function(e) { if (e.textContent === item.value) e.classList.remove('on'); });
         updateLocBadge();
       } else {
-        var ti = selTypes.indexOf(item.label);
+        var ti = selTypes.indexOf(item.value);
         if (ti > -1) selTypes.splice(ti, 1);
-        document.querySelectorAll('.type-card').forEach(function(e) { if (e.querySelector('.type-name') && e.querySelector('.type-name').textContent === item.label) e.classList.remove('on'); });
+        document.querySelectorAll('.type-card').forEach(function(e) { if (e.dataset.slug === item.value) e.classList.remove('on'); });
         updateTypeBadge();
       }
     };

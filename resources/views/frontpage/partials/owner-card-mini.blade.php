@@ -9,7 +9,7 @@
     $colorPair = $colors[$loop->index % count($colors)] ?? $colors[0];
     $tags = array_slice($owner->venue_types_list ?? [], 0, 2);
 @endphp
-<div class="owner-card rv">
+<a href="/owners/{{ $owner->slug }}" class="owner-card rv" style="text-decoration:none;color:inherit">
     <div class="oc-head">
         <div class="oc-logo" style="background:linear-gradient(135deg,{{ $colorPair[0] }},{{ $colorPair[1] }})">{{ $initials }}</div>
         <div>
@@ -28,4 +28,4 @@
         <div><div class="oc-sn">{{ $owner->screen_count ?? 0 }}</div><div class="oc-sl">Inventory</div></div>
         <div><div class="oc-sn">{{ $owner->city_count ?? 0 }}</div><div class="oc-sl">Cities</div></div>
     </div>
-</div>
+</a>
