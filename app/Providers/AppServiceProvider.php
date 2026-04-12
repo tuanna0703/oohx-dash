@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
             }
             config(['app.url' => $url]);
             url()->forceRootUrl($url);
+
+            if ($scheme === 'https') {
+                \Illuminate\Support\Facades\URL::forceScheme('https');
+            }
         }
     }
 }

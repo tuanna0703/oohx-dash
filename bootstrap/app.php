@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'ability' => \App\Http\Middleware\CheckTokenAbility::class,
             'buyer'   => \App\Http\Middleware\EnsureBuyerAuth::class,

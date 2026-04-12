@@ -13,7 +13,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'https://oohx.net',
+        'https://www.oohx.net',
+        'https://dash.oohx.net',
+        'http://oohx.test',
+        'http://dash.oohx.test',
+        'http://localhost:3000',
+        'http://localhost:5173',
+    ],
 
     'allowed_origins_patterns' => [],
 
