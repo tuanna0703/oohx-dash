@@ -54,9 +54,10 @@ class BookingController extends Controller
         ]);
 
         $user = $request->user();
-        $org = $user->currentOrganization;
-        $cart = $this->cartService->getOrCreateCart($user);
+        $org = $user->currentOrganization ?? $user->organizations()->first();
+        abort_unless($org, 403, 'Bạn chưa thuộc tổ chức nào. Vui lòng đăng ký tại /register.');
 
+        $cart = $this->cartService->getOrCreateCart($user);
         abort_unless($cart->items()->exists(), 422, 'Plan trống');
 
         $campaign = $this->campaignService->createFromCart($org, $user, $cart, $data);
