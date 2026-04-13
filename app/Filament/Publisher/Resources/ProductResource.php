@@ -140,7 +140,14 @@ class ProductResource extends Resource
                     ->multiple()
                     ->options(fn () => Screen::where('owner_id', $ownerId)->where('active', true)->pluck('name', 'id'))
                     ->searchable()
-                    ->helperText('Chọn screens thuộc product này'),
+                    ->preload()
+                    ->helperText('Chọn screens thuộc product này')
+                    ->afterStateHydrated(function (Forms\Components\Select $component, ?Product $record) {
+                        if ($record) {
+                            $component->state($record->screens()->pluck('screens.id')->toArray());
+                        }
+                    })
+                    ->dehydrated(false),
             ])->collapsible(),
         ]);
     }

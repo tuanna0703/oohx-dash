@@ -6,6 +6,7 @@ use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Network;
 use App\Models\Owner;
 use App\Models\Product;
+use App\Models\Screen;
 use App\Models\Site;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -192,6 +193,27 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('sort_order')->label('Thứ tự')->numeric()->default(0),
                 ]),
             ]),
+
+            Forms\Components\Section::make('Gắn Screens')->schema([
+                Forms\Components\Select::make('screenIds')
+                    ->label('Screens')
+                    ->multiple()
+                    ->options(fn (Forms\Get $get) => $get('owner_id')
+                        ? Screen::withoutGlobalScope('owner_scope')
+                            ->where('owner_id', $get('owner_id'))
+                            ->where('active', true)
+                            ->pluck('name', 'id')
+                        : [])
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Chọn screens thuộc product này (chọn Owner trước)')
+                    ->afterStateHydrated(function (Forms\Components\Select $component, ?Product $record) {
+                        if ($record) {
+                            $component->state($record->screens()->pluck('screens.id')->toArray());
+                        }
+                    })
+                    ->dehydrated(false),
+            ])->collapsible(),
         ]);
     }
 

@@ -14,4 +14,11 @@ class EditProduct extends EditRecord
     {
         return [Actions\ViewAction::make()];
     }
+
+    protected function afterSave(): void
+    {
+        $screenIds = $this->form->getState()['screenIds'] ?? [];
+        $this->record->screens()->sync($screenIds);
+        $this->record->update(['total_units' => count($screenIds)]);
+    }
 }

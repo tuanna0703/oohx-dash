@@ -14,4 +14,13 @@ class CreateProduct extends CreateRecord
         $data['owner_id'] = auth()->user()->current_owner_id;
         return $data;
     }
+
+    protected function afterCreate(): void
+    {
+        $screenIds = $this->form->getState()['screenIds'] ?? [];
+        if (! empty($screenIds)) {
+            $this->record->screens()->sync($screenIds);
+            $this->record->update(['total_units' => count($screenIds)]);
+        }
+    }
 }
