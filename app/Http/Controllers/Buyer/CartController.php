@@ -31,20 +31,37 @@ class CartController extends Controller
     }
 
     /**
-     * POST /cart/add — add screen to cart (AJAX or redirect)
+     * POST /cart/add — add screen or product to cart (AJAX or redirect)
      */
     public function add(Request $request): JsonResponse|RedirectResponse
     {
-        $data = $request->validate([
-            'screen_id'  => ['required', 'string', 'exists:screens,id'],
-            'product_id' => ['nullable', 'string', 'exists:products,id'],
-            'start_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'end_date'   => ['nullable', 'date', 'after:start_date'],
-            'quantity'   => ['nullable', 'integer', 'min:1'],
-        ]);
-
         $cart = $this->cartService->getOrCreateCart($request->user());
-        $item = $this->cartService->addItem($cart, $data['screen_id'], $data);
+
+        // Product-based add (new flow)
+        if ($request->filled('product_id') && ! $request->filled('screen_id')) {
+            $data = $request->validate([
+                'product_id'         => ['required', 'string', 'exists:products,id'],
+                'buy_mode'           => ['nullable', 'in:package,individual'],
+                'selected_screen_ids' => ['nullable', 'array'],
+                'selected_screen_ids.*' => ['string', 'exists:screens,id'],
+                'start_date'         => ['nullable', 'date', 'after_or_equal:today'],
+                'end_date'           => ['nullable', 'date', 'after:start_date'],
+            ]);
+
+            $item = $this->cartService->addProduct($cart, $data['product_id'], $data);
+        } else {
+            // Legacy screen-based add
+            $data = $request->validate([
+                'screen_id'  => ['required', 'string', 'exists:screens,id'],
+                'product_id' => ['nullable', 'string', 'exists:products,id'],
+                'start_date' => ['nullable', 'date', 'after_or_equal:today'],
+                'end_date'   => ['nullable', 'date', 'after:start_date'],
+                'quantity'   => ['nullable', 'integer', 'min:1'],
+            ]);
+
+            $item = $this->cartService->addItem($cart, $data['screen_id'], $data);
+        }
+
         $count = $cart->items()->count();
 
         if ($request->wantsJson()) {

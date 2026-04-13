@@ -20,6 +20,17 @@ class Product extends Model
     public const TYPE_PACKAGE = 'package';
     public const TYPE_CUSTOM  = 'custom';
 
+    // Listing mode constants
+    public const LISTING_PACKAGE_ONLY    = 'package_only';
+    public const LISTING_INDIVIDUAL_ONLY = 'individual_only';
+    public const LISTING_BOTH            = 'both';
+
+    public const LISTING_MODES = [
+        self::LISTING_PACKAGE_ONLY    => 'Chỉ bán nguyên gói',
+        self::LISTING_INDIVIDUAL_ONLY => 'Chỉ bán lẻ từng màn hình',
+        self::LISTING_BOTH            => 'Bán gói hoặc bán lẻ',
+    ];
+
     // Category constants
     public const CATEGORY_BILLBOARD      = 'billboard';
     public const CATEGORY_LED            = 'led';
@@ -45,7 +56,8 @@ class Product extends Model
         'owner_id', 'network_id', 'site_id',
         'name', 'slug', 'type', 'category', 'listing_mode',
         'min_quantity', 'max_quantity', 'total_units',
-        'floor_price', 'currency', 'price_unit',
+        'floor_price', 'individual_price', 'package_discount_pct',
+        'currency', 'price_unit',
         'description', 'short_description', 'cover_photo', 'photos', 'specs',
         'city', 'region', 'package_options',
         'status', 'featured', 'sort_order',
@@ -53,15 +65,17 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'photos'          => 'array',
-        'specs'           => 'array',
-        'package_options' => 'array',
-        'floor_price'     => 'decimal:2',
-        'min_quantity'    => 'integer',
-        'max_quantity'    => 'integer',
-        'total_units'     => 'integer',
-        'featured'        => 'boolean',
-        'sort_order'      => 'integer',
+        'photos'               => 'array',
+        'specs'                => 'array',
+        'package_options'      => 'array',
+        'floor_price'          => 'decimal:2',
+        'individual_price'     => 'decimal:2',
+        'package_discount_pct' => 'integer',
+        'min_quantity'         => 'integer',
+        'max_quantity'         => 'integer',
+        'total_units'          => 'integer',
+        'featured'             => 'boolean',
+        'sort_order'           => 'integer',
     ];
 
     // ── Relationships ──
@@ -183,4 +197,33 @@ class Product extends Model
     public function isSingle(): bool  { return $this->type === self::TYPE_SINGLE; }
     public function isPackage(): bool  { return $this->type === self::TYPE_PACKAGE; }
     public function isCustom(): bool   { return $this->type === self::TYPE_CUSTOM; }
+
+    public function allowsIndividual(): bool
+    {
+        return in_array($this->listing_mode, [self::LISTING_INDIVIDUAL_ONLY, self::LISTING_BOTH]);
+    }
+
+    public function allowsPackage(): bool
+    {
+        return in_array($this->listing_mode, [self::LISTING_PACKAGE_ONLY, self::LISTING_BOTH]);
+    }
+
+    /** Giá lẻ per screen — dùng individual_price nếu có, fallback floor_price */
+    public function getIndividualPriceDisplayAttribute(): string
+    {
+        $price = $this->individual_price ?: $this->floor_price;
+        $unit = match ($this->price_unit) {
+            'month'    => '/tháng',
+            'week'     => '/tuần',
+            'day'      => '/ngày',
+            'campaign' => '/campaign',
+            default    => '',
+        };
+        return number_format($price, 0, ',', '.') . ' ₫' . $unit;
+    }
+
+    public function getListingModeLabelAttribute(): string
+    {
+        return self::LISTING_MODES[$this->listing_mode] ?? $this->listing_mode;
+    }
 }

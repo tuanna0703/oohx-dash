@@ -24,38 +24,84 @@ class CartService
     }
 
     /**
-     * Add screen to cart. Returns the cart item.
+     * Add product to cart. Supports 3 listing modes:
+     * - package_only: mua cả gói (no screen selection)
+     * - individual_only: chọn từng screen
+     * - both: chọn gói hoặc chọn lẻ
+     */
+    public function addProduct(Cart $cart, string $productId, array $data = []): CartItem
+    {
+        $product = \App\Models\Product::with('screens.inventory')->findOrFail($productId);
+
+        $selectedScreenIds = $data['selected_screen_ids'] ?? null;
+        $buyMode = $data['buy_mode'] ?? ($product->listing_mode === 'package_only' ? 'package' : 'individual');
+        $startDate = $data['start_date'] ?? now()->addDays(7)->toDateString();
+        $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString();
+        $sovPct = $data['share_of_voice_pct'] ?? 100;
+
+        if ($buyMode === 'package') {
+            // Mua cả gói
+            $quantity = 1;
+            $cost = (float) $product->floor_price;
+            $impressions = 0;
+            $selectedScreenIds = null;
+        } else {
+            // Mua lẻ — dùng individual_price nếu có
+            $screenIds = is_array($selectedScreenIds) ? $selectedScreenIds : [];
+            $quantity = max(1, count($screenIds));
+            $unitPrice = (float) ($product->individual_price ?: $product->floor_price);
+            $cost = $unitPrice * $quantity;
+            $impressions = 0;
+
+            // Tính impressions nếu có
+            foreach ($product->screens as $screen) {
+                if (in_array($screen->id, $screenIds)) {
+                    $impressions += $screen->inventory?->weekly_impressions ?? 0;
+                }
+            }
+        }
+
+        // Use product_id as unique key (1 product = 1 cart item)
+        return CartItem::updateOrCreate(
+            ['cart_id' => $cart->id, 'product_id' => $productId],
+            [
+                'screen_id' => $product->screens->first()?->id,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'spot_length' => $data['spot_length'] ?? 15,
+                'quantity' => $quantity,
+                'selected_screen_ids' => $selectedScreenIds,
+                'selected_region' => $data['selected_region'] ?? null,
+                'share_of_voice_pct' => $sovPct,
+                'estimated_impressions' => $impressions,
+                'estimated_cost' => $cost,
+                'notes' => $data['notes'] ?? null,
+            ]
+        );
+    }
+
+    /**
+     * Add single screen to cart (legacy / direct screen booking).
      */
     public function addItem(Cart $cart, string $screenId, array $data = []): CartItem
     {
         $screen = Screen::with('inventory')->findOrFail($screenId);
-        $productId = $data['product_id'] ?? null;
 
         $startDate = $data['start_date'] ?? now()->addDays(7)->toDateString();
-        $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString(); // ~1 month
+        $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString();
         $spotLength = $data['spot_length'] ?? $screen->inventory?->spot_length ?? 15;
         $sovPct = $data['share_of_voice_pct'] ?? 100;
-        $quantity = (int) ($data['quantity'] ?? 1);
 
-        // If product is package, use product price instead of screen CPM
-        $product = $productId ? \App\Models\Product::find($productId) : null;
-        if ($product && $product->isPackage()) {
-            $estimated = [
-                'impressions' => 0,
-                'cost' => (float) $product->floor_price * $quantity,
-            ];
-        } else {
-            $estimated = $this->estimateCost($screen, $startDate, $endDate, $sovPct);
-        }
+        $estimated = $this->estimateCost($screen, $startDate, $endDate, $sovPct);
 
         return CartItem::updateOrCreate(
             ['cart_id' => $cart->id, 'screen_id' => $screenId],
             [
-                'product_id' => $productId,
+                'product_id' => $data['product_id'] ?? null,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'spot_length' => $spotLength,
-                'quantity' => $quantity,
+                'quantity' => (int) ($data['quantity'] ?? 1),
                 'selected_screen_ids' => $data['selected_screen_ids'] ?? null,
                 'selected_region' => $data['selected_region'] ?? null,
                 'share_of_voice_pct' => $sovPct,

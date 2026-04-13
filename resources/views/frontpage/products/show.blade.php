@@ -34,9 +34,10 @@
                 @php
                     $typeLabels = ['single'=>'Đơn lẻ','package'=>'Gói','custom'=>'Combo'];
                 @endphp
-                <div style="display:flex;gap:6px;margin-bottom:8px">
+                <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
                     <span class="badge b-bl">{{ $typeLabels[$product->type] ?? $product->type }}</span>
                     <span class="badge b-gray">{{ $product->category_label }}</span>
+                    <span class="badge" style="background:rgba(255,149,0,.1);color:#C93400">{{ $product->listing_mode_label }}</span>
                 </div>
                 <h1 style="font-size:24px;font-weight:800;color:var(--t1);letter-spacing:-.4px;margin-bottom:8px">{{ $product->name }}</h1>
                 <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--t3);flex-wrap:wrap">
@@ -44,8 +45,8 @@
                     <a href="/owners/{{ $product->owner->slug }}" style="color:var(--bl);font-weight:600;text-decoration:none">{{ $product->owner->name }}</a>
                     @endif
                     @if($product->network)<span>{{ $product->network->name }}</span>@endif
-                    @if($product->city)<span>📍 {{ $product->city }}</span>@endif
-                    @if($product->isPackage())<span>{{ $product->total_units }} vị trí</span>@endif
+                    @if($product->city)<span>{{ $product->city }}</span>@endif
+                    <span>{{ $product->total_units }} vị trí</span>
                 </div>
             </div>
 
@@ -69,16 +70,36 @@
             </div>
             @endif
 
-            {{-- Screens list (for package/custom) --}}
-            @if(!$product->isSingle() && $product->screens->count() > 0)
+            {{-- Screens list (for package/custom with individual purchase) --}}
+            @if($product->screens->count() > 0 && $product->allowsIndividual())
+            <div style="margin-top:24px" id="screen-list-section">
+                <h3 style="font-size:16px;font-weight:700;color:var(--t1);margin-bottom:12px">
+                    Chọn màn hình ({{ $product->screens->count() }})
+                </h3>
+                <div class="pd-screen-list">
+                    @foreach($product->screens as $screen)
+                    <label class="pd-screen-item" data-screen-id="{{ $screen->id }}" data-price="{{ $product->individual_price ?: $product->floor_price }}">
+                        <input type="checkbox" name="screens[]" value="{{ $screen->id }}" class="pd-screen-check">
+                        <img src="{{ $screen->spec?->photo_url ? asset('storage/' . $screen->spec->photo_url) : 'https://placehold.co/48x48/F5F5F7/999?text=—' }}" class="pd-screen-thumb" loading="lazy">
+                        <div style="flex:1;min-width:0">
+                            <div style="font-weight:600;color:var(--t1);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $screen->name }}</div>
+                            <div style="font-size:11px;color:var(--t4)">{{ $screen->site?->city ?? '' }} · {{ $screen->spec?->width_px ?? '—' }}x{{ $screen->spec?->height_px ?? '—' }}px</div>
+                        </div>
+                        <div style="font-size:13px;font-weight:700;color:var(--bl);white-space:nowrap">{{ $product->individual_price_display }}</div>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+            @elseif($product->screens->count() > 0)
+            {{-- Package only — show screens as read-only list --}}
             <div style="margin-top:24px">
                 <h3 style="font-size:16px;font-weight:700;color:var(--t1);margin-bottom:12px">
-                    Danh sách {{ $product->isPackage() ? 'vị trí' : 'items' }} ({{ $product->screens->count() }})
+                    Danh sách vị trí ({{ $product->screens->count() }})
                 </h3>
                 <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--ln2);border-radius:12px;overflow:hidden">
                     @foreach($product->screens->take(20) as $screen)
                     <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--ln2);font-size:13px">
-                        <img src="{{ $screen->spec?->photo ?? '' }}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--bg2);flex-shrink:0" loading="lazy">
+                        <img src="{{ $screen->spec?->photo_url ? asset('storage/' . $screen->spec->photo_url) : '' }}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--bg2);flex-shrink:0" loading="lazy">
                         <div style="flex:1;min-width:0">
                             <div style="font-weight:600;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $screen->name }}</div>
                             <div style="font-size:11px;color:var(--t4)">{{ $screen->site?->city ?? '' }}</div>
@@ -108,15 +129,79 @@
 
         {{-- Right: booking panel --}}
         <div class="pd-detail-sidebar">
-            <div class="bp">
+            <div class="bp" id="booking-panel">
+                {{-- ═══ MODE: both — Tab chọn gói hoặc lẻ ═══ --}}
+                @if($product->listing_mode === 'both')
+                <div class="bp-tabs">
+                    <button class="bp-tab active" data-tab="package" type="button">Mua cả gói</button>
+                    <button class="bp-tab" data-tab="individual" type="button">Chọn lẻ</button>
+                </div>
+
+                {{-- Tab: Mua cả gói --}}
+                <div class="bp-tab-content active" id="tab-package">
+                    <div class="bp-head">
+                        <div class="bp-price">{{ $product->price_display }}</div>
+                        <div style="font-size:12px;color:var(--t4);margin:2px 0 6px">{{ $product->total_units }} vị trí · Chưa bao gồm VAT</div>
+                        @if($product->package_discount_pct > 0)
+                        <div style="font-size:12px;font-weight:700;color:#248A3D;margin-bottom:6px">Tiết kiệm {{ $product->package_discount_pct }}% so với mua lẻ</div>
+                        @endif
+                        <div class="bp-avail"><div class="bp-dot"></div>{{ $product->status === 'active' ? 'Còn trống' : 'Tạm hết' }}</div>
+                    </div>
+                    <div class="bp-body">
+                        @auth
+                        <form method="POST" action="/cart/add">
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="buy_mode" value="package">
+                            <button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px">
+                                <svg viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                Thêm cả gói vào Plan
+                            </button>
+                        </form>
+                        @else
+                        <a href="/login" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none">Đăng nhập để Booking</a>
+                        @endauth
+                    </div>
+                </div>
+
+                {{-- Tab: Chọn lẻ --}}
+                <div class="bp-tab-content" id="tab-individual">
+                    <div class="bp-head">
+                        <div class="bp-price">{{ $product->individual_price_display }}</div>
+                        <div style="font-size:12px;color:var(--t4);margin:2px 0 6px">Giá / màn hình · Chưa bao gồm VAT</div>
+                    </div>
+                    <div class="bp-body">
+                        <div style="font-size:13px;color:var(--t3);margin-bottom:10px">Chọn màn hình từ danh sách bên trái</div>
+                        <div id="individual-summary" style="display:none;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:12px">
+                            <div style="font-size:13px;font-weight:700;color:var(--t1)">Đã chọn: <span id="selected-count">0</span> màn hình</div>
+                            <div style="font-size:16px;font-weight:800;color:var(--bl);margin-top:4px"><span id="selected-total">0</span> ₫</div>
+                        </div>
+                        @auth
+                        <form method="POST" action="/cart/add" id="individual-form">
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="buy_mode" value="individual">
+                            <div id="selected-inputs"></div>
+                            <button type="submit" class="btn btn-p btn-lg" id="individual-submit" style="width:100%;justify-content:center;border-radius:12px;height:52px" disabled>
+                                Thêm vào Plan
+                            </button>
+                        </form>
+                        @else
+                        <a href="/login" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none">Đăng nhập để Booking</a>
+                        @endauth
+                    </div>
+                </div>
+
+                {{-- ═══ MODE: package_only ═══ --}}
+                @elseif($product->listing_mode === 'package_only')
                 <div class="bp-head">
                     <div class="bp-price">{{ $product->price_display }}</div>
-                    <div style="font-size:13px;color:var(--t4);margin:4px 0 10px">Chưa bao gồm VAT</div>
+                    <div style="font-size:12px;color:var(--t4);margin:2px 0 6px">{{ $product->total_units }} vị trí · Chưa bao gồm VAT</div>
                     <div class="bp-avail"><div class="bp-dot"></div>{{ $product->status === 'active' ? 'Còn trống' : 'Tạm hết' }}</div>
                 </div>
 
-                {{-- Package options --}}
-                @if($product->isPackage() && $product->package_options)
+                {{-- Package options (gói con) --}}
+                @if($product->package_options && count($product->package_options) > 0)
                 <div class="bp-body">
                     <div class="bp-lbl">Chọn gói</div>
                     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
@@ -138,8 +223,8 @@
                     @auth
                     <form method="POST" action="/cart/add">
                         @csrf
-                        <input type="hidden" name="screen_id" value="{{ $product->screens->first()?->id }}">
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="buy_mode" value="package">
                         <button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px">
                             <svg viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                             Thêm vào Plan
@@ -149,6 +234,35 @@
                     <a href="/login" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none">Đăng nhập để Booking</a>
                     @endauth
                 </div>
+
+                {{-- ═══ MODE: individual_only ═══ --}}
+                @else
+                <div class="bp-head">
+                    <div class="bp-price">{{ $product->individual_price_display }}</div>
+                    <div style="font-size:12px;color:var(--t4);margin:2px 0 6px">Giá / màn hình · Chưa bao gồm VAT</div>
+                    <div class="bp-avail"><div class="bp-dot"></div>{{ $product->status === 'active' ? 'Còn trống' : 'Tạm hết' }}</div>
+                </div>
+                <div class="bp-body">
+                    <div style="font-size:13px;color:var(--t3);margin-bottom:10px">Chọn màn hình từ danh sách bên dưới</div>
+                    <div id="individual-summary" style="display:none;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:12px">
+                        <div style="font-size:13px;font-weight:700;color:var(--t1)">Đã chọn: <span id="selected-count">0</span> màn hình</div>
+                        <div style="font-size:16px;font-weight:800;color:var(--bl);margin-top:4px"><span id="selected-total">0</span> ₫</div>
+                    </div>
+                    @auth
+                    <form method="POST" action="/cart/add" id="individual-form">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="buy_mode" value="individual">
+                        <div id="selected-inputs"></div>
+                        <button type="submit" class="btn btn-p btn-lg" id="individual-submit" style="width:100%;justify-content:center;border-radius:12px;height:52px" disabled>
+                            Thêm vào Plan
+                        </button>
+                    </form>
+                    @else
+                    <a href="/login" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none">Đăng nhập để Booking</a>
+                    @endauth
+                </div>
+                @endif
 
                 <div class="bp-foot">
                     <svg viewBox="0 0 24 24" fill="var(--grn)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
@@ -174,4 +288,67 @@
         </div>
     </div>
 </div>
+
+{{-- JavaScript for screen selection + tab switching --}}
+@if($product->allowsIndividual())
+<script>
+(function(){
+    var unitPrice = {{ (float)($product->individual_price ?: $product->floor_price) }};
+
+    function fmtPrice(n){ return n.toLocaleString('vi-VN') }
+
+    // Tab switching (for 'both' mode)
+    document.querySelectorAll('.bp-tab').forEach(function(tab){
+        tab.addEventListener('click', function(){
+            document.querySelectorAll('.bp-tab').forEach(function(t){ t.classList.remove('active') });
+            document.querySelectorAll('.bp-tab-content').forEach(function(c){ c.classList.remove('active') });
+            tab.classList.add('active');
+            var target = document.getElementById('tab-' + tab.dataset.tab);
+            if(target) target.classList.add('active');
+        });
+    });
+
+    // Screen checkbox selection
+    var checks = document.querySelectorAll('.pd-screen-check');
+    checks.forEach(function(cb){
+        cb.addEventListener('change', updateSelection);
+    });
+
+    function updateSelection(){
+        var selected = document.querySelectorAll('.pd-screen-check:checked');
+        var count = selected.length;
+        var total = count * unitPrice;
+
+        // Update all summary elements (may be in different tabs)
+        document.querySelectorAll('#selected-count').forEach(function(el){ el.textContent = count });
+        document.querySelectorAll('#selected-total').forEach(function(el){ el.textContent = fmtPrice(total) });
+        document.querySelectorAll('#individual-summary').forEach(function(el){ el.style.display = count > 0 ? 'block' : 'none' });
+
+        // Update submit buttons
+        document.querySelectorAll('#individual-submit').forEach(function(btn){
+            btn.disabled = count === 0;
+            btn.textContent = count > 0 ? 'Thêm ' + count + ' màn hình vào Plan' : 'Thêm vào Plan';
+        });
+
+        // Update hidden inputs
+        document.querySelectorAll('#selected-inputs').forEach(function(container){
+            container.innerHTML = '';
+            selected.forEach(function(cb){
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selected_screen_ids[]';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+        });
+
+        // Highlight selected items
+        document.querySelectorAll('.pd-screen-item').forEach(function(item){
+            var cb = item.querySelector('.pd-screen-check');
+            item.classList.toggle('selected', cb && cb.checked);
+        });
+    }
+})();
+</script>
+@endif
 @endsection

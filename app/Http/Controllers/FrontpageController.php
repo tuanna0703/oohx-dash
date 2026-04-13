@@ -63,6 +63,7 @@ class FrontpageController extends Controller
 
         $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs) {
             $catId = $p->inventory?->vn_category_id;
+            $product = $p->relationLoaded('products') ? $p->products->first() : null;
             return [
                 'id'        => $p->uuid ?? $p->id,
                 'name'      => $p->name,
@@ -74,6 +75,12 @@ class FrontpageController extends Controller
                 'price'     => (float) ($p->inventory?->floor_cpm ?? 0),
                 'type'      => $vnCatSlugs[$catId] ?? '',
                 'typeLabel' => $vnCatLabels[$catId] ?? '',
+                'product'   => $product ? [
+                    'slug'        => $product->slug,
+                    'name'        => $product->name,
+                    'total_units' => $product->total_units,
+                    'can_buy_individual' => $product->allowsIndividual(),
+                ] : null,
             ];
         })->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
 

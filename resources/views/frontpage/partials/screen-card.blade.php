@@ -1,5 +1,5 @@
 {{-- Unified screen card partial
-     Receives: $screen (Screen model with spec, inventory, owner, site, site.network relations)
+     Receives: $screen (Screen model with spec, inventory, owner, site, site.network, products relations)
      Optional: $vnCatLabels (array), $compact (bool — smaller card for similar/featured)
 --}}
 @php
@@ -14,11 +14,24 @@
     $sizeDisplay = ($widthM && $heightM) ? "{$widthM}x{$heightM}m" : '—';
     $compact = $compact ?? false;
     $detailUrl = route('fp.detail', $screen->uuid ?? $screen->id);
+    // Product badge: lấy product đầu tiên nếu screen thuộc product
+    $product = $screen->relationLoaded('products') ? $screen->products->first() : null;
 @endphp
 <a href="{{ $detailUrl }}" class="sc-card {{ $compact ? 'sc-compact' : '' }}">
     <div class="sc-photo">
         <img src="{{ $photo }}" loading="lazy" alt="{{ $screen->name }}">
         <div class="sc-badge">Còn trống</div>
+        @if($product)
+        <div class="sc-product-badge">
+            @if($product->total_units > 1)
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                {{ $product->total_units }} vị trí
+            @endif
+            @if($product->allowsIndividual())
+                · Mua lẻ được
+            @endif
+        </div>
+        @endif
     </div>
     <div class="sc-body">
         <div class="sc-title">{{ $screen->name }}</div>

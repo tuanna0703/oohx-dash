@@ -215,6 +215,7 @@ class FrontpageService
                     'owner:id,name,slug',
                     'site:id,network_id,name,city,address',
                     'site.network:id,name',
+                    'products:id,slug,name,total_units,listing_mode',
                 ])
                 ->inRandomOrder()
                 ->limit($limit)
@@ -332,6 +333,7 @@ class FrontpageService
                 'owner:id,name,slug',
                 'site:id,network_id,name,city,address',
                 'site.network:id,name',
+                'products:id,slug,name,total_units,listing_mode',
             ]);
 
         $query = $this->applySort($query, $request);
@@ -413,7 +415,14 @@ class FrontpageService
     {
         return $this->buildScreenQuery($request)
             ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')->where('lat', '!=', 0)->where('lon', '!=', 0))
-            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,venue_type,vn_category_id', 'owner:id,name,slug', 'site:id,network_id,name,lat,lon,city,address', 'site.network:id,name'])
+            ->with([
+                'spec:screen_id,photo_url,photos',
+                'inventory:screen_id,floor_cpm,venue_type,vn_category_id',
+                'owner:id,name,slug',
+                'site:id,network_id,name,lat,lon,city,address',
+                'site.network:id,name',
+                'products:id,slug,name,total_units,listing_mode',
+            ])
             ->get();
     }
 

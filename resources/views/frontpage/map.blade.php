@@ -135,6 +135,12 @@
                     <span id="popup-city"></span>
                 </div>
                 <span class="badge b-grn" style="display:inline-flex;margin-bottom:8px">Còn trống</span>
+                <div id="popup-product" style="display:none;margin-bottom:8px;padding:6px 10px;background:rgba(42,79,246,.05);border:1px solid rgba(42,79,246,.12);border-radius:8px">
+                    <a href="#" id="popup-product-link" style="font-size:11px;font-weight:700;color:var(--bl);text-decoration:none;display:flex;align-items:center;gap:4px">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px;flex-shrink:0"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                        <span id="popup-product-text"></span>
+                    </a>
+                </div>
                 <div class="mpop-price" id="popup-price"></div>
                 <div class="mpop-actions">
                     <a href="#" id="popup-link" class="btn btn-p btn-sm" style="flex:1;justify-content:center">Xem chi tiết</a>
@@ -286,6 +292,19 @@
         document.getElementById('popup-price').innerHTML = fmtPrice(pin.price) + ' ₫<span> / tháng</span>';
         document.getElementById('popup-img').src = pin.photo || 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
         document.getElementById('popup-link').href = '/explore/' + pin.id;
+
+        // Product badge
+        var prodEl = document.getElementById('popup-product');
+        if (pin.product) {
+            var txt = pin.product.name + ' (' + pin.product.total_units + ' MH)';
+            if (pin.product.can_buy_individual) txt += ' · Mua lẻ được';
+            document.getElementById('popup-product-text').textContent = txt;
+            document.getElementById('popup-product-link').href = '/products/' + pin.product.slug;
+            prodEl.style.display = 'block';
+        } else {
+            prodEl.style.display = 'none';
+        }
+
         popup.style.display = 'block';
 
         // Pan map

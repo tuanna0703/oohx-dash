@@ -56,13 +56,11 @@ class ProductResource extends Resource
                         ->required()
                         ->searchable(),
                     Forms\Components\Select::make('listing_mode')
-                        ->label('Cách tính giá')
-                        ->options([
-                            'per_unit'    => 'Theo đơn vị',
-                            'per_package' => 'Theo gói',
-                            'per_site'    => 'Theo site',
-                        ])
-                        ->required(),
+                        ->label('Chế độ bán')
+                        ->options(Product::LISTING_MODES)
+                        ->required()
+                        ->reactive()
+                        ->helperText('Cho phép buyer mua cả gói, mua lẻ, hoặc cả hai'),
                 ]),
                 Forms\Components\Grid::make(3)->schema([
                     Forms\Components\Select::make('owner_id')
@@ -91,18 +89,39 @@ class ProductResource extends Resource
             Forms\Components\Section::make('Giá & Số lượng')->schema([
                 Forms\Components\Grid::make(4)->schema([
                     Forms\Components\TextInput::make('floor_price')
-                        ->label('Giá sàn')
+                        ->label('Giá gói')
                         ->numeric()
                         ->prefix('₫')
-                        ->required(),
+                        ->required()
+                        ->helperText('Giá cả gói / giá mặc định'),
+                    Forms\Components\TextInput::make('individual_price')
+                        ->label('Giá lẻ / screen')
+                        ->numeric()
+                        ->prefix('₫')
+                        ->nullable()
+                        ->visible(fn (Forms\Get $get) => in_array($get('listing_mode'), ['individual_only', 'both']))
+                        ->helperText('Giá khi buyer mua từng screen'),
+                    Forms\Components\TextInput::make('package_discount_pct')
+                        ->label('Giảm giá gói (%)')
+                        ->numeric()
+                        ->default(0)
+                        ->suffix('%')
+                        ->visible(fn (Forms\Get $get) => $get('listing_mode') === 'both')
+                        ->helperText('% giảm khi mua cả gói so với mua lẻ'),
                     Forms\Components\Select::make('price_unit')
                         ->label('Đơn vị')
                         ->options(['month'=>'Tháng','week'=>'Tuần','day'=>'Ngày','campaign'=>'Campaign'])
                         ->default('month'),
+                ]),
+                Forms\Components\Grid::make(3)->schema([
                     Forms\Components\TextInput::make('min_quantity')
                         ->label('SL tối thiểu')
                         ->numeric()
                         ->default(1),
+                    Forms\Components\TextInput::make('max_quantity')
+                        ->label('SL tối đa')
+                        ->numeric()
+                        ->nullable(),
                     Forms\Components\TextInput::make('total_units')
                         ->label('Tổng đơn vị')
                         ->numeric()
@@ -209,6 +228,14 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('category')
                     ->label('Danh mục')
                     ->formatStateUsing(fn (string $state) => Product::CATEGORIES[$state] ?? $state),
+
+                Tables\Columns\TextColumn::make('listing_mode')
+                    ->label('Chế độ bán')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state) => Product::LISTING_MODES[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'package_only' => 'info', 'individual_only' => 'success', 'both' => 'warning', default => 'gray',
+                    }),
 
                 Tables\Columns\TextColumn::make('floor_price')
                     ->label('Giá')
