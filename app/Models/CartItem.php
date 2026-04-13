@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CartItem extends Model
 {
     protected $fillable = [
-        'cart_id', 'screen_id',
+        'cart_id', 'screen_id', 'product_id',
         'start_date', 'end_date', 'spot_length',
+        'quantity', 'selected_screen_ids', 'selected_region',
         'share_of_voice_pct', 'estimated_impressions', 'estimated_cost',
         'notes',
     ];
@@ -18,6 +19,8 @@ class CartItem extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'spot_length' => 'integer',
+        'quantity' => 'integer',
+        'selected_screen_ids' => 'array',
         'share_of_voice_pct' => 'integer',
         'estimated_impressions' => 'integer',
         'estimated_cost' => 'decimal:2',
@@ -31,5 +34,10 @@ class CartItem extends Model
     public function screen(): BelongsTo
     {
         return $this->belongsTo(Screen::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

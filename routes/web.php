@@ -8,6 +8,7 @@ use App\Http\Controllers\Buyer\BuyerReportController;
 use App\Http\Controllers\Buyer\BuyerSettingsController;
 use App\Http\Controllers\Buyer\CartController;
 use App\Http\Controllers\Buyer\PaymentController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\FrontpageController;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,10 @@ Route::domain($fpDomain)->group(function () {
     Route::get('/agency',             [FrontpageController::class, 'agency'])->name('fp.agency');
     Route::get('/owners',             [FrontpageController::class, 'owners'])->name('fp.owners');
     Route::get('/owners/{owner}',     [FrontpageController::class, 'ownerDetail'])->name('fp.owner-detail');
+
+    // Products (new marketplace listing)
+    Route::get('/products',           [ProductController::class, 'index'])->name('fp.products');
+    Route::get('/products/{slug}',    [ProductController::class, 'show'])->name('fp.product-detail');
 
     // ── Buyer auth (no guest middleware — accessible always) ──
     Route::get('/login',              [BuyerAuthController::class, 'showLogin'])->name('buyer.login');

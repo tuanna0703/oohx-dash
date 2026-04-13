@@ -12,7 +12,7 @@ class BookingLine extends Model
     use HasUlids;
 
     protected $fillable = [
-        'campaign_id', 'screen_id', 'owner_id',
+        'campaign_id', 'product_id', 'screen_id', 'owner_id',
         'start_date', 'end_date', 'spot_length',
         'share_of_voice_pct',
         'floor_cpm_at_booking', 'negotiated_cpm',
@@ -41,6 +41,11 @@ class BookingLine extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function screen(): BelongsTo

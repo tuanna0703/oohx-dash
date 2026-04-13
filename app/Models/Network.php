@@ -51,6 +51,11 @@ class Network extends Model
         return $this->hasManyThrough(Screen::class, Site::class);
     }
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeActive($query)

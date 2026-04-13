@@ -36,9 +36,11 @@ class CartController extends Controller
     public function add(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
-            'screen_id' => ['required', 'string', 'exists:screens,id'],
+            'screen_id'  => ['required', 'string', 'exists:screens,id'],
+            'product_id' => ['nullable', 'string', 'exists:products,id'],
             'start_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'end_date' => ['nullable', 'date', 'after:start_date'],
+            'end_date'   => ['nullable', 'date', 'after:start_date'],
+            'quantity'   => ['nullable', 'integer', 'min:1'],
         ]);
 
         $cart = $this->cartService->getOrCreateCart($request->user());

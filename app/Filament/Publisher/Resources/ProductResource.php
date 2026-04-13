@@ -1,0 +1,178 @@
+<?php
+
+namespace App\Filament\Publisher\Resources;
+
+use App\Filament\Publisher\Resources\ProductResource\Pages;
+use App\Models\Network;
+use App\Models\Product;
+use App\Models\Screen;
+use App\Models\Site;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+class ProductResource extends Resource
+{
+    protected static ?string $model = Product::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+
+    protected static ?string $navigationGroup = 'Inventory';
+
+    protected static ?string $navigationLabel = 'Products';
+
+    protected static ?int $navigationSort = 0;
+
+    public static function form(Form $form): Form
+    {
+        $ownerId = auth()->user()?->current_owner_id;
+
+        return $form->schema([
+            Forms\Components\Hidden::make('owner_id')->default($ownerId),
+
+            Forms\Components\Section::make('Thông tin cơ bản')->schema([
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->label('Tên sản phẩm')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('slug')
+                        ->label('Slug')
+                        ->required()
+                        ->unique(ignoreRecord: true),
+                ]),
+                Forms\Components\Grid::make(3)->schema([
+                    Forms\Components\Select::make('type')
+                        ->label('Loại')
+                        ->options(['single'=>'Đơn lẻ','package'=>'Gói','custom'=>'Tùy chỉnh'])
+                        ->required()
+                        ->reactive(),
+                    Forms\Components\Select::make('category')
+                        ->label('Danh mục')
+                        ->options(Product::CATEGORIES)
+                        ->required()
+                        ->searchable(),
+                    Forms\Components\Select::make('listing_mode')
+                        ->label('Cách tính giá')
+                        ->options(['per_unit'=>'Theo đơn vị','per_package'=>'Theo gói','per_site'=>'Theo site'])
+                        ->required(),
+                ]),
+                Forms\Components\Grid::make(2)->schema([
+                    Forms\Components\Select::make('network_id')
+                        ->label('Network')
+                        ->options(fn () => Network::where('owner_id', $ownerId)->pluck('name', 'id'))
+                        ->searchable()
+                        ->nullable()
+                        ->reactive(),
+                    Forms\Components\Select::make('site_id')
+                        ->label('Site')
+                        ->options(fn (Forms\Get $get) => $get('network_id')
+                            ? Site::where('network_id', $get('network_id'))->pluck('name', 'id')
+                            : Site::where('owner_id', $ownerId)->pluck('name', 'id'))
+                        ->searchable()
+                        ->nullable(),
+                ]),
+            ]),
+
+            Forms\Components\Section::make('Giá & Số lượng')->schema([
+                Forms\Components\Grid::make(4)->schema([
+                    Forms\Components\TextInput::make('floor_price')->label('Giá sàn')->numeric()->prefix('₫')->required(),
+                    Forms\Components\Select::make('price_unit')->label('Đơn vị')
+                        ->options(['month'=>'Tháng','week'=>'Tuần','day'=>'Ngày','campaign'=>'Campaign'])->default('month'),
+                    Forms\Components\TextInput::make('min_quantity')->label('SL tối thiểu')->numeric()->default(1),
+                    Forms\Components\TextInput::make('total_units')->label('Tổng đơn vị')->numeric()->default(1),
+                ]),
+                Forms\Components\Repeater::make('package_options')
+                    ->label('Gói booking')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')->label('Tên gói')->required(),
+                        Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->required(),
+                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->numeric()->required(),
+                    ])
+                    ->columns(3)
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'package')
+                    ->collapsible()
+                    ->defaultItems(0),
+            ]),
+
+            Forms\Components\Section::make('Nội dung')->schema([
+                Forms\Components\Textarea::make('short_description')->label('Mô tả ngắn')->rows(2),
+                Forms\Components\RichEditor::make('description')->label('Mô tả chi tiết'),
+                Forms\Components\FileUpload::make('cover_photo')
+                    ->label('Ảnh bìa')->image()->directory('products/covers')->disk('public')->maxSize(51200),
+                Forms\Components\FileUpload::make('photos')
+                    ->label('Thư viện ảnh')->image()->multiple()->directory('products/photos')->disk('public')->maxSize(51200)->reorderable(),
+            ]),
+
+            Forms\Components\Section::make('Thông số kỹ thuật')->schema([
+                Forms\Components\KeyValue::make('specs')->label('Specs')->keyLabel('Thuộc tính')->valueLabel('Giá trị'),
+            ])->collapsible(),
+
+            Forms\Components\Section::make('Vị trí & Trạng thái')->schema([
+                Forms\Components\Grid::make(3)->schema([
+                    Forms\Components\TextInput::make('city')->label('Thành phố'),
+                    Forms\Components\TextInput::make('region')->label('Khu vực'),
+                    Forms\Components\Select::make('status')->label('Trạng thái')
+                        ->options(['draft'=>'Nháp','active'=>'Active','paused'=>'Tạm dừng','sold_out'=>'Hết chỗ'])
+                        ->default('draft')->required(),
+                ]),
+                Forms\Components\Toggle::make('featured')->label('Featured'),
+            ]),
+
+            Forms\Components\Section::make('Gắn Screens')->schema([
+                Forms\Components\Select::make('screenIds')
+                    ->label('Screens')
+                    ->multiple()
+                    ->options(fn () => Screen::where('owner_id', $ownerId)->where('active', true)->pluck('name', 'id'))
+                    ->searchable()
+                    ->helperText('Chọn screens thuộc product này'),
+            ])->collapsible(),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\ImageColumn::make('cover_photo')->label('Ảnh')->disk('public')->width(56)->height(42),
+                Tables\Columns\TextColumn::make('name')->label('Sản phẩm')->searchable()->sortable()->weight('bold')->limit(35),
+                Tables\Columns\TextColumn::make('type')->label('Loại')->badge()
+                    ->color(fn (string $state): string => match ($state) { 'single'=>'info','package'=>'success','custom'=>'warning',default=>'gray' }),
+                Tables\Columns\TextColumn::make('category')->label('Danh mục')
+                    ->formatStateUsing(fn (string $state) => Product::CATEGORIES[$state] ?? $state),
+                Tables\Columns\TextColumn::make('floor_price')->label('Giá')->money('VND')->sortable(),
+                Tables\Columns\TextColumn::make('screens_count')->label('Screens')->counts('screens')->alignCenter(),
+                Tables\Columns\TextColumn::make('status')->label('Trạng thái')->badge()
+                    ->color(fn (string $state): string => match ($state) { 'active'=>'success','draft'=>'gray','paused'=>'warning','sold_out'=>'danger',default=>'gray' }),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('type')->options(['single'=>'Single','package'=>'Package','custom'=>'Custom']),
+                Tables\Filters\SelectFilter::make('category')->options(Product::CATEGORIES),
+                Tables\Filters\SelectFilter::make('status')->options(['active'=>'Active','draft'=>'Nháp','paused'=>'Tạm dừng']),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('owner_id', auth()->user()?->current_owner_id);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index'  => Pages\ListProducts::route('/'),
+            'create' => Pages\CreateProduct::route('/create'),
+            'edit'   => Pages\EditProduct::route('/{record}/edit'),
+        ];
+    }
+}

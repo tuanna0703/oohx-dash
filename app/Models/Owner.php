@@ -46,6 +46,11 @@ class Owner extends Model
         return $this->hasMany(Screen::class);
     }
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(OwnerUser::class);

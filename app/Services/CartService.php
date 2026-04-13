@@ -29,20 +29,35 @@ class CartService
     public function addItem(Cart $cart, string $screenId, array $data = []): CartItem
     {
         $screen = Screen::with('inventory')->findOrFail($screenId);
+        $productId = $data['product_id'] ?? null;
 
         $startDate = $data['start_date'] ?? now()->addDays(7)->toDateString();
         $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString(); // ~1 month
         $spotLength = $data['spot_length'] ?? $screen->inventory?->spot_length ?? 15;
         $sovPct = $data['share_of_voice_pct'] ?? 100;
+        $quantity = (int) ($data['quantity'] ?? 1);
 
-        $estimated = $this->estimateCost($screen, $startDate, $endDate, $sovPct);
+        // If product is package, use product price instead of screen CPM
+        $product = $productId ? \App\Models\Product::find($productId) : null;
+        if ($product && $product->isPackage()) {
+            $estimated = [
+                'impressions' => 0,
+                'cost' => (float) $product->floor_price * $quantity,
+            ];
+        } else {
+            $estimated = $this->estimateCost($screen, $startDate, $endDate, $sovPct);
+        }
 
         return CartItem::updateOrCreate(
             ['cart_id' => $cart->id, 'screen_id' => $screenId],
             [
+                'product_id' => $productId,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'spot_length' => $spotLength,
+                'quantity' => $quantity,
+                'selected_screen_ids' => $data['selected_screen_ids'] ?? null,
+                'selected_region' => $data['selected_region'] ?? null,
                 'share_of_voice_pct' => $sovPct,
                 'estimated_impressions' => $estimated['impressions'],
                 'estimated_cost' => $estimated['cost'],
