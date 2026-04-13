@@ -13,9 +13,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // MySQL requires: drop FK first → then drop unique index (FK depends on the index)
-        DB::statement('ALTER TABLE cart_items DROP FOREIGN KEY cart_items_screen_id_foreign');
-        DB::statement('ALTER TABLE cart_items DROP INDEX cart_items_cart_id_screen_id_unique');
+        // Drop FK + unique defensively (may have been partially applied in prior failed run)
+        $this->dropForeignIfExists('cart_items', 'cart_items_screen_id_foreign');
+        $this->dropIndexIfExists('cart_items', 'cart_items_cart_id_screen_id_unique');
 
         Schema::table('cart_items', function (Blueprint $table) {
             $table->ulid('screen_id')->nullable()->change();
@@ -36,5 +36,36 @@ return new class extends Migration
             $table->foreign('screen_id')->references('id')->on('screens')->cascadeOnDelete();
             $table->unique(['cart_id', 'screen_id']);
         });
+    }
+
+    private function dropForeignIfExists(string $table, string $fkName): void
+    {
+        $exists = DB::selectOne(
+            "SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
+             WHERE CONSTRAINT_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND CONSTRAINT_NAME = ?
+               AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+            [$table, $fkName]
+        );
+
+        if ($exists) {
+            DB::statement("ALTER TABLE {$table} DROP FOREIGN KEY {$fkName}");
+        }
+    }
+
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        $exists = DB::selectOne(
+            "SELECT 1 FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND INDEX_NAME = ?",
+            [$table, $indexName]
+        );
+
+        if ($exists) {
+            DB::statement("ALTER TABLE {$table} DROP INDEX {$indexName}");
+        }
     }
 };
