@@ -33,6 +33,10 @@ class FrontpageListingRequest extends FormRequest
             'district.*'    => 'string|max:50',
             'region'        => 'nullable|array|max:3',
             'region.*'      => 'in:north,central,south',
+            'site'          => 'nullable|string|max:50',
+            'group'         => 'nullable|in:screen,network,site',
+            'min_price'     => 'nullable|numeric|min:0',
+            'max_price'     => 'nullable|numeric|min:0',
             'sort'          => 'nullable|in:price_asc,price_desc,newest',
             'page'          => 'nullable|integer|min:1',
         ];

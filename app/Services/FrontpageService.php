@@ -322,7 +322,81 @@ class FrontpageService
             ->paginate($perPage);
     }
 
-    // ── Phase 3: Listing ──────────────────────────────────
+    // ── Phase 3: Listing (multi-level browse) ───────────────
+
+    /**
+     * Get networks with aggregated stats for group=network view.
+     */
+    public function getNetworksPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
+    {
+        $query = Network::withoutGlobalScope('owner_scope')
+            ->where('status', 'active')
+            ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
+            ->with(['owner:id,name,slug']);
+
+        // Search
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where('name', 'LIKE', "%{$search}%");
+        }
+
+        // Owner filter
+        if (! empty($ownerSlugs = $this->resolveArrayParam($request, 'owner'))) {
+            $query->whereHas('owner', fn ($oq) => $oq->whereIn('slug', $ownerSlugs));
+        }
+
+        // Enrich: site_count, cities list
+        $query->withCount('sites')
+            ->having('screen_count', '>', 0)
+            ->orderByDesc('screen_count');
+
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Get sites with aggregated stats for group=site view.
+     */
+    public function getSitesPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
+    {
+        $query = Site::withoutGlobalScope('owner_scope')
+            ->where('status', 'active')
+            ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
+            ->with(['owner:id,name,slug', 'network:id,name']);
+
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('address', 'LIKE', "%{$search}%")
+                    ->orWhere('city', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if (! empty($ownerSlugs = $this->resolveArrayParam($request, 'owner'))) {
+            $query->whereHas('owner', fn ($oq) => $oq->whereIn('slug', $ownerSlugs));
+        }
+
+        if (! empty($networks = $this->resolveArrayParam($request, 'network'))) {
+            $query->whereHas('network', fn ($nq) => $nq->whereIn('code', $networks));
+        }
+
+        if (! empty($citySlugs = array_unique(array_merge(
+            $this->resolveArrayParam($request, 'city'),
+            $this->resolveArrayParam($request, 'province')
+        )))) {
+            $cityNames = $this->expandCitySlugs($citySlugs);
+            $query->where(function ($q) use ($cityNames) {
+                foreach ($cityNames as $name) {
+                    $q->orWhere('city', 'LIKE', $name . '%');
+                }
+            });
+        }
+
+        $query->having('screen_count', '>', 0)
+            ->orderByDesc('screen_count');
+
+        return $query->paginate($perPage);
+    }
 
     public function getScreensPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
     {
@@ -345,7 +419,6 @@ class FrontpageService
     {
         return Cache::remember('fp:filters', 1800, function () {
             $formats = $this->getVenueTypesWithCounts();
-
             $cities = $this->getTopCities(20);
 
             $priceRange = DB::table('screen_inventory')
@@ -356,9 +429,39 @@ class FrontpageService
                 ->selectRaw('MIN(screen_inventory.floor_cpm) as min_price, MAX(screen_inventory.floor_cpm) as max_price')
                 ->first();
 
+            // Networks with screen counts
+            $networks = DB::table('networks')
+                ->join('sites', 'networks.id', '=', 'sites.network_id')
+                ->join('screens', 'sites.id', '=', 'screens.site_id')
+                ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
+                ->whereNull('networks.deleted_at')
+                ->where('networks.status', 'active')
+                ->selectRaw('networks.id, networks.code, networks.name, COUNT(DISTINCT screens.id) as count')
+                ->groupBy('networks.id', 'networks.code', 'networks.name')
+                ->orderByDesc('count')
+                ->limit(30)
+                ->get();
+
+            // Owners with screen counts
+            $owners = DB::table('owners')
+                ->join('screens', 'owners.id', '=', 'screens.owner_id')
+                ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('owners.deleted_at')
+                ->where('owners.status', 'active')
+                ->selectRaw('owners.id, owners.slug, owners.name, COUNT(DISTINCT screens.id) as count')
+                ->groupBy('owners.id', 'owners.slug', 'owners.name')
+                ->orderByDesc('count')
+                ->limit(20)
+                ->get();
+
             return [
                 'formats'   => $formats,
                 'cities'    => $cities,
+                'networks'  => $networks,
+                'owners'    => $owners,
                 'min_price' => (float) ($priceRange->min_price ?? 0),
                 'max_price' => (float) ($priceRange->max_price ?? 0),
             ];
@@ -610,6 +713,15 @@ class FrontpageService
             )
             ->when(! empty($ownerSlugs = $this->resolveArrayParam($request, 'owner')),
                 fn ($q) => $q->whereHas('owner', fn ($oq) => $oq->whereIn('slug', $ownerSlugs))
+            )
+            ->when($request->filled('min_price'),
+                fn ($q) => $q->whereHas('inventory', fn ($iq) => $iq->where('floor_cpm', '>=', $request->input('min_price')))
+            )
+            ->when($request->filled('max_price'),
+                fn ($q) => $q->whereHas('inventory', fn ($iq) => $iq->where('floor_cpm', '<=', $request->input('max_price')))
+            )
+            ->when($request->filled('site'),
+                fn ($q) => $q->where('site_id', $request->input('site'))
             )
             ->when(! empty($districtCodes = $this->resolveArrayParam($request, 'district')),
                 fn ($q) => $q->whereIn('location_district_code', $districtCodes)

@@ -36,10 +36,21 @@ class FrontpageController extends Controller
 
     public function listing(FrontpageListingRequest $request): View
     {
+        $group = $request->input('group', 'screen');
+        $filters = $this->fp->getFilterAggregates();
+        $vnCatLabels = $this->fp->getVnCategoryLabels();
+
+        $data = match ($group) {
+            'network' => ['networks' => $this->fp->getNetworksPaginated($request)],
+            'site'    => ['sites' => $this->fp->getSitesPaginated($request)],
+            default   => ['screens' => $this->fp->getScreensPaginated($request)],
+        };
+
         return view('frontpage.listing', [
-            'screens'     => $this->fp->getScreensPaginated($request),
-            'filters'     => $this->fp->getFilterAggregates(),
-            'vnCatLabels' => $this->fp->getVnCategoryLabels(),
+            'group'       => $group,
+            'filters'     => $filters,
+            'vnCatLabels' => $vnCatLabels,
+            ...$data,
         ]);
     }
 

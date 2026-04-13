@@ -53,27 +53,127 @@
                 <div class="mpc-chip" data-type="available">Còn trống</div>
             </div>
         </div>
-        <div class="mp-count">Hiển thị <strong id="pin-count">{{ number_format($pins->count()) }}</strong> kết quả</div>
+        {{-- Advanced filters (collapsible) --}}
+        <div class="mp-filters" id="mp-filters" style="display:none">
+            <form method="GET" action="{{ route('fp.map') }}" id="map-filter-form">
+                @php
+                    $mActiveOwners = request()->input('owner', []);
+                    if (is_string($mActiveOwners)) $mActiveOwners = [$mActiveOwners];
+                    $mActiveNetworks = request()->input('network', []);
+                    if (is_string($mActiveNetworks)) $mActiveNetworks = [$mActiveNetworks];
+                    $mMinPrice = request()->input('min_price', '');
+                    $mMaxPrice = request()->input('max_price', '');
+                @endphp
+
+                @if(($filters['owners'] ?? collect())->isNotEmpty())
+                <div class="mp-filter-section">
+                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Media Owner</div>
+                    <div class="sb-group" style="gap:4px">
+                        @foreach(($filters['owners'] ?? collect())->take(8) as $o)
+                        <label class="sb-item {{ in_array($o->slug, $mActiveOwners) ? 'on' : '' }}" style="padding:4px 6px;font-size:12px">
+                            <input type="checkbox" name="owner[]" value="{{ $o->slug }}" {{ in_array($o->slug, $mActiveOwners) ? 'checked' : '' }} hidden>
+                            <div class="sb-checkbox" style="width:14px;height:14px;border-radius:4px"></div>
+                            <span>{{ $o->name }}</span>
+                            <span class="sb-count">{{ $o->count }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if(($filters['networks'] ?? collect())->isNotEmpty())
+                <div class="mp-filter-section">
+                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Network</div>
+                    <div class="sb-group" style="gap:4px">
+                        @foreach(($filters['networks'] ?? collect())->take(8) as $n)
+                        <label class="sb-item {{ in_array($n->code, $mActiveNetworks) ? 'on' : '' }}" style="padding:4px 6px;font-size:12px">
+                            <input type="checkbox" name="network[]" value="{{ $n->code }}" {{ in_array($n->code, $mActiveNetworks) ? 'checked' : '' }} hidden>
+                            <div class="sb-checkbox" style="width:14px;height:14px;border-radius:4px"></div>
+                            <span>{{ $n->name }}</span>
+                            <span class="sb-count">{{ $n->count }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <div class="mp-filter-section">
+                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Mức giá (₫/tháng)</div>
+                    <div class="sb-price-row">
+                        <input type="number" name="min_price" value="{{ $mMinPrice }}" placeholder="Từ" class="sb-input sb-price-input" min="0">
+                        <span style="color:var(--t4);font-size:11px">—</span>
+                        <input type="number" name="max_price" value="{{ $mMaxPrice }}" placeholder="Đến" class="sb-input sb-price-input" min="0">
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:6px">
+                    <button type="submit" class="btn btn-p btn-sm" style="flex:1;justify-content:center;border-radius:8px">Áp dụng</button>
+                    <a href="{{ route('fp.map') }}" class="btn btn-s btn-sm" style="border-radius:8px;text-decoration:none">Xoá</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="mp-count">
+            <span>Hiển thị <strong id="pin-count">{{ number_format($pins->count()) }}</strong> kết quả</span>
+            <button type="button" class="mp-filter-toggle" id="mp-filter-toggle">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+            </button>
+        </div>
         <div class="mp-list" id="pin-list">
-            @foreach($pins->take(50) as $pin)
-            @if($pin->site?->lat && $pin->site?->lon)
-            <div class="mp-card" data-uuid="{{ $pin->uuid }}" data-lat="{{ $pin->site->lat }}" data-lng="{{ $pin->site->lon }}">
-                <div class="mp-card-img">
-                    <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=No+Photo' }}" loading="lazy" alt="{{ $pin->name }}">
-                </div>
-                <div class="mp-card-info">
-                    <div class="mp-card-nm">{{ $pin->name }}</div>
-                    <div class="mp-card-lc">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                        {{ $pin->site?->city ?? '' }}
+            @php
+                // Group pins by site for better hierarchy display
+                $pinsBySite = $pins->filter(fn($p) => $p->site?->lat && $p->site?->lon)
+                    ->groupBy('site_id')
+                    ->sortByDesc(fn($group) => $group->count())
+                    ->take(80);
+            @endphp
+            @foreach($pinsBySite as $siteId => $siteScreens)
+                @php $site = $siteScreens->first()->site; @endphp
+                @if($siteScreens->count() > 1)
+                {{-- Site group header --}}
+                <div class="mp-site-group">
+                    <div class="mp-site-header" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
+                        <div class="mp-site-name">{{ $site->name }}</div>
+                        <div class="mp-site-meta">
+                            <span>{{ $site->city ?? '' }}</span>
+                            <span class="mp-site-badge">{{ $siteScreens->count() }} screens</span>
+                        </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
-                        <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Còn trống</span>
+                    @foreach($siteScreens->take(5) as $pin)
+                    <div class="mp-card mp-card-nested" data-uuid="{{ $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
+                        <div class="mp-card-img">
+                            <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
+                        </div>
+                        <div class="mp-card-info">
+                            <div class="mp-card-nm">{{ $pin->name }}</div>
+                            <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
+                        </div>
+                    </div>
+                    @endforeach
+                    @if($siteScreens->count() > 5)
+                    <div class="mp-site-more">+{{ $siteScreens->count() - 5 }} screens khác</div>
+                    @endif
+                </div>
+                @else
+                {{-- Single screen, no group --}}
+                @php $pin = $siteScreens->first(); @endphp
+                <div class="mp-card" data-uuid="{{ $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
+                    <div class="mp-card-img">
+                        <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
+                    </div>
+                    <div class="mp-card-info">
+                        <div class="mp-card-nm">{{ $pin->name }}</div>
+                        <div class="mp-card-lc">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                            {{ $site->city ?? '' }}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
+                            <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Còn trống</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            @endif
+                @endif
             @endforeach
         </div>
     </div>
@@ -436,6 +536,32 @@
     document.getElementById('map-search').addEventListener('keyup', function(e) {
         if (e.key === 'Enter') searchMap();
     });
+
+    // ── Site group header click → fly to site ──
+    document.querySelectorAll('.mp-site-header').forEach(function(header){
+        header.addEventListener('click', function(){
+            var lat = parseFloat(header.dataset.lat);
+            var lng = parseFloat(header.dataset.lng);
+            if (lat && lng) map.flyTo([lat, lng], 16, {duration: 0.8});
+        });
+    });
+
+    // ── Map filter panel toggle ──
+    var filterToggle = document.getElementById('mp-filter-toggle');
+    var filterPanel = document.getElementById('mp-filters');
+    if (filterToggle && filterPanel) {
+        filterToggle.addEventListener('click', function(){
+            var open = filterPanel.style.display !== 'none';
+            filterPanel.style.display = open ? 'none' : 'block';
+            filterToggle.classList.toggle('on', !open);
+        });
+        // checkbox sync
+        filterPanel.querySelectorAll('.sb-item input[type="checkbox"]').forEach(function(cb){
+            cb.addEventListener('change', function(){
+                cb.closest('.sb-item').classList.toggle('on', cb.checked);
+            });
+        });
+    }
 })();
 </script>
 @endpush

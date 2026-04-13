@@ -34,6 +34,21 @@
         @endif
     </div>
     <div class="sc-body">
+        {{-- Hierarchy breadcrumb --}}
+        @unless($compact)
+        @php
+            $networkName = $screen->site?->network?->name;
+            $siteName = $screen->site?->name;
+        @endphp
+        @if($networkName || $siteName)
+        <div class="sc-breadcrumb">
+            @if($networkName)<span>{{ $networkName }}</span>@endif
+            @if($networkName && $siteName)<span class="sc-bc-sep">›</span>@endif
+            @if($siteName)<span>{{ $siteName }}</span>@endif
+        </div>
+        @endif
+        @endunless
+
         <div class="sc-title">{{ $screen->name }}</div>
         @if($city)
             <div class="sc-loc">
@@ -45,9 +60,7 @@
         @unless($compact)
             <div class="sc-specs">
                 <div class="sc-spec"><span class="sc-spec-l">Chủ sở hữu</span><span class="sc-spec-v">{{ $screen->owner?->name ?? '—' }}</span></div>
-                <div class="sc-spec"><span class="sc-spec-l">Network</span><span class="sc-spec-v">{{ $screen->site?->network?->name ?? '—' }}</span></div>
-                <div class="sc-spec"><span class="sc-spec-l">Site</span><span class="sc-spec-v">{{ $screen->site?->name ?? '—' }}</span></div>
-                <div class="sc-spec"><span class="sc-spec-l">Địa điểm</span><span class="sc-spec-v">{{ $venueLabel }}</span></div>
+                <div class="sc-spec"><span class="sc-spec-l">Loại hình</span><span class="sc-spec-v">{{ $venueLabel }}</span></div>
                 <div class="sc-spec"><span class="sc-spec-l">Kích thước</span><span class="sc-spec-v">{{ $sizeDisplay }}</span></div>
             </div>
         @endunless
