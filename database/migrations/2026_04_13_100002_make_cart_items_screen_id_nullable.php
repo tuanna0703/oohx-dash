@@ -1,71 +1,65 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 /**
- * Cart items giờ có thể chứa product mà không cần screen_id cụ thể
- * (ví dụ: mua cả gói package_only).
+ * Cart items giờ có thể chứa product mà không cần screen_id cụ thể.
+ * Dùng raw SQL để kiểm soát chính xác thứ tự operations trên MySQL.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // Drop FK + unique defensively (may have been partially applied in prior failed run)
-        $this->dropForeignIfExists('cart_items', 'cart_items_screen_id_foreign');
-        $this->dropIndexIfExists('cart_items', 'cart_items_cart_id_screen_id_unique');
+        // 1. Drop FK on screen_id (nếu còn)
+        if ($this->foreignExists('cart_items', 'cart_items_screen_id_foreign')) {
+            DB::statement('ALTER TABLE cart_items DROP FOREIGN KEY cart_items_screen_id_foreign');
+        }
 
-        Schema::table('cart_items', function (Blueprint $table) {
-            $table->ulid('screen_id')->nullable()->change();
-            $table->foreign('screen_id')->references('id')->on('screens')->nullOnDelete();
-            $table->unique(['cart_id', 'product_id']);
-        });
+        // 2. Drop unique index (nếu còn) — giờ an toàn vì không còn FK nào depend on nó
+        if ($this->indexExists('cart_items', 'cart_items_cart_id_screen_id_unique')) {
+            DB::statement('ALTER TABLE cart_items DROP INDEX cart_items_cart_id_screen_id_unique');
+        }
+
+        // 3. Modify screen_id nullable + re-add FK + add new unique — tất cả 1 statement
+        DB::statement('ALTER TABLE cart_items MODIFY COLUMN screen_id CHAR(26) NULL');
+        DB::statement('ALTER TABLE cart_items ADD CONSTRAINT cart_items_screen_id_foreign FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE SET NULL');
+
+        // 4. Add unique on [cart_id, product_id] (nếu chưa có)
+        if (! $this->indexExists('cart_items', 'cart_items_cart_id_product_id_unique')) {
+            DB::statement('ALTER TABLE cart_items ADD UNIQUE INDEX cart_items_cart_id_product_id_unique (cart_id, product_id)');
+        }
     }
 
     public function down(): void
     {
-        Schema::table('cart_items', function (Blueprint $table) {
-            $table->dropForeign(['screen_id']);
-            $table->dropUnique(['cart_id', 'product_id']);
-        });
+        if ($this->foreignExists('cart_items', 'cart_items_screen_id_foreign')) {
+            DB::statement('ALTER TABLE cart_items DROP FOREIGN KEY cart_items_screen_id_foreign');
+        }
+        if ($this->indexExists('cart_items', 'cart_items_cart_id_product_id_unique')) {
+            DB::statement('ALTER TABLE cart_items DROP INDEX cart_items_cart_id_product_id_unique');
+        }
 
-        Schema::table('cart_items', function (Blueprint $table) {
-            $table->ulid('screen_id')->nullable(false)->change();
-            $table->foreign('screen_id')->references('id')->on('screens')->cascadeOnDelete();
-            $table->unique(['cart_id', 'screen_id']);
-        });
+        DB::statement('ALTER TABLE cart_items MODIFY COLUMN screen_id CHAR(26) NOT NULL');
+        DB::statement('ALTER TABLE cart_items ADD CONSTRAINT cart_items_screen_id_foreign FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE CASCADE');
+        DB::statement('ALTER TABLE cart_items ADD UNIQUE INDEX cart_items_cart_id_screen_id_unique (cart_id, screen_id)');
     }
 
-    private function dropForeignIfExists(string $table, string $fkName): void
+    private function foreignExists(string $table, string $fkName): bool
     {
-        $exists = DB::selectOne(
+        return (bool) DB::selectOne(
             "SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
-             WHERE CONSTRAINT_SCHEMA = DATABASE()
-               AND TABLE_NAME = ?
-               AND CONSTRAINT_NAME = ?
-               AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+             WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
             [$table, $fkName]
         );
-
-        if ($exists) {
-            DB::statement("ALTER TABLE {$table} DROP FOREIGN KEY {$fkName}");
-        }
     }
 
-    private function dropIndexIfExists(string $table, string $indexName): void
+    private function indexExists(string $table, string $indexName): bool
     {
-        $exists = DB::selectOne(
+        return (bool) DB::selectOne(
             "SELECT 1 FROM information_schema.STATISTICS
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = ?
-               AND INDEX_NAME = ?",
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?",
             [$table, $indexName]
         );
-
-        if ($exists) {
-            DB::statement("ALTER TABLE {$table} DROP INDEX {$indexName}");
-        }
     }
 };
