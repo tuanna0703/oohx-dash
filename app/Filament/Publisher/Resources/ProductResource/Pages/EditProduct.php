@@ -10,10 +10,20 @@ class EditProduct extends EditRecord
 {
     protected static string $resource = ProductResource::class;
 
+    protected array $pendingScreenIds = [];
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Lưu screenIds trước khi Filament loại bỏ (dehydrated: false)
+        $this->pendingScreenIds = $data['screenIds'] ?? [];
+        unset($data['screenIds']);
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
-        $screenIds = $this->form->getState()['screenIds'] ?? [];
-        $this->record->screens()->sync($screenIds);
-        $this->record->update(['total_units' => count($screenIds)]);
+        $this->record->screens()->sync($this->pendingScreenIds);
+        $this->record->update(['total_units' => count($this->pendingScreenIds)]);
     }
 }

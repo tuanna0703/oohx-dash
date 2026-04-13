@@ -211,8 +211,7 @@ class ProductResource extends Resource
                         if ($record) {
                             $component->state($record->screens()->pluck('screens.id')->toArray());
                         }
-                    })
-                    ->dehydrated(false),
+                    }),
             ])->collapsible(),
         ]);
     }

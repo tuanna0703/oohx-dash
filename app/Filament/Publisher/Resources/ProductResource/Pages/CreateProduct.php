@@ -9,18 +9,24 @@ class CreateProduct extends CreateRecord
 {
     protected static string $resource = ProductResource::class;
 
+    protected array $pendingScreenIds = [];
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['owner_id'] = auth()->user()->current_owner_id;
+
+        // Lưu screenIds trước khi Filament loại bỏ (dehydrated: false)
+        $this->pendingScreenIds = $data['screenIds'] ?? [];
+        unset($data['screenIds']);
+
         return $data;
     }
 
     protected function afterCreate(): void
     {
-        $screenIds = $this->form->getState()['screenIds'] ?? [];
-        if (! empty($screenIds)) {
-            $this->record->screens()->sync($screenIds);
-            $this->record->update(['total_units' => count($screenIds)]);
+        if (! empty($this->pendingScreenIds)) {
+            $this->record->screens()->sync($this->pendingScreenIds);
+            $this->record->update(['total_units' => count($this->pendingScreenIds)]);
         }
     }
 }
