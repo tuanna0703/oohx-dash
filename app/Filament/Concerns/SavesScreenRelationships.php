@@ -9,17 +9,32 @@ trait SavesScreenRelationships
 {
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        if (empty($data['owner_id'])) {
-            // Lấy owner_id từ site đã chọn (admin không có current_owner_id)
-            $data['owner_id'] = auth()->user()->current_owner_id
-                ?? \App\Models\Site::find($data['site_id'] ?? null)?->owner_id;
-        }
+        $data = $this->resolveOwnerId($data);
         return $this->extractNestedData($data);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $data = $this->resolveOwnerId($data);
         return $this->extractNestedData($data);
+    }
+
+    /**
+     * Resolve owner_id theo thứ tự ưu tiên:
+     * 1. Form field (admin chọn owner)
+     * 2. current_owner_id (publisher đang login)
+     * 3. Site's owner_id (fallback)
+     */
+    private function resolveOwnerId(array $data): array
+    {
+        if (! empty($data['owner_id'])) {
+            return $data;
+        }
+
+        $data['owner_id'] = auth()->user()?->current_owner_id
+            ?? \App\Models\Site::find($data['site_id'] ?? null)?->owner_id;
+
+        return $data;
     }
 
     protected function afterCreate(): void

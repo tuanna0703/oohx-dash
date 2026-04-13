@@ -32,6 +32,11 @@ abstract class BaseScreenResource extends Resource
 
     // ── Hooks cho subclass ────────────────────────────────────────────────────
 
+    protected static function showOwnerField(): bool
+    {
+        return false; // Admin override = true
+    }
+
     protected static function canPricing(): bool
     {
         return true;
@@ -96,6 +101,17 @@ abstract class BaseScreenResource extends Resource
                         ->icon('heroicon-o-information-circle')
                         ->columns(3)
                         ->schema([
+                            Forms\Components\Select::make('owner_id')
+                                ->label('Media Owner')
+                                ->relationship('owner', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->live()
+                                ->visible(static::showOwnerField())
+                                ->afterStateUpdated(fn (callable $set) => $set('network_filter', null) || $set('site_id', null))
+                                ->columnSpan(3),
+
                             Forms\Components\TextInput::make('external_id')
                                 ->label('Screen ID')
                                 ->required()
@@ -111,7 +127,9 @@ abstract class BaseScreenResource extends Resource
                             Forms\Components\Select::make('network_filter')
                                 ->label('Network')
                                 ->placeholder('Chọn network')
-                                ->options(fn () => static::networkFormOptions())
+                                ->options(fn (callable $get) => static::showOwnerField() && $get('owner_id')
+                                    ? Network::where('owner_id', $get('owner_id'))->orderBy('name')->pluck('name', 'id')->toArray()
+                                    : static::networkFormOptions())
                                 ->searchable()
                                 ->live()
                                 ->afterStateHydrated(function (Forms\Components\Select $component, ?Screen $record) {
@@ -126,7 +144,17 @@ abstract class BaseScreenResource extends Resource
                                 ->label('Site')
                                 ->required()
                                 ->placeholder(fn (callable $get) => $get('network_filter') ? 'Chọn site' : 'Chọn network trước')
-                                ->options(fn (callable $get) => static::sitesByNetwork($get('network_filter')))
+                                ->options(function (callable $get) {
+                                    $networkId = $get('network_filter');
+                                    if (static::showOwnerField()) {
+                                        $ownerId = $get('owner_id');
+                                        if (! $ownerId) return [];
+                                        $q = Site::where('owner_id', $ownerId);
+                                        if ($networkId) $q->where('network_id', $networkId);
+                                        return $q->orderBy('name')->pluck('name', 'id')->toArray();
+                                    }
+                                    return static::sitesByNetwork($networkId);
+                                })
                                 ->searchable()
                                 ->live(),
 

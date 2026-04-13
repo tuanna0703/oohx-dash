@@ -12,18 +12,19 @@ class ScreenResource extends BaseScreenResource
     // Admin xem tất cả owners, không scope theo tenant
     protected static ?int $navigationSort = 2;
 
+    // ── Admin hiển thị field Owner trong form ────────────────────────────────
+
+    protected static function showOwnerField(): bool
+    {
+        return true;
+    }
+
     // ── Phân quyền: admin luôn có toàn quyền ─────────────────────────────────
 
     public static function canViewAny(): bool  { return true; }
     public static function canCreate(): bool   { return true; }
     public static function canEdit($r): bool   { return true; }
     public static function canDelete($r): bool { return true; }
-
-    // canPricing() không override → luôn true (base default)
-    // getEloquentQuery() không override → admin thấy toàn bộ screens
-
-    // Dropdowns siteFormOptions/networkFormOptions không override
-    // → dùng default của base: tất cả sites/networks (không scope tenant)
 
     // ── Owner column trong table ──────────────────────────────────────────────
 

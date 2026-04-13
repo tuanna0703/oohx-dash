@@ -28,6 +28,16 @@ class Site extends Model
 
     protected static function booted(): void
     {
+        // Khi Site đổi owner → đồng bộ owner_id cho tất cả Screens con
+        static::updating(function (Site $site) {
+            if ($site->isDirty('owner_id') && $site->owner_id) {
+                $site->screens()
+                    ->withoutGlobalScope('owner_scope')
+                    ->where('owner_id', '!=', $site->owner_id)
+                    ->update(['owner_id' => $site->owner_id]);
+            }
+        });
+
         static::deleting(function (Site $site) {
             if (! $site->isForceDeleting()) {
                 $site->screens()->each(fn (Screen $s) => $s->delete());
