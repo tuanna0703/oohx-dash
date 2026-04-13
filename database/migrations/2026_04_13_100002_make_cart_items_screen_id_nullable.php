@@ -5,34 +5,44 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Cart items giờ có thể chứa product mà không cần screen_id cụ thể.
- * Dùng raw SQL để kiểm soát chính xác thứ tự operations trên MySQL.
+ * Tắt FK checks để MySQL cho phép drop index mà không bị block.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Drop FK on screen_id (nếu còn)
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+
+        // Drop FK on screen_id (nếu còn)
         if ($this->foreignExists('cart_items', 'cart_items_screen_id_foreign')) {
             DB::statement('ALTER TABLE cart_items DROP FOREIGN KEY cart_items_screen_id_foreign');
         }
 
-        // 2. Drop unique index (nếu còn) — giờ an toàn vì không còn FK nào depend on nó
+        // Drop unique index (nếu còn)
         if ($this->indexExists('cart_items', 'cart_items_cart_id_screen_id_unique')) {
             DB::statement('ALTER TABLE cart_items DROP INDEX cart_items_cart_id_screen_id_unique');
         }
 
-        // 3. Modify screen_id nullable + re-add FK + add new unique — tất cả 1 statement
+        // Modify screen_id → nullable
         DB::statement('ALTER TABLE cart_items MODIFY COLUMN screen_id CHAR(26) NULL');
-        DB::statement('ALTER TABLE cart_items ADD CONSTRAINT cart_items_screen_id_foreign FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE SET NULL');
 
-        // 4. Add unique on [cart_id, product_id] (nếu chưa có)
+        // Re-add FK on screen_id (ON DELETE SET NULL)
+        if (! $this->foreignExists('cart_items', 'cart_items_screen_id_foreign')) {
+            DB::statement('ALTER TABLE cart_items ADD CONSTRAINT cart_items_screen_id_foreign FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE SET NULL');
+        }
+
+        // Add unique on [cart_id, product_id] (nếu chưa có)
         if (! $this->indexExists('cart_items', 'cart_items_cart_id_product_id_unique')) {
             DB::statement('ALTER TABLE cart_items ADD UNIQUE INDEX cart_items_cart_id_product_id_unique (cart_id, product_id)');
         }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     public function down(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+
         if ($this->foreignExists('cart_items', 'cart_items_screen_id_foreign')) {
             DB::statement('ALTER TABLE cart_items DROP FOREIGN KEY cart_items_screen_id_foreign');
         }
@@ -42,7 +52,12 @@ return new class extends Migration
 
         DB::statement('ALTER TABLE cart_items MODIFY COLUMN screen_id CHAR(26) NOT NULL');
         DB::statement('ALTER TABLE cart_items ADD CONSTRAINT cart_items_screen_id_foreign FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE CASCADE');
-        DB::statement('ALTER TABLE cart_items ADD UNIQUE INDEX cart_items_cart_id_screen_id_unique (cart_id, screen_id)');
+
+        if (! $this->indexExists('cart_items', 'cart_items_cart_id_screen_id_unique')) {
+            DB::statement('ALTER TABLE cart_items ADD UNIQUE INDEX cart_items_cart_id_screen_id_unique (cart_id, screen_id)');
+        }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     private function foreignExists(string $table, string $fkName): bool
