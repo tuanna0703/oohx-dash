@@ -97,11 +97,11 @@
 
 {{-- ═══ Cover + Avatar ═══ --}}
 <div class="fp-cover">
-    <img class="fp-cover-img" src="{{ $owner->cover_url ?? $defaultCover }}" alt="{{ $owner->name }}">
+    <img class="fp-cover-img" src="{{ $owner->cover_url ? asset('storage/' . $owner->cover_url) : $defaultCover }}" alt="{{ $owner->name }}">
     <div class="fp-cover-inner"><div class="fp-avatar-wrap">
         <div class="fp-avatar">
             @if($owner->logo_url)
-                <img src="{{ $owner->logo_url }}" alt="{{ $owner->name }}">
+                <img src="{{ asset('storage/' . $owner->logo_url) }}" alt="{{ $owner->name }}">
             @else
                 {{ $initials }}
             @endif
