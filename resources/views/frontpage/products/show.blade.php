@@ -34,7 +34,11 @@
     <div style="font-size:12px;color:var(--t4);margin-bottom:16px;display:flex;gap:6px;align-items:center">
         <a href="/products" style="color:var(--bl);text-decoration:none">Sản phẩm</a>
         <span>›</span>
-        <span>{{ $product->category_label }}</span>
+        <a href="/products?category[]={{ $product->category }}" style="color:var(--bl);text-decoration:none">{{ $product->category_label }}</a>
+        @if($product->city)
+        <span>›</span>
+        <a href="/products?city[]={{ urlencode($product->city) }}" style="color:var(--bl);text-decoration:none">{{ $product->city }}</a>
+        @endif
         <span>›</span>
         <span style="color:var(--t2)">{{ $product->name }}</span>
     </div>
