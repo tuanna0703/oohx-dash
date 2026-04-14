@@ -387,7 +387,7 @@ class FrontpageService
                 'site.network:id,name',
                 'products:id,slug,name,total_units,listing_mode',
             ])
-            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
     }
 
@@ -937,8 +937,8 @@ class FrontpageService
         }
 
         return match ($sort) {
-            'newest' => $query->orderBy('screens.updated_at', 'desc'),
-            default  => $query->orderBy('screens.id', 'asc'),
+            'newest' => $query->orderBy('screens.created_at', 'desc'),
+            default  => $query->orderBy('screens.created_at', 'desc'),
         };
     }
 
