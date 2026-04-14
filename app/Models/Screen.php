@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOwnerScope;
+use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,12 +39,12 @@ use Illuminate\Support\Str;
  */
 class Screen extends Model
 {
-    use HasFactory, HasUlids, HasOwnerScope, SoftDeletes;
+    use HasFactory, HasUlids, HasOwnerScope, HasSlug, SoftDeletes;
 
     protected $fillable = [
         // Marketplace
         'site_id', 'owner_id', 'external_id', 'uuid',
-        'name', 'description', 'active', 'status',
+        'name', 'slug', 'description', 'active', 'status',
 
         // AdOps / device (Phase 2)
         'unit_id', 'internal_notes',

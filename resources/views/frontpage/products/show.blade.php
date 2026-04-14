@@ -1,6 +1,31 @@
 @extends('frontpage.layouts.app', ['activeNav' => 'explore', 'bodyClass' => 'page-detail'])
 
-@section('title', $product->name . ' | OOHX')
+@section('title', $product->meta_title ?: $product->name . ' | OOHX')
+
+@section('seo')
+@include('frontpage.partials.seo-meta', [
+    'seoTitle'       => $product->meta_title ?: $product->name . ' | OOHX',
+    'seoDescription' => $product->meta_description ?: $product->short_description ?: $product->name . ' - ' . $product->category_label . ' tại ' . ($product->city ?? 'Việt Nam') . '. ' . $product->total_units . ' vị trí. Từ ' . $product->price_display,
+    'seoImage'       => $product->cover_url,
+    'seoUrl'         => route('fp.product-detail', $product->slug),
+    'seoType'        => 'product',
+    'seoJsonLd'      => [
+        '@context' => 'https://schema.org',
+        '@type'    => 'Product',
+        'name'     => $product->name,
+        'description' => $product->short_description ?? $product->name,
+        'image'    => $product->cover_url ?? '',
+        'brand'    => ['@type' => 'Organization', 'name' => $product->owner?->name ?? 'OOHX'],
+        'category' => $product->category_label,
+        'offers'   => [
+            '@type'         => 'Offer',
+            'price'         => (float) $product->floor_price,
+            'priceCurrency' => $product->currency ?? 'VND',
+            'availability'  => $product->status === 'active' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        ],
+    ],
+])
+@endsection
 
 @section('content')
 <div class="w" style="padding-top:20px;padding-bottom:64px">

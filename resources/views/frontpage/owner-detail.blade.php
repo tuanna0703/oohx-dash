@@ -2,6 +2,25 @@
 
 @section('title', ($owner->name ?? 'Chi tiết Media Owner') . ' | OOHX')
 
+@section('seo')
+@include('frontpage.partials.seo-meta', [
+    'seoTitle'       => ($owner->name ?? 'Media Owner') . ' | OOHX',
+    'seoDescription' => ($owner->tagline ?? $owner->name) . '. ' . ($owner->screen_count ?? 0) . ' màn hình tại ' . ($owner->city_count ?? 0) . ' tỉnh thành.',
+    'seoImage'       => $owner->cover_url ? asset('storage/' . $owner->cover_url) : ($owner->logo_url ? asset('storage/' . $owner->logo_url) : null),
+    'seoUrl'         => route('fp.owner-detail', $owner->slug),
+    'seoType'        => 'profile',
+    'seoJsonLd'      => [
+        '@context' => 'https://schema.org',
+        '@type'    => 'Organization',
+        'name'     => $owner->name,
+        'description' => $owner->tagline ?? $owner->about ?? '',
+        'url'      => route('fp.owner-detail', $owner->slug),
+        'logo'     => $owner->logo_url ? asset('storage/' . $owner->logo_url) : '',
+        'address'  => $owner->province ? ['@type' => 'PostalAddress', 'addressLocality' => $owner->province->full_name ?? '', 'streetAddress' => $owner->address ?? ''] : null,
+    ],
+])
+@endsection
+
 @php
     $initials = strtoupper(collect(explode(' ', $owner->name))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->join(''));
     $defaultCover = 'https://placehold.co/1200x460/E0E0E5/8E8E93?text=' . urlencode($owner->name);

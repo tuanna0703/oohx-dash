@@ -10,6 +10,7 @@ use App\Http\Controllers\Buyer\CartController;
 use App\Http\Controllers\Buyer\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\FrontpageController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,9 @@ Route::domain($dashDomain)->group(function () {
 
 // ── Frontpage: oohx.net ────────────────────────────────
 Route::domain($fpDomain)->group(function () {
+
+    // Sitemap
+    Route::get('/sitemap.xml',        [SitemapController::class, 'index'])->name('sitemap');
 
     // Public pages
     Route::get('/',                   [FrontpageController::class, 'index'])->name('fp.index');

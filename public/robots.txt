@@ -1,2 +1,13 @@
 User-agent: *
-Disallow:
+Allow: /
+
+Disallow: /my/
+Disallow: /cart/
+Disallow: /booking/
+Disallow: /login
+Disallow: /register
+Disallow: /admin/
+Disallow: /publisher/
+Disallow: /livewire/
+
+Sitemap: https://oohx.net/sitemap.xml

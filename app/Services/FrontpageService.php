@@ -588,7 +588,8 @@ class FrontpageService
                     'site.network:id,name',
                 ])
                 ->where(function ($q) use ($id) {
-                    $q->where('id', $id)
+                    $q->where('slug', $id)
+                      ->orWhere('id', $id)
                       ->orWhere('uuid', $id)
                       ->orWhere('external_id', $id);
                 })

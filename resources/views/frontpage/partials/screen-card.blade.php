@@ -13,7 +13,7 @@
     $heightM = $screen->spec?->height_cm ? round($screen->spec->height_cm / 100, 1) : null;
     $sizeDisplay = ($widthM && $heightM) ? "{$widthM}x{$heightM}m" : '—';
     $compact = $compact ?? false;
-    $detailUrl = route('fp.detail', $screen->uuid ?? $screen->id);
+    $detailUrl = route('fp.detail', $screen->slug ?? $screen->uuid ?? $screen->id);
     // Product badge: lấy product đầu tiên nếu screen thuộc product
     $product = $screen->relationLoaded('products') ? $screen->products->first() : null;
 @endphp

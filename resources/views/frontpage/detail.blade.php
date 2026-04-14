@@ -2,6 +2,30 @@
 
 @section('title', ($screen->name ?? 'Chi tiết vị trí') . ' | OOHX')
 
+@section('seo')
+@include('frontpage.partials.seo-meta', [
+    'seoTitle'       => ($screen->name ?? 'Chi tiết vị trí') . ' | OOHX',
+    'seoDescription' => $screen->name . ' tại ' . ($screen->site?->name ?? '') . ', ' . ($screen->site?->city ?? '') . '. ' . ($screen->spec?->width_px ?? '') . 'x' . ($screen->spec?->height_px ?? '') . 'px. Giá từ ' . number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') . 'đ/tháng.',
+    'seoImage'       => $screen->spec?->photo_url ? asset('storage/' . $screen->spec->photo_url) : null,
+    'seoUrl'         => route('fp.detail', $screen->slug ?? $screen->uuid),
+    'seoType'        => 'product',
+    'seoJsonLd'      => [
+        '@context' => 'https://schema.org',
+        '@type'    => 'Product',
+        'name'     => $screen->name,
+        'description' => $screen->name . ' tại ' . ($screen->site?->name ?? '') . ', ' . ($screen->site?->city ?? ''),
+        'image'    => $screen->spec?->photo_url ? asset('storage/' . $screen->spec->photo_url) : '',
+        'brand'    => ['@type' => 'Organization', 'name' => $screen->owner?->name ?? 'OOHX'],
+        'offers'   => [
+            '@type'         => 'Offer',
+            'price'         => (float) ($screen->inventory?->floor_cpm ?? 0),
+            'priceCurrency' => $screen->inventory?->floor_cpm_currency ?? 'VND',
+            'availability'  => 'https://schema.org/InStock',
+        ],
+    ],
+])
+@endsection
+
 @push('head')
 <style>@media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}</style>
 @endpush

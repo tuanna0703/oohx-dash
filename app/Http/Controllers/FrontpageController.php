@@ -45,10 +45,15 @@ class FrontpageController extends Controller
         ]);
     }
 
-    public function detail(string $screen): View
+    public function detail(string $screen): View|\Illuminate\Http\RedirectResponse
     {
         $screenModel = $this->fp->getScreenDetail($screen);
         abort_unless($screenModel, 404);
+
+        // 301 redirect old UUID/ID URLs to canonical slug URL
+        if ($screenModel->slug && $screen !== $screenModel->slug) {
+            return redirect()->route('fp.detail', $screenModel->slug, 301);
+        }
 
         return view('frontpage.detail', [
             'screen'         => $screenModel,
@@ -68,7 +73,7 @@ class FrontpageController extends Controller
             $catId = $p->inventory?->vn_category_id;
             $product = $p->relationLoaded('products') ? $p->products->first() : null;
             return [
-                'id'        => $p->uuid ?? $p->id,
+                'id'        => $p->slug ?? $p->uuid ?? $p->id,
                 'name'      => $p->name,
                 'lat'       => (float) ($p->site?->lat ?? 0),
                 'lng'       => (float) ($p->site?->lon ?? 0),

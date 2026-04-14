@@ -76,7 +76,7 @@
                         </div>
                     </div>
                     @foreach($siteScreens->take(5) as $pin)
-                    <div class="mp-card mp-card-nested" data-uuid="{{ $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
+                    <div class="mp-card mp-card-nested" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                         <div class="mp-card-img">
                             <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
                         </div>
@@ -93,7 +93,7 @@
                 @else
                 {{-- Single screen, no group --}}
                 @php $pin = $siteScreens->first(); @endphp
-                <div class="mp-card" data-uuid="{{ $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
+                <div class="mp-card" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                     <div class="mp-card-img">
                         <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
                     </div>

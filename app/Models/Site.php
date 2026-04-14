@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOwnerScope;
+use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,11 +13,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Site extends Model
 {
-    use HasFactory, HasUlids, HasOwnerScope, SoftDeletes;
+    use HasFactory, HasUlids, HasOwnerScope, HasSlug, SoftDeletes;
 
     protected $fillable = [
         'owner_id', 'network_id', 'external_id',
-        'name', 'description', 'logo', 'banner', 'lat', 'lon',
+        'name', 'slug', 'description', 'logo', 'banner', 'lat', 'lon',
         'address', 'city', 'region', 'country', 'status',
         'province_id', 'commune_id',
     ];
