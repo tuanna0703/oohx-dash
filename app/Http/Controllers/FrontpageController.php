@@ -113,15 +113,17 @@ class FrontpageController extends Controller
         ]);
     }
 
-    public function ownerDetail(string $owner): View
+    public function ownerDetail(Request $request, string $owner): View
     {
         $ownerModel = $this->fp->getOwnerBySlug($owner);
         abort_unless($ownerModel, 404);
 
         return view('frontpage.owner-detail', [
-            'owner'        => $ownerModel,
-            'ownerScreens' => $this->fp->getOwnerScreens($ownerModel->id),
-            'vnCatLabels'  => $this->fp->getVnCategoryLabels(),
+            'owner'            => $ownerModel,
+            'ownerScreens'     => $this->fp->getOwnerScreens($ownerModel->id, $request),
+            'filters'          => $this->fp->getOwnerFilterAggregates($ownerModel->id),
+            'locationsByRegion' => $this->fp->getLocationsByRegion(),
+            'vnCatLabels'      => $this->fp->getVnCategoryLabels(),
         ]);
     }
 }

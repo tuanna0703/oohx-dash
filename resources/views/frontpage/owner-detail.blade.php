@@ -67,6 +67,8 @@
 .fp-venue-tag { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:var(--bl-lt); color:var(--bl); }
 
 /* ── Tab: Inventory ─────────────────────────────────────── */
+.fp-inv-filter { margin-bottom:20px; padding:16px; background:var(--bg2); border-radius:14px; border:1px solid var(--ln2); }
+.fp-inv-filter .sft { padding:0; border-bottom:none; }
 .fp-inv-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
 
 /* ── Responsive ─────────────────────────────────────────── */
@@ -279,8 +281,15 @@
         </div>
     </div>
 
-    {{-- Panel: Inventory (full list) --}}
+    {{-- Panel: Inventory (full list with smart filter) --}}
     <div id="fp-inventory" class="fp-panel">
+        <div class="fp-inv-filter">
+            @include('frontpage.partials.smart-filter', [
+                'filters'          => $filters,
+                'locationsByRegion' => $locationsByRegion,
+                'target'           => 'owners/' . $owner->slug,
+            ])
+        </div>
         <div class="fp-inv-header">
             <div class="avail-badge"><div class="avail-dot"></div>{{ $ownerScreens->total() }} vị trí</div>
         </div>
@@ -289,7 +298,7 @@
                 @include('frontpage.partials.screen-card', ['screen' => $screen])
             @endforeach
         </div>
-        <div style="margin-top:20px">{{ $ownerScreens->links() }}</div>
+        {{ $ownerScreens->withQueryString()->links('frontpage.partials.pagination') }}
     </div>
 
 </div>
@@ -305,5 +314,18 @@ function fpTab(el, id) {
     document.getElementById(id).classList.add('on');
     window.scrollTo({ top: document.querySelector('.fp-nav-wrap').offsetTop - 60, behavior: 'smooth' });
 }
+
+// Auto-switch to inventory tab when filters are active
+(function(){
+    var params = new URLSearchParams(window.location.search);
+    var hasFilter = params.has('city[]') || params.has('network[]') || params.has('venue_type[]')
+                 || params.has('region[]') || params.has('q');
+    if (hasFilter) {
+        fpTab(document.querySelectorAll('.fp-tab')[1], 'fp-inventory');
+    }
+
+    // Smart Filter JS
+    @include('frontpage.partials.smart-filter-js')
+})();
 </script>
 @endpush

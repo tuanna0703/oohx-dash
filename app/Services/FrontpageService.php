@@ -309,19 +309,108 @@ class FrontpageService
         });
     }
 
-    public function getOwnerScreens(string $ownerId, int $perPage = 12): LengthAwarePaginator
+    public function getOwnerScreens(string $ownerId, Request $request = null, int $perPage = 12): LengthAwarePaginator
     {
-        return Screen::withoutGlobalScope('owner_scope')->where('owner_id', $ownerId)
-            ->where('active', true)
-            ->with([
+        $query = Screen::withoutGlobalScope('owner_scope')
+            ->where('owner_id', $ownerId)
+            ->where('active', true);
+
+        // Apply filters if request provided
+        if ($request) {
+            // City
+            if (! empty($citySlugs = $this->resolveArrayParam($request, 'city'))) {
+                $cityNames = $this->expandCitySlugs($citySlugs);
+                $query->whereHas('site', function ($sq) use ($cityNames) {
+                    $sq->where(function ($or) use ($cityNames) {
+                        foreach ($cityNames as $name) {
+                            $or->orWhere('city', 'LIKE', $name . '%');
+                        }
+                    });
+                });
+            }
+            // Region
+            if (! empty($regionCodes = $this->resolveArrayParam($request, 'region'))) {
+                $regionConfig = config('regions');
+                $provinceCodes = collect($regionCodes)
+                    ->flatMap(fn ($r) => $regionConfig[$r]['provinces'] ?? [])
+                    ->unique()->values()->all();
+                $cityNames = array_map(fn ($p) => self::CITY_SLUG_MAP[$p] ?? $p, $provinceCodes);
+                $query->whereHas('site', function ($sq) use ($cityNames) {
+                    $sq->where(function ($or) use ($cityNames) {
+                        foreach ($cityNames as $name) {
+                            $or->orWhere('city', 'LIKE', $name . '%');
+                        }
+                    });
+                });
+            }
+            // Network
+            if (! empty($networks = $this->resolveArrayParam($request, 'network'))) {
+                $query->whereHas('site.network', fn ($nq) => $nq->whereIn('code', $networks));
+            }
+            // Venue type
+            if (! empty($venueTypes = $this->resolveArrayParam($request, 'venue_type'))) {
+                $catIds = DB::table('venue_categories')->whereIn('slug', $venueTypes)->pluck('id');
+                if ($catIds->isNotEmpty()) {
+                    $query->whereHas('inventory', fn ($iq) => $iq->whereIn('vn_category_id', $catIds));
+                }
+            }
+            // Search
+            if ($request->filled('q')) {
+                $search = $request->input('q');
+                $query->where(function ($sub) use ($search) {
+                    $sub->where('name', 'LIKE', "%{$search}%")
+                        ->orWhereHas('site', fn ($sq) => $sq->where('address', 'LIKE', "%{$search}%"));
+                });
+            }
+        }
+
+        return $query->with([
                 'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id',
                 'owner:id,name,slug',
                 'site:id,network_id,name,city,address',
                 'site.network:id,name',
+                'products:id,slug,name,total_units,listing_mode',
             ])
             ->orderByDesc('updated_at')
             ->paginate($perPage);
+    }
+
+    /**
+     * Get filter aggregates scoped to a specific owner (for owner detail page).
+     */
+    public function getOwnerFilterAggregates(string $ownerId): array
+    {
+        return Cache::remember("fp:owner_filters:{$ownerId}", 900, function () use ($ownerId) {
+            $networks = DB::table('networks')
+                ->join('sites', 'networks.id', '=', 'sites.network_id')
+                ->join('screens', 'sites.id', '=', 'screens.site_id')
+                ->where('screens.owner_id', $ownerId)
+                ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('networks.deleted_at')
+                ->selectRaw('networks.id, networks.code, networks.name, COUNT(DISTINCT screens.id) as count')
+                ->groupBy('networks.id', 'networks.code', 'networks.name')
+                ->orderByDesc('count')
+                ->get();
+
+            $formats = DB::table('screen_inventory')
+                ->join('screens', 'screen_inventory.screen_id', '=', 'screens.id')
+                ->join('venue_categories', 'screen_inventory.vn_category_id', '=', 'venue_categories.id')
+                ->where('screens.owner_id', $ownerId)
+                ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->where('venue_categories.is_active', true)
+                ->selectRaw('venue_categories.id, venue_categories.slug as type, COALESCE(venue_categories.name_vi, venue_categories.name) as label, COUNT(*) as count')
+                ->groupBy('venue_categories.id', 'venue_categories.slug', 'label')
+                ->orderByDesc('count')
+                ->get();
+
+            return [
+                'networks' => $networks,
+                'formats'  => $formats,
+            ];
+        });
     }
 
     // ── Phase 3: Listing (multi-level browse) ───────────────
