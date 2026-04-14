@@ -83,16 +83,21 @@ abstract class BaseSiteResource extends Resource
                         ->nullable()
                         ->helperText('Network mà site này thuộc về'),
 
-                    Forms\Components\TextInput::make('external_id')
-                        ->label('Site ID')
-                        ->required()
-                        ->maxLength(75)
-                        ->helperText('Mã định danh duy nhất, ví dụ: GUARD-HN-SITE-001'),
-
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan(2),
+                        ->columnSpan(2)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(function (callable $set, callable $get, ?string $state) {
+                            if ($state && ! $get('external_id')) {
+                                $set('external_id', strtoupper(\Illuminate\Support\Str::slug($state, '-')));
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('external_id')
+                        ->label('Site ID')
+                        ->maxLength(75)
+                        ->helperText('Tự động từ tên. Có thể sửa tay.'),
 
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),

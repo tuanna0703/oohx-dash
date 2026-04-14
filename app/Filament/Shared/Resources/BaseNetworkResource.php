@@ -69,13 +69,19 @@ abstract class BaseNetworkResource extends Resource
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan($ownerField ? 1 : 2),
+                        ->columnSpan($ownerField ? 1 : 2)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(function (callable $set, callable $get, ?string $state) {
+                            if ($state && ! $get('code')) {
+                                $set('code', \Illuminate\Support\Str::slug($state));
+                            }
+                        }),
 
                     Forms\Components\TextInput::make('code')
                         ->label('Network Code')
                         ->unique(Network::class, 'code', ignoreRecord: true)
                         ->maxLength(100)
-                        ->helperText('Mã định danh duy nhất, dùng để liên kết screens. Để trống sẽ không gán qua code.'),
+                        ->helperText('Tự động từ tên. Dùng để liên kết screens.'),
 
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),

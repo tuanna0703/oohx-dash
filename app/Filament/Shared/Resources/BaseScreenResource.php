@@ -112,17 +112,22 @@ abstract class BaseScreenResource extends Resource
                                 ->afterStateUpdated(fn (callable $set) => $set('network_filter', null) || $set('site_id', null))
                                 ->columnSpan(3),
 
-                            Forms\Components\TextInput::make('external_id')
-                                ->label('Screen ID')
-                                ->required()
-                                ->maxLength(75)
-                                ->placeholder('GUARD-HOR-IND-001'),
-
                             Forms\Components\TextInput::make('name')
                                 ->label('Tên màn hình')
                                 ->required()
                                 ->maxLength(199)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (callable $set, callable $get, ?string $state) {
+                                    if ($state && ! $get('external_id')) {
+                                        $set('external_id', strtoupper(\Illuminate\Support\Str::slug($state, '-')));
+                                    }
+                                })
                                 ->columnSpan(2),
+
+                            Forms\Components\TextInput::make('external_id')
+                                ->label('Screen ID')
+                                ->maxLength(75)
+                                ->helperText('Tự động từ tên. Có thể sửa tay.'),
 
                             Forms\Components\Select::make('network_filter')
                                 ->label('Network')
@@ -314,10 +319,7 @@ abstract class BaseScreenResource extends Resource
                         ->maxLength(100)
                         ->nullable(),
 
-                    Forms\Components\TextInput::make('uuid')
-                        ->label('Ad request API UUID')
-                        ->helperText('Auto-generated if empty.')
-                        ->maxLength(255),
+                    Forms\Components\Hidden::make('uuid'),
 
                     Forms\Components\Select::make('player_type')
                         ->label('Player type')

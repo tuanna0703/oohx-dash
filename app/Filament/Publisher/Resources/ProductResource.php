@@ -38,11 +38,13 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('name')
                         ->label('Tên sản phẩm')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn (callable $set, ?string $state) => $set('slug', \Illuminate\Support\Str::slug($state, '-', 'vi'))),
                     Forms\Components\TextInput::make('slug')
                         ->label('Slug')
-                        ->required()
-                        ->unique(ignoreRecord: true),
+                        ->unique(ignoreRecord: true)
+                        ->helperText('Tự động từ tên'),
                 ]),
                 Forms\Components\Grid::make(3)->schema([
                     Forms\Components\Select::make('type')

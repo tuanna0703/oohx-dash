@@ -34,14 +34,15 @@ class VenueCategoryResource extends Resource
                 Forms\Components\TextInput::make('name_vi')
                     ->label('Tên tiếng Việt')
                     ->required()
-                    ->maxLength(100),
+                    ->maxLength(100)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (callable $set, ?string $state) => $set('slug', \Illuminate\Support\Str::slug($state, '-', 'vi'))),
 
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
-                    ->required()
                     ->unique(VenueCategory::class, 'slug', ignoreRecord: true)
                     ->maxLength(100)
-                    ->helperText('URL-friendly identifier, e.g. "food-beverage"'),
+                    ->helperText('Tự động từ tên tiếng Việt'),
 
                 Forms\Components\TextInput::make('icon')
                     ->label('Material Icon')

@@ -28,10 +28,12 @@ class OwnerResource extends Resource
         return $form->schema([
             Forms\Components\Section::make('Basic Info')->columns(2)->schema([
                 Forms\Components\TextInput::make('name')
-                    ->required()->maxLength(255)->columnSpan(2),
+                    ->required()->maxLength(255)->columnSpan(2)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (callable $set, ?string $state) => $set('slug', \Illuminate\Support\Str::slug($state, '-', 'vi'))),
                 Forms\Components\TextInput::make('slug')
-                    ->required()->unique(ignoreRecord:true)
-                    ->helperText('URL-friendly, e.g. guardian-vn'),
+                    ->unique(ignoreRecord:true)
+                    ->helperText('Tự động từ tên. Có thể sửa tay.'),
                 Forms\Components\Select::make('type')
                     ->options(['retailer'=>'Retailer','media_owner'=>'Media Owner','self'=>'Self'])
                     ->required(),
