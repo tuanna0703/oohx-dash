@@ -188,11 +188,19 @@ class FrontpageService
                 ->get();
 
             $provinces = $rawProvinceCounts->map(function ($r) use ($cityToCode, $regionConfig) {
-                $code   = $cityToCode[$r->province] ?? Str::slug($r->province);
+                $slugged  = Str::slug($r->province);
+                $noDash   = str_replace('-', '', $slugged);
+                $code     = $cityToCode[$r->province] ?? $slugged;
+
+                // Match against regions config (codes are no-dash: dongnai, bacninh...)
                 $region = null;
                 foreach ($regionConfig as $rc => $cfg) {
-                    if (in_array($code, $cfg['provinces'])) {
+                    if (in_array($code, $cfg['provinces']) || in_array($noDash, $cfg['provinces'])) {
                         $region = $rc;
+                        // Use the config code for consistency
+                        if (in_array($noDash, $cfg['provinces'])) {
+                            $code = $noDash;
+                        }
                         break;
                     }
                 }
@@ -856,11 +864,28 @@ class FrontpageService
 
     private function expandCitySlugs(array $slugs): array
     {
+        // Build code → Vietnamese name map from DB + hardcoded
+        $codeToName = Cache::remember('fp:code_to_city_name', 3600, function () {
+            $map = self::CITY_SLUG_MAP; // hanoi => Hà Nội, hcm => Hồ Chí Minh, etc.
+            // Add all vietnam_provinces: no-dash slug → name
+            DB::table('vietnam_provinces')->select('name')->get()->each(function ($p) use (&$map) {
+                $code = str_replace('-', '', Str::slug($p->name));
+                if (! isset($map[$code])) {
+                    $map[$code] = $p->name;
+                }
+            });
+            return $map;
+        });
+
         return collect($slugs)
-            ->flatMap(fn ($slug) => array_unique([
-                self::CITY_SLUG_MAP[$slug] ?? $slug,
-                $slug,
-            ]))
+            ->flatMap(function ($slug) use ($codeToName) {
+                $noDash = str_replace('-', '', $slug);
+                return array_unique(array_filter([
+                    $codeToName[$slug] ?? null,
+                    $codeToName[$noDash] ?? null,
+                    $slug,
+                ]));
+            })
             ->unique()
             ->values()
             ->all();
