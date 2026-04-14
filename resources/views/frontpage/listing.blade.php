@@ -39,20 +39,10 @@
         </a>
     </div>
 
-    {{-- Mega Search Box — mobile: stacked, desktop: inline --}}
+    {{-- Mega Search Box — filters inside search bar --}}
     <div class="ex-search-wrap">
-        {{-- Search input row --}}
-        <div class="ex-input-row">
-            <svg class="ex-input-icon" viewBox="0 0 24 24" fill="var(--t4)"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input class="ex-input" type="text" id="ex-q" value="{{ $activeQ }}" placeholder="Tìm tên, địa chỉ, network...">
-            <button class="ex-submit" type="button" id="ex-search-btn">
-                <svg viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <span class="ex-submit-text">Tìm kiếm</span>
-            </button>
-        </div>
-
-        {{-- Filter pills row --}}
-        <div class="ex-pills">
+        <div class="ex-search-box">
+            {{-- Inline filter buttons --}}
             <button class="ex-pill" type="button" id="exf-city">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                 <span class="ex-pill-label">{{ count($activeCities) > 0 ? count($activeCities) . ' tỉnh/thành' : 'Tỉnh/Thành' }}</span>
@@ -70,6 +60,13 @@
                 <span class="ex-pill-label">{{ count($activeVenueTypes) > 0 ? count($activeVenueTypes) . ' loại' : 'Loại hình' }}</span>
                 @if(count($activeVenueTypes) > 0)<span class="ex-pill-badge">{{ count($activeVenueTypes) }}</span>@endif
                 <svg class="ex-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+            <div class="ex-divider"></div>
+            {{-- Search input --}}
+            <input class="ex-input" type="text" id="ex-q" value="{{ $activeQ }}" placeholder="Tìm tên, địa chỉ, network...">
+            <button class="ex-submit" type="button" id="ex-search-btn">
+                <svg viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span class="ex-submit-text">Tìm kiếm</span>
             </button>
         </div>
 
