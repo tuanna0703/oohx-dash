@@ -92,12 +92,21 @@ abstract class BaseSiteResource extends Resource
                             if ($state && ! $get('external_id')) {
                                 $set('external_id', strtoupper(\Illuminate\Support\Str::slug($state, '-')));
                             }
+                            if ($state && ! $get('slug')) {
+                                $set('slug', \Illuminate\Support\Str::slug($state, '-', 'vi'));
+                            }
                         }),
 
                     Forms\Components\TextInput::make('external_id')
                         ->label('Site ID')
                         ->maxLength(75)
                         ->helperText('Tự động từ tên. Có thể sửa tay.'),
+
+                    Forms\Components\TextInput::make('slug')
+                        ->label('Slug (SEO URL)')
+                        ->maxLength(150)
+                        ->unique(ignoreRecord: true)
+                        ->helperText('Tự động từ tên'),
 
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),
