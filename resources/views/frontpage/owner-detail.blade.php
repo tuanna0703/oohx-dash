@@ -66,6 +66,19 @@
 .fp-venue-tags { display:flex; flex-wrap:wrap; gap:6px; }
 .fp-venue-tag { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:var(--bl-lt); color:var(--bl); }
 
+/* ── Featured screens slider ───────────────────────────── */
+.fp-featured-card { padding:16px; }
+.fp-featured-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.fp-slider-nav { display:flex; gap:6px; }
+.fp-slider-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--ln2); background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--t3); transition:all 140ms; }
+.fp-slider-btn:hover { border-color:var(--bl); color:var(--bl); background:rgba(42,79,246,.04); }
+.fp-slider-btn:disabled { opacity:.3; cursor:default; }
+.fp-slider-btn svg { width:16px; height:16px; }
+.fp-slider { display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; padding:4px 0 8px; scroll-snap-type:x mandatory; }
+.fp-slider::-webkit-scrollbar { display:none; }
+.fp-slider > .sc-card { min-width:220px; max-width:240px; flex-shrink:0; scroll-snap-align:start; }
+@media(min-width:768px) { .fp-slider > .sc-card { min-width:230px; max-width:260px; } }
+
 /* ── Tab: Inventory ─────────────────────────────────────── */
 .fp-inv-filter { margin-bottom:20px; }
 .fp-inv-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
@@ -275,17 +288,27 @@
                 @endif
             </div>
 
-            {{-- Right: Featured screens (carousel) --}}
+            {{-- Right: Featured screens (carousel with arrows) --}}
             <div style="min-width:0">
-                <div class="fp-card" style="padding:16px 0 16px 16px">
-                    <div class="fp-card-title" style="padding-right:16px">Màn hình nổi bật</div>
-                    <div class="hs">
-                        @foreach($ownerScreens->take(6) as $screen)
-                            @include('frontpage.partials.screen-card', ['screen' => $screen])
+                <div class="fp-card fp-featured-card">
+                    <div class="fp-featured-head">
+                        <div class="fp-card-title" style="margin-bottom:0">Màn hình nổi bật</div>
+                        <div class="fp-slider-nav">
+                            <button type="button" class="fp-slider-btn" id="fp-sl-prev" aria-label="Trước">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                            </button>
+                            <button type="button" class="fp-slider-btn" id="fp-sl-next" aria-label="Sau">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="fp-slider" id="fp-slider">
+                        @foreach($ownerScreens->take(8) as $screen)
+                            @include('frontpage.partials.screen-card', ['screen' => $screen, 'compact' => true])
                         @endforeach
                     </div>
-                    @if($ownerScreens->total() > 6)
-                        <div style="text-align:center;margin-top:12px;padding-right:16px">
+                    @if($ownerScreens->total() > 8)
+                        <div style="text-align:center;margin-top:12px">
                             <a href="javascript:void(0)" onclick="fpTab(document.querySelectorAll('.fp-tab')[1],'fp-inventory')" class="btn btn-s btn-sm" style="display:inline-flex">
                                 Xem tất cả {{ $ownerScreens->total() }} màn hình
                             </a>
@@ -347,6 +370,16 @@ function fpTab(el, id) {
             history.replaceState(null, '', window.location.pathname + '?' + params.toString().replace(/%5B/gi,'[').replace(/%5D/gi,']') + (params.toString() ? '&' : '') + 'tab=inventory');
         }
         fpTab(document.querySelectorAll('.fp-tab')[1], 'fp-inventory');
+    }
+
+    // ── Featured slider arrows ──
+    var slider = document.getElementById('fp-slider');
+    var prevBtn = document.getElementById('fp-sl-prev');
+    var nextBtn = document.getElementById('fp-sl-next');
+    if (slider && prevBtn && nextBtn) {
+        var scrollAmt = 260;
+        prevBtn.addEventListener('click', function(){ slider.scrollBy({left: -scrollAmt, behavior: 'smooth'}); });
+        nextBtn.addEventListener('click', function(){ slider.scrollBy({left: scrollAmt, behavior: 'smooth'}); });
     }
 
     // Mega Search JS
