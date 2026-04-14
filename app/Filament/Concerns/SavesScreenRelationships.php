@@ -46,7 +46,7 @@ trait SavesScreenRelationships
             $ownerId = $data['owner_id'] ?? null;
             $extId = $base;
             $n = 1;
-            $query = \App\Models\Screen::withoutGlobalScopes()
+            $query = \App\Models\Screen::withoutGlobalScopes()->withTrashed()
                 ->where('owner_id', $ownerId)
                 ->where('external_id', $extId);
             if ($this->record ?? null) {
@@ -55,7 +55,7 @@ trait SavesScreenRelationships
             while ($query->exists()) {
                 $n++;
                 $extId = $base . '-' . str_pad($n, 2, '0', STR_PAD_LEFT);
-                $query = \App\Models\Screen::withoutGlobalScopes()
+                $query = \App\Models\Screen::withoutGlobalScopes()->withTrashed()
                     ->where('owner_id', $ownerId)
                     ->where('external_id', $extId);
                 if ($this->record ?? null) {
