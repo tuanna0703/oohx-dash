@@ -152,11 +152,6 @@ class CompanyProfile extends Page implements HasForms
                                     ->preload()
                                     ->helperText('Chọn tỉnh/thành trước'),
 
-                                Forms\Components\TextInput::make('district')
-                                    ->label('Quận / Huyện')
-                                    ->maxLength(100)
-                                    ->placeholder('Quận Cầu Giấy'),
-
                                 Forms\Components\TextInput::make('address')
                                     ->label('Địa chỉ chi tiết')
                                     ->maxLength(255)
