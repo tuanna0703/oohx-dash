@@ -67,8 +67,7 @@
 .fp-venue-tag { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:var(--bl-lt); color:var(--bl); }
 
 /* ── Tab: Inventory ─────────────────────────────────────── */
-.fp-inv-filter { margin-bottom:20px; padding:16px; background:var(--bg2); border-radius:14px; border:1px solid var(--ln2); }
-.fp-inv-filter .sft { padding:0; border-bottom:none; }
+.fp-inv-filter { margin-bottom:20px; }
 .fp-inv-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
 
 /* ── Responsive ─────────────────────────────────────────── */
@@ -281,13 +280,13 @@
         </div>
     </div>
 
-    {{-- Panel: Inventory (full list with smart filter) --}}
+    {{-- Panel: Inventory (full list with mega search) --}}
     <div id="fp-inventory" class="fp-panel">
         <div class="fp-inv-filter">
-            @include('frontpage.partials.smart-filter', [
+            @include('frontpage.partials.mega-search', [
+                'variant'          => 'compact',
                 'filters'          => $filters,
                 'locationsByRegion' => $locationsByRegion,
-                'target'           => 'owners/' . $owner->slug,
             ])
         </div>
         <div class="fp-inv-header">
@@ -324,8 +323,8 @@ function fpTab(el, id) {
         fpTab(document.querySelectorAll('.fp-tab')[1], 'fp-inventory');
     }
 
-    // Smart Filter JS
-    @include('frontpage.partials.smart-filter-js')
+    // Mega Search JS
+    @include('frontpage.partials.mega-search-js')
 })();
 </script>
 @endpush

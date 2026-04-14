@@ -76,8 +76,8 @@
     });
 
     // ── Build URL from current state ──
-    // Detect target page: if on /map → stay on /map, otherwise → /explore
-    var msTarget = window.location.pathname.indexOf('/map') === 0 ? '/map' : '/explore';
+    // Detect target page: stay on current page path
+    var msTarget = window.location.pathname;
 
     function buildUrl() {
         var params = new URLSearchParams();
