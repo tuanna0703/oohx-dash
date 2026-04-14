@@ -161,8 +161,7 @@
     </div>
 </div></div>
 
-<div class="w">
-    {{-- ═══ RESULTS ═══ --}}
+<div class="w ex-results">
     @php
         $items = $screens ?? collect();
     @endphp
