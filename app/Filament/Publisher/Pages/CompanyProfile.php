@@ -3,6 +3,8 @@
 namespace App\Filament\Publisher\Pages;
 
 use App\Models\Owner;
+use App\Models\VietnamCommune;
+use App\Models\VietnamProvince;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -131,33 +133,58 @@ class CompanyProfile extends Page implements HasForms
                             ->icon('heroicon-o-map-pin')
                             ->columns(2)
                             ->schema([
-                                Forms\Components\TextInput::make('address')
-                                    ->label('Địa chỉ')
-                                    ->maxLength(255)
-                                    ->placeholder('Số 123, Đường ABC')
-                                    ->columnSpan(2),
+                                Forms\Components\Select::make('province_id')
+                                    ->label('Tỉnh / Thành phố')
+                                    ->options(fn () => VietnamProvince::orderByRaw("type = 'thanh_pho' DESC, name ASC")->pluck('full_name', 'id'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(fn (callable $set) => $set('commune_id', null)),
+
+                                Forms\Components\Select::make('commune_id')
+                                    ->label('Phường / Xã')
+                                    ->options(fn (callable $get) => $get('province_id')
+                                        ? VietnamCommune::where('province_id', $get('province_id'))
+                                            ->orderByRaw("FIELD(type, 'phuong', 'thi_tran', 'xa'), name ASC")
+                                            ->pluck('full_name', 'id')
+                                        : [])
+                                    ->searchable()
+                                    ->preload()
+                                    ->helperText('Chọn tỉnh/thành trước'),
 
                                 Forms\Components\TextInput::make('district')
                                     ->label('Quận / Huyện')
                                     ->maxLength(100)
                                     ->placeholder('Quận Cầu Giấy'),
 
-                                Forms\Components\TextInput::make('city')
-                                    ->label('Tỉnh / Thành phố')
-                                    ->maxLength(100)
-                                    ->placeholder('Hà Nội'),
+                                Forms\Components\TextInput::make('address')
+                                    ->label('Địa chỉ chi tiết')
+                                    ->maxLength(255)
+                                    ->placeholder('Số 123, Đường ABC')
+                                    ->columnSpan(2),
 
-                                Forms\Components\TextInput::make('headquarters_lat')
-                                    ->label('Latitude')
-                                    ->numeric()
-                                    ->step(0.0000001)
-                                    ->placeholder('21.0285'),
+                                Forms\Components\Section::make('Tọa độ trụ sở')
+                                    ->description('Nhập tọa độ hoặc kéo pin trên bản đồ')
+                                    ->columnSpan(2)
+                                    ->columns(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('headquarters_lat')
+                                            ->label('Latitude')
+                                            ->numeric()
+                                            ->step(0.0000001)
+                                            ->live(debounce: 800)
+                                            ->placeholder('21.0285'),
 
-                                Forms\Components\TextInput::make('headquarters_lng')
-                                    ->label('Longitude')
-                                    ->numeric()
-                                    ->step(0.0000001)
-                                    ->placeholder('105.8542'),
+                                        Forms\Components\TextInput::make('headquarters_lng')
+                                            ->label('Longitude')
+                                            ->numeric()
+                                            ->step(0.0000001)
+                                            ->live(debounce: 800)
+                                            ->placeholder('105.8542'),
+
+                                        Forms\Components\View::make('filament.publisher.components.headquarters-map')
+                                            ->columnSpan(2),
+                                    ]),
                             ]),
                     ])
                     ->persistTabInQueryString('tab')
@@ -184,7 +211,8 @@ class CompanyProfile extends Page implements HasForms
             'email'            => $state['email'] ?? null,
             'phone'            => $state['phone'] ?? null,
             'address'          => $state['address'] ?? null,
-            'city'             => $state['city'] ?? null,
+            'province_id'      => $state['province_id'] ?? null,
+            'commune_id'       => $state['commune_id'] ?? null,
             'district'         => $state['district'] ?? null,
             'founded'          => $state['founded'] ?? null,
             'featured'         => $state['featured'] ?? false,

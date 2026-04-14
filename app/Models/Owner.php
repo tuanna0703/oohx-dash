@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -17,6 +18,7 @@ class Owner extends Model
         'revenue_share_pct', 'status', 'billing_info', 'notes',
         'tagline', 'about', 'logo_url', 'cover_url',
         'website', 'email', 'phone', 'address', 'city', 'district',
+        'province_id', 'commune_id',
         'founded', 'featured', 'headquarters_lat', 'headquarters_lng',
     ];
 
@@ -30,6 +32,16 @@ class Owner extends Model
     ];
 
     // ── Relationships ──────────────────────────────────────
+
+    public function province(): BelongsTo
+    {
+        return $this->belongsTo(VietnamProvince::class, 'province_id');
+    }
+
+    public function commune(): BelongsTo
+    {
+        return $this->belongsTo(VietnamCommune::class, 'commune_id');
+    }
 
     public function sites(): HasMany
     {
