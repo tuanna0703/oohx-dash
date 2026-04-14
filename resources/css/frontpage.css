@@ -1456,6 +1456,33 @@ body.page-map{overflow:hidden}
 .mp-chips::-webkit-scrollbar{display:none}
 .mpc-chip{flex-shrink:0;padding:5px 12px;border-radius:980px;font-size:12px;font-weight:600;border:1.5px solid var(--ln2);background:#fff;color:var(--t3);white-space:nowrap;cursor:pointer;transition:all 140ms}
 .mpc-chip:hover,.mpc-chip.on{background:var(--bl);border-color:var(--bl);color:#fff}
+/* ═══ Smart Filter Component (.sft-*) ═══ */
+.sft{padding:14px 16px;border-bottom:1px solid var(--ln2);flex-shrink:0;overflow-y:auto}
+/* Search */
+.sft-search{display:flex;align-items:center;gap:8px;background:var(--bg2);border-radius:10px;padding:0 12px;margin-bottom:14px}
+.sft-search-icon{width:15px;height:15px;flex-shrink:0}
+.sft-search-input{flex:1;height:36px;border:none;outline:none;background:transparent;font-family:var(--font);font-size:13px;color:var(--t1);padding:0}
+.sft-search-input::placeholder{color:var(--t4)}
+/* Section */
+.sft-section{margin-bottom:14px}
+.sft-label{font-size:11px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+/* Chips */
+.sft-chips{display:flex;flex-wrap:wrap;gap:5px}
+.sft-chip{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:980px;border:1.5px solid var(--ln2);background:#fff;font-family:var(--font);font-size:11px;font-weight:600;color:var(--t3);cursor:pointer;transition:all 140ms;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.sft-chip:hover{border-color:var(--bl);color:var(--bl);background:rgba(42,79,246,.04)}
+.sft-chip.on{background:var(--bl);border-color:var(--bl);color:#fff}
+.sft-chip-count{font-size:10px;opacity:.7}
+.sft-chip.on .sft-chip-count{opacity:.85}
+.sft-hidden{display:none!important}
+.sft-more{display:inline-flex;padding:5px 10px;border-radius:980px;border:1px dashed var(--ln2);background:transparent;font-family:var(--font);font-size:11px;font-weight:600;color:var(--bl);cursor:pointer;transition:all 120ms;white-space:nowrap}
+.sft-more:hover{border-color:var(--bl);background:rgba(42,79,246,.04)}
+/* Actions */
+.sft-actions{display:flex;gap:6px;margin-top:2px}
+@media(min-width:768px){
+  .sft-chip{padding:6px 12px;font-size:12px}
+  .sft-chip-count{font-size:10px}
+  .sft-label{font-size:11px}
+}
 .mp-count{font-size:13px;font-weight:600;color:var(--t2);padding:12px 18px;border-bottom:1px solid var(--ln2);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
 .mp-count strong{color:var(--bl)}
 .mp-filter-toggle{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);transition:all 140ms;flex-shrink:0}

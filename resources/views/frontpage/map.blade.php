@@ -39,85 +39,15 @@
     {{-- ── LEFT PANEL ── --}}
     <div class="map-panel" id="panel">
         <div class="mp-drag" onclick="togglePanel()"><div class="mp-drag-bar"></div></div>
-        <div class="mp-head">
-            <div class="mp-search">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t4)" style="width:16px;height:16px;flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input placeholder="Tìm khu vực, loại biển…" id="map-search">
-                <button class="btn btn-p btn-xs" style="border-radius:6px" onclick="searchMap()">OK</button>
-            </div>
-            <div class="mp-chips">
-                <div class="mpc-chip on" data-type="all">Tất cả</div>
-                @foreach(($filters['formats'] ?? collect())->take(3) as $f)
-                <div class="mpc-chip" data-type="{{ $f['type'] }}">{{ $f['label'] }}</div>
-                @endforeach
-                <div class="mpc-chip" data-type="available">Còn trống</div>
-            </div>
-        </div>
-        {{-- Advanced filters (collapsible) --}}
-        <div class="mp-filters" id="mp-filters" style="display:none">
-            <form method="GET" action="{{ route('fp.map') }}" id="map-filter-form">
-                @php
-                    $mActiveOwners = request()->input('owner', []);
-                    if (is_string($mActiveOwners)) $mActiveOwners = [$mActiveOwners];
-                    $mActiveNetworks = request()->input('network', []);
-                    if (is_string($mActiveNetworks)) $mActiveNetworks = [$mActiveNetworks];
-                    $mMinPrice = request()->input('min_price', '');
-                    $mMaxPrice = request()->input('max_price', '');
-                @endphp
-
-                @if(($filters['owners'] ?? collect())->isNotEmpty())
-                <div class="mp-filter-section">
-                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Media Owner</div>
-                    <div class="sb-group" style="gap:4px">
-                        @foreach(($filters['owners'] ?? collect())->take(8) as $o)
-                        <label class="sb-item {{ in_array($o->slug, $mActiveOwners) ? 'on' : '' }}" style="padding:4px 6px;font-size:12px">
-                            <input type="checkbox" name="owner[]" value="{{ $o->slug }}" {{ in_array($o->slug, $mActiveOwners) ? 'checked' : '' }} hidden>
-                            <div class="sb-checkbox" style="width:14px;height:14px;border-radius:4px"></div>
-                            <span>{{ $o->name }}</span>
-                            <span class="sb-count">{{ $o->count }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                @if(($filters['networks'] ?? collect())->isNotEmpty())
-                <div class="mp-filter-section">
-                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Network</div>
-                    <div class="sb-group" style="gap:4px">
-                        @foreach(($filters['networks'] ?? collect())->take(8) as $n)
-                        <label class="sb-item {{ in_array($n->code, $mActiveNetworks) ? 'on' : '' }}" style="padding:4px 6px;font-size:12px">
-                            <input type="checkbox" name="network[]" value="{{ $n->code }}" {{ in_array($n->code, $mActiveNetworks) ? 'checked' : '' }} hidden>
-                            <div class="sb-checkbox" style="width:14px;height:14px;border-radius:4px"></div>
-                            <span>{{ $n->name }}</span>
-                            <span class="sb-count">{{ $n->count }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                <div class="mp-filter-section">
-                    <div class="sb-title" style="font-size:12px;margin-bottom:8px">Mức giá (₫/tháng)</div>
-                    <div class="sb-price-row">
-                        <input type="number" name="min_price" value="{{ $mMinPrice }}" placeholder="Từ" class="sb-input sb-price-input" min="0">
-                        <span style="color:var(--t4);font-size:11px">—</span>
-                        <input type="number" name="max_price" value="{{ $mMaxPrice }}" placeholder="Đến" class="sb-input sb-price-input" min="0">
-                    </div>
-                </div>
-
-                <div style="display:flex;gap:6px">
-                    <button type="submit" class="btn btn-p btn-sm" style="flex:1;justify-content:center;border-radius:8px">Áp dụng</button>
-                    <a href="{{ route('fp.map') }}" class="btn btn-s btn-sm" style="border-radius:8px;text-decoration:none">Xoá</a>
-                </div>
-            </form>
-        </div>
+        {{-- Smart Filter --}}
+        @include('frontpage.partials.smart-filter', [
+            'filters'          => $filters,
+            'locationsByRegion' => $locationsByRegion,
+            'target'           => 'map',
+        ])
 
         <div class="mp-count">
             <span>Hiển thị <strong id="pin-count">{{ number_format($pins->count()) }}</strong> kết quả</span>
-            <button type="button" class="mp-filter-toggle" id="mp-filter-toggle">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-            </button>
         </div>
         <div class="mp-list" id="pin-list">
             @php
@@ -490,52 +420,10 @@
         }
     });
 
-    // ── Filter chips ──
-    document.querySelectorAll('.mpc-chip').forEach(function(chip) {
-        chip.addEventListener('click', function() {
-            document.querySelectorAll('.mpc-chip').forEach(function(x){ x.classList.remove('on'); });
-            chip.classList.add('on');
-
-            var type = chip.dataset.type;
-            var filtered = type === 'all' ? PINS : PINS.filter(function(p) {
-                if (type === 'available') return true;
-                return p.type === type;
-            });
-            renderPins(filtered);
-
-            if (filtered.length > 0) {
-                var bounds = L.latLngBounds(filtered.map(function(p){ return [p.lat, p.lng]; }));
-                map.fitBounds(bounds, {padding: [40, 40], maxZoom: 14});
-            }
-
-            hidePopup();
-        });
-    });
-
     // ── Panel toggle (mobile) ──
     window.togglePanel = function() {
         document.getElementById('panel').classList.toggle('open');
     };
-
-    // ── Search ──
-    window.searchMap = function() {
-        var q = document.getElementById('map-search').value.trim().toLowerCase();
-        if (!q) { renderPins(PINS); return; }
-        var filtered = PINS.filter(function(p) {
-            return (p.name && p.name.toLowerCase().indexOf(q) >= 0) ||
-                   (p.city && p.city.toLowerCase().indexOf(q) >= 0) ||
-                   (p.addr && p.addr.toLowerCase().indexOf(q) >= 0);
-        });
-        renderPins(filtered);
-        if (filtered.length > 0) {
-            var bounds = L.latLngBounds(filtered.map(function(p){ return [p.lat, p.lng]; }));
-            map.fitBounds(bounds, {padding: [40, 40], maxZoom: 14});
-        }
-    };
-
-    document.getElementById('map-search').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') searchMap();
-    });
 
     // ── Site group header click → fly to site ──
     document.querySelectorAll('.mp-site-header').forEach(function(header){
@@ -546,22 +434,8 @@
         });
     });
 
-    // ── Map filter panel toggle ──
-    var filterToggle = document.getElementById('mp-filter-toggle');
-    var filterPanel = document.getElementById('mp-filters');
-    if (filterToggle && filterPanel) {
-        filterToggle.addEventListener('click', function(){
-            var open = filterPanel.style.display !== 'none';
-            filterPanel.style.display = open ? 'none' : 'block';
-            filterToggle.classList.toggle('on', !open);
-        });
-        // checkbox sync
-        filterPanel.querySelectorAll('.sb-item input[type="checkbox"]').forEach(function(cb){
-            cb.addEventListener('change', function(){
-                cb.closest('.sb-item').classList.toggle('on', cb.checked);
-            });
-        });
-    }
+    // ── Smart Filter ──
+    @include('frontpage.partials.smart-filter-js')
 })();
 </script>
 @endpush

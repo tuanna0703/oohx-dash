@@ -87,10 +87,11 @@ class FrontpageController extends Controller
         })->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
 
         return view('frontpage.map', [
-            'pins'        => $pins,
-            'pinsJson'    => $pinsJson,
-            'filters'     => $this->fp->getFilterAggregates(),
-            'vnCatLabels' => $vnCatLabels,
+            'pins'              => $pins,
+            'pinsJson'          => $pinsJson,
+            'filters'           => $this->fp->getFilterAggregates(),
+            'locationsByRegion' => $this->fp->getLocationsByRegion(),
+            'vnCatLabels'       => $vnCatLabels,
         ]);
     }
 

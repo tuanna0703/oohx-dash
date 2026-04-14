@@ -76,6 +76,9 @@
     });
 
     // ── Build URL from current state ──
+    // Detect target page: if on /map → stay on /map, otherwise → /explore
+    var msTarget = window.location.pathname.indexOf('/map') === 0 ? '/map' : '/explore';
+
     function buildUrl() {
         var params = new URLSearchParams();
         var q = document.getElementById('ms-q');
@@ -98,8 +101,8 @@
         var sortSel = document.getElementById('sort-sel');
         if (sortSel && sortSel.value) params.append('sort', sortSel.value);
 
-        var str = params.toString();
-        window.location.href = '/explore' + (str ? '?' + str : '');
+        var str = params.toString().replace(/%5B/gi, '[').replace(/%5D/gi, ']');
+        window.location.href = msTarget + (str ? '?' + str : '');
     }
 
     // ── Apply buttons ──
@@ -133,7 +136,7 @@
 
     // ── Clear all tags ──
     var clearAll = document.getElementById('ms-clear-all');
-    if (clearAll) clearAll.addEventListener('click', function(){ window.location.href = '/explore'; });
+    if (clearAll) clearAll.addEventListener('click', function(){ window.location.href = msTarget; });
 
     // ── Search chips (hero variant) ──
     document.querySelectorAll('.ms-chip').forEach(function(chip) {

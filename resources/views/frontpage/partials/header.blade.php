@@ -5,7 +5,6 @@
             <a href="{{ route('fp.listing') }}" @class(['ac' => ($activeNav ?? '') === 'explore'])>Khám phá</a>
             <a href="{{ route('fp.map') }}" @class(['ac' => ($activeNav ?? '') === 'map'])>Bản đồ</a>
             <a href="{{ route('fp.owners') }}" @class(['ac' => ($activeNav ?? '') === 'owners'])>Media Owners</a>
-            <a href="#" @class(['ac' => ($activeNav ?? '') === 'quote'])>Báo giá</a>
             <a href="{{ route('fp.agency') }}" @class(['ac' => ($activeNav ?? '') === 'agency'])>Agency</a>
         </nav>
         <div class="hdr-acts">
