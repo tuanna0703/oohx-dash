@@ -10,12 +10,14 @@ trait SavesScreenRelationships
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data = $this->resolveOwnerId($data);
+        $data = $this->resolveExternalId($data);
         return $this->extractNestedData($data);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data = $this->resolveOwnerId($data);
+        $data = $this->resolveExternalId($data);
         return $this->extractNestedData($data);
     }
 
@@ -33,6 +35,15 @@ trait SavesScreenRelationships
 
         $data['owner_id'] = auth()->user()?->current_owner_id
             ?? \App\Models\Site::find($data['site_id'] ?? null)?->owner_id;
+
+        return $data;
+    }
+
+    private function resolveExternalId(array $data): array
+    {
+        if (empty($data['external_id']) && ! empty($data['name'])) {
+            $data['external_id'] = strtoupper(\Illuminate\Support\Str::slug($data['name'], '-'));
+        }
 
         return $data;
     }
