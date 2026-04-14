@@ -101,6 +101,10 @@
         var sortSel = document.getElementById('sort-sel');
         if (sortSel && sortSel.value) params.append('sort', sortSel.value);
 
+        // Preserve tab context (e.g. owner detail inventory tab)
+        var curTab = new URLSearchParams(window.location.search).get('tab');
+        if (curTab) params.append('tab', curTab);
+
         var str = params.toString().replace(/%5B/gi, '[').replace(/%5D/gi, ']');
         window.location.href = msTarget + (str ? '?' + str : '');
     }
@@ -130,13 +134,16 @@
             var all = url.searchParams.getAll(type + '[]');
             url.searchParams.delete(type + '[]');
             all.filter(function(v){ return v !== val; }).forEach(function(v){ url.searchParams.append(type + '[]', v); });
-            window.location.href = url.toString();
+            window.location.href = url.toString().replace(/%5B/gi, '[').replace(/%5D/gi, ']');
         });
     });
 
     // ── Clear all tags ──
     var clearAll = document.getElementById('ms-clear-all');
-    if (clearAll) clearAll.addEventListener('click', function(){ window.location.href = msTarget; });
+    if (clearAll) clearAll.addEventListener('click', function(){
+        var tab = new URLSearchParams(window.location.search).get('tab');
+        window.location.href = msTarget + (tab ? '?tab=' + tab : '');
+    });
 
     // ── Search chips (hero variant) ──
     document.querySelectorAll('.ms-chip').forEach(function(chip) {

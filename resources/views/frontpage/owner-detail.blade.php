@@ -311,15 +311,24 @@ function fpTab(el, id) {
     document.querySelectorAll('.fp-panel').forEach(function(p) { p.classList.remove('on'); });
     el.classList.add('on');
     document.getElementById(id).classList.add('on');
+    // Update URL tab param
+    var url = new URL(window.location.href);
+    if (id === 'fp-inventory') { url.searchParams.set('tab', 'inventory'); }
+    else { url.searchParams.delete('tab'); }
+    history.replaceState(null, '', url.toString().replace(/%5B/gi,'[').replace(/%5D/gi,']'));
     window.scrollTo({ top: document.querySelector('.fp-nav-wrap').offsetTop - 60, behavior: 'smooth' });
 }
 
-// Auto-switch to inventory tab when filters are active
+// Auto-switch to inventory tab when filters are active or tab=inventory
 (function(){
     var params = new URLSearchParams(window.location.search);
     var hasFilter = params.has('city[]') || params.has('network[]') || params.has('venue_type[]')
-                 || params.has('region[]') || params.has('q');
+                 || params.has('region[]') || params.has('q') || params.get('tab') === 'inventory';
     if (hasFilter) {
+        // Set tab param so mega-search preserves it
+        if (!params.has('tab')) {
+            history.replaceState(null, '', window.location.pathname + '?' + params.toString().replace(/%5B/gi,'[').replace(/%5D/gi,']') + (params.toString() ? '&' : '') + 'tab=inventory');
+        }
         fpTab(document.querySelectorAll('.fp-tab')[1], 'fp-inventory');
     }
 
