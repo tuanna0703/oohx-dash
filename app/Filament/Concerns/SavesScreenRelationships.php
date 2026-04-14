@@ -45,6 +45,10 @@ trait SavesScreenRelationships
             $data['external_id'] = strtoupper(\Illuminate\Support\Str::slug($data['name'], '-'));
         }
 
+        if (empty($data['slug']) && ! empty($data['name'])) {
+            $data['slug'] = \App\Models\Screen::generateUniqueSlug($data['name'], $this->record ?? null);
+        }
+
         return $data;
     }
 

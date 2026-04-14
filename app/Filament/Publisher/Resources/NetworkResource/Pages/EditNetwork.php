@@ -5,6 +5,7 @@ namespace App\Filament\Publisher\Resources\NetworkResource\Pages;
 use App\Filament\Publisher\Resources\NetworkResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class EditNetwork extends EditRecord
@@ -15,7 +16,6 @@ class EditNetwork extends EditRecord
     {
         parent::mount($record);
 
-        // Verify the record belongs to the current tenant
         $ownerId = auth()->user()?->current_owner_id;
         if ($ownerId && $this->record->owner_id !== $ownerId) {
             throw new NotFoundHttpException();
@@ -30,6 +30,10 @@ class EditNetwork extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['owner_id'] = auth()->user()->current_owner_id;
+
+        if (empty($data['code']) && ! empty($data['name'])) {
+            $data['code'] = Str::slug($data['name']);
+        }
 
         return $data;
     }

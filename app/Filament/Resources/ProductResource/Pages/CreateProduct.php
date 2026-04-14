@@ -2,17 +2,22 @@
 
 namespace App\Filament\Resources\ProductResource\Pages;
 
+use App\Filament\Concerns\ResolvesSlug;
 use App\Filament\Resources\ProductResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateProduct extends CreateRecord
 {
+    use ResolvesSlug;
+
     protected static string $resource = ProductResource::class;
 
     protected array $pendingScreenIds = [];
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data = $this->resolveSlug($data);
+
         $this->pendingScreenIds = $data['screenIds'] ?? [];
         unset($data['screenIds']);
 

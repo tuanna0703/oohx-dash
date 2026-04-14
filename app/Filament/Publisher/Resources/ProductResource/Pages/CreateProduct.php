@@ -2,11 +2,14 @@
 
 namespace App\Filament\Publisher\Resources\ProductResource\Pages;
 
+use App\Filament\Concerns\ResolvesSlug;
 use App\Filament\Publisher\Resources\ProductResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateProduct extends CreateRecord
 {
+    use ResolvesSlug;
+
     protected static string $resource = ProductResource::class;
 
     protected array $pendingScreenIds = [];
@@ -14,8 +17,8 @@ class CreateProduct extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['owner_id'] = auth()->user()->current_owner_id;
+        $data = $this->resolveSlug($data);
 
-        // Lưu screenIds trước khi Filament loại bỏ (dehydrated: false)
         $this->pendingScreenIds = $data['screenIds'] ?? [];
         unset($data['screenIds']);
 
