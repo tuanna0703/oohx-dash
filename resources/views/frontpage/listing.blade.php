@@ -30,38 +30,51 @@
 @php $group = $group ?? 'screen'; @endphp
 <div class="ex-hero"><div class="w">
 
-    {{-- Mega Search Box --}}
+    {{-- Title row --}}
+    <div class="ex-top">
+        <h1 class="ex-title">Khám phá Inventory</h1>
+        <a href="{{ route('fp.map') }}" class="ph-map-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+            Bản đồ
+        </a>
+    </div>
+
+    {{-- Mega Search Box — mobile: stacked, desktop: inline --}}
     <div class="ex-search-wrap">
-        <div class="search-box" id="ex-search-box">
-            {{-- Filter: Tỉnh/Thành --}}
-            <button class="sf-inline" type="button" id="exf-city">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                <span id="exf-city-label">{{ count($activeCities) > 0 ? count($activeCities) . ' tỉnh/thành' : 'Tỉnh/Thành' }}</span>
-                @if(count($activeCities) > 0)<span class="sf-badge">{{ count($activeCities) }}</span>@endif
-                <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-            </button>
-            {{-- Filter: Network --}}
-            <button class="sf-inline" type="button" id="exf-network">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm4 4H8v-2h2v2zm0-4H8v-2h2v2zm10 4h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>
-                <span id="exf-network-label">{{ count($activeNetworks) > 0 ? count($activeNetworks) . ' network' : 'Network' }}</span>
-                @if(count($activeNetworks) > 0)<span class="sf-badge">{{ count($activeNetworks) }}</span>@endif
-                <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-            </button>
-            {{-- Filter: Loại hình --}}
-            <button class="sf-inline" type="button" id="exf-type">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                <span id="exf-type-label">{{ count($activeVenueTypes) > 0 ? count($activeVenueTypes) . ' loại' : 'Loại hình' }}</span>
-                @if(count($activeVenueTypes) > 0)<span class="sf-badge">{{ count($activeVenueTypes) }}</span>@endif
-                <svg class="chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-            </button>
-            <div class="sb-divider"></div>
-            <input class="search-input" type="text" id="ex-q" value="{{ $activeQ }}" placeholder="Tìm tên, địa chỉ, network...">
-            <button class="search-btn" type="button" id="ex-search-btn">
-                <svg viewBox="0 0 24 24" fill="#fff"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <span class="search-btn-text">Tìm</span>
+        {{-- Search input row --}}
+        <div class="ex-input-row">
+            <svg class="ex-input-icon" viewBox="0 0 24 24" fill="var(--t4)"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="ex-input" type="text" id="ex-q" value="{{ $activeQ }}" placeholder="Tìm tên, địa chỉ, network...">
+            <button class="ex-submit" type="button" id="ex-search-btn">
+                <svg viewBox="0 0 24 24" fill="#fff" style="width:16px;height:16px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span class="ex-submit-text">Tìm kiếm</span>
             </button>
         </div>
+
+        {{-- Filter pills row --}}
+        <div class="ex-pills">
+            <button class="ex-pill" type="button" id="exf-city">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                <span class="ex-pill-label">{{ count($activeCities) > 0 ? count($activeCities) . ' tỉnh/thành' : 'Tỉnh/Thành' }}</span>
+                @if(count($activeCities) > 0)<span class="ex-pill-badge">{{ count($activeCities) }}</span>@endif
+                <svg class="ex-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+            <button class="ex-pill" type="button" id="exf-network">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm4 4H8v-2h2v2zm0-4H8v-2h2v2zm10 4h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>
+                <span class="ex-pill-label">{{ count($activeNetworks) > 0 ? count($activeNetworks) . ' network' : 'Network' }}</span>
+                @if(count($activeNetworks) > 0)<span class="ex-pill-badge">{{ count($activeNetworks) }}</span>@endif
+                <svg class="ex-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+            <button class="ex-pill" type="button" id="exf-type">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <span class="ex-pill-label">{{ count($activeVenueTypes) > 0 ? count($activeVenueTypes) . ' loại' : 'Loại hình' }}</span>
+                @if(count($activeVenueTypes) > 0)<span class="ex-pill-badge">{{ count($activeVenueTypes) }}</span>@endif
+                <svg class="ex-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+        </div>
+
         {{-- Active filter tags --}}
+        @if($hasFilters)
         <div class="ex-active-tags" id="ex-active-tags">
             @foreach($activeCities as $c)
             <span class="ex-tag" data-type="city" data-val="{{ $c }}">{{ $c }} <span class="ex-tag-x">&times;</span></span>
@@ -72,10 +85,9 @@
             @foreach($activeVenueTypes as $v)
             <span class="ex-tag" data-type="venue_type" data-val="{{ $v }}">{{ $v }} <span class="ex-tag-x">&times;</span></span>
             @endforeach
-            @if($hasFilters)
             <span class="ex-tag ex-tag-clear" id="ex-clear-all">Xoá tất cả</span>
-            @endif
         </div>
+        @endif
     </div>
 
     {{-- Mega Dropdowns --}}
@@ -149,19 +161,6 @@
                 <button class="btn btn-p btn-sm" type="button" id="exa-type">Áp dụng</button>
             </div>
         </div>
-    </div>
-
-    {{-- Group tabs + map link --}}
-    <div class="ex-bar">
-        <div class="explore-tabs">
-            <a href="/explore?group=network" class="explore-tab {{ $group === 'network' ? 'on' : '' }}">Networks</a>
-            <a href="/explore?group=site" class="explore-tab {{ $group === 'site' ? 'on' : '' }}">Sites</a>
-            <a href="/explore" class="explore-tab {{ $group === 'screen' ? 'on' : '' }}">Screens</a>
-        </div>
-        <a href="{{ route('fp.map') }}" class="ph-map-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-            Bản đồ
-        </a>
     </div>
 </div></div>
 
@@ -366,7 +365,7 @@
     function closeDrop() {
         if (openDrop) { openDrop.classList.remove('open'); openDrop = null; }
         if (backdrop) backdrop.classList.remove('open');
-        document.querySelectorAll('.sf-inline').forEach(function(b){ b.classList.remove('on'); });
+        document.querySelectorAll('.ex-pill').forEach(function(b){ b.classList.remove('on'); });
     }
 
     function toggleDrop(btnId, dropId) {
