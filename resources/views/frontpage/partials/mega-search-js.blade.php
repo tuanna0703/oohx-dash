@@ -4,6 +4,21 @@
 (function(){
     var openDrop = null;
     var backdrop = document.getElementById('ms-backdrop');
+    var msBox = document.getElementById('ms-box');
+
+    // ── Position dropdown below search box (fixed positioning) ──
+    function positionDrop(drop) {
+        if (!msBox || !drop) return;
+        var rect = msBox.getBoundingClientRect();
+        var dropW = Math.min(720, window.innerWidth * 0.96);
+        var left = rect.left + (rect.width / 2) - (dropW / 2);
+        // Keep within viewport
+        if (left < 8) left = 8;
+        if (left + dropW > window.innerWidth - 8) left = window.innerWidth - 8 - dropW;
+        drop.style.top = (rect.bottom + 8) + 'px';
+        drop.style.left = left + 'px';
+        drop.style.width = dropW + 'px';
+    }
 
     // ── Dropdown open/close ──
     function closeDrop() {
@@ -20,6 +35,7 @@
             e.stopPropagation();
             if (openDrop === drop) { closeDrop(); return; }
             closeDrop();
+            positionDrop(drop);
             drop.classList.add('open');
             openDrop = drop;
             btn.classList.add('on');
@@ -30,6 +46,10 @@
     bindDrop('ms-btn-city', 'ms-drop-city');
     bindDrop('ms-btn-network', 'ms-drop-network');
     bindDrop('ms-btn-type', 'ms-drop-type');
+
+    // Reposition on scroll/resize
+    window.addEventListener('scroll', function(){ if (openDrop) positionDrop(openDrop); }, {passive:true});
+    window.addEventListener('resize', function(){ if (openDrop) positionDrop(openDrop); });
 
     if (backdrop) backdrop.addEventListener('click', closeDrop);
     document.querySelectorAll('.ms-drop-close').forEach(function(b){ b.addEventListener('click', closeDrop); });
