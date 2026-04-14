@@ -29,6 +29,7 @@ class FrontpageController extends Controller
             'featuredScreens'   => $this->fp->getFeaturedScreens(4),
             'featuredOwners'    => $this->fp->getFeaturedOwners(6),
             'locationsByRegion' => $this->fp->getLocationsByRegion(),
+            'filters'           => $this->fp->getFilterAggregates(),
             'mapData'           => $mapData,
             'vnCatLabels'       => $this->fp->getVnCategoryLabels(),
         ]);
@@ -37,9 +38,10 @@ class FrontpageController extends Controller
     public function listing(FrontpageListingRequest $request): View
     {
         return view('frontpage.listing', [
-            'screens'     => $this->fp->getScreensPaginated($request),
-            'filters'     => $this->fp->getFilterAggregates(),
-            'vnCatLabels' => $this->fp->getVnCategoryLabels(),
+            'screens'          => $this->fp->getScreensPaginated($request),
+            'filters'          => $this->fp->getFilterAggregates(),
+            'vnCatLabels'      => $this->fp->getVnCategoryLabels(),
+            'locationsByRegion' => $this->fp->getLocationsByRegion(),
         ]);
     }
 

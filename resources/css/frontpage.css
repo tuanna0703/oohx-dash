@@ -992,75 +992,95 @@ ul{list-style:none}
 .ph-search input::placeholder{color:var(--t4)}
 .ph-search-icon{padding:0 14px;display:flex;align-items:center;color:var(--t4);flex-shrink:0}
 .ph-search-icon svg{width:18px;height:18px}
+/* ═══ Mega Search Component (.ms-*) — mobile-first ═══ */
+.ms-wrap{max-width:820px;margin:0 auto;position:relative}
+.ms-hero{max-width:760px}
+/* Search box */
+.ms-box{display:flex;align-items:center;background:#fff;border:1.5px solid var(--ln2);border-radius:980px;box-shadow:var(--sh2);overflow:hidden;transition:border-color 200ms,box-shadow 200ms}
+.ms-box:focus-within{border-color:var(--bl);box-shadow:0 0 0 4px rgba(42,79,246,.1),var(--sh2)}
+/* Inline pills (mobile: icon-only) */
+.ms-pill{display:inline-flex;align-items:center;gap:2px;padding:6px 8px;border-radius:980px;border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;transition:all 160ms;white-space:nowrap;flex-shrink:0;margin-left:4px;-webkit-tap-highlight-color:transparent}
+.ms-pill:first-child{margin-left:8px}
+.ms-pill svg:first-child{width:12px;height:12px;flex-shrink:0}
+.ms-pill-txt{display:none}
+.ms-pill-chv{display:none;width:12px;height:12px;color:var(--t4);transition:transform 200ms}
+.ms-pill:hover{color:var(--bl)}
+.ms-pill.on{color:var(--bl)}
+.ms-pill.on .ms-pill-chv{transform:rotate(180deg)}
+.ms-pill-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;background:var(--bl);color:#fff;border-radius:980px;font-size:9px;font-weight:800;margin-left:1px}
+.ms-divider{width:1px;height:24px;background:var(--ln2);flex-shrink:0;margin:0 2px}
+/* Input */
+.ms-input{flex:1;height:48px;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--t1);padding:0 12px;background:transparent;min-width:0}
+.ms-input::placeholder{color:var(--t4)}
+/* Submit button */
+.ms-submit{height:48px;padding:0 16px;flex-shrink:0;background:var(--bl);color:#fff;border:none;border-radius:0 980px 980px 0;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:background 140ms;display:flex;align-items:center;gap:6px}
+.ms-submit:hover{background:var(--bl-h)}
+.ms-submit-txt{display:none}
+/* Tags */
+.ms-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:0}
+.ms-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:980px;font-size:11px;font-weight:600;background:rgba(42,79,246,.08);color:var(--bl);cursor:default}
+.ms-tag-x{cursor:pointer;font-size:14px;line-height:1;opacity:.6;transition:opacity 100ms}
+.ms-tag-x:hover{opacity:1}
+.ms-tag-clear{background:transparent;color:var(--t4);cursor:pointer;border:1px dashed var(--ln2)}
+.ms-tag-clear:hover{color:var(--red);border-color:var(--red)}
+/* Search chips (hero only) */
+.ms-chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.ms-chip{font-size:13px;color:var(--t3);font-weight:500;padding:6px 14px;border-radius:980px;border:1.5px solid var(--ln2);background:var(--bg);cursor:pointer;transition:all 140ms;white-space:nowrap}
+.ms-chip:hover{border-color:var(--bl);color:var(--bl);background:var(--bl-lt)}
+/* Backdrop */
+.ms-backdrop{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.12)}
+.ms-backdrop.open{display:block}
+/* Location dropdown — grouped by region */
+.ms-loc-cols{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.ms-loc-region{padding:0 12px 12px}
+.ms-loc-region:not(:last-child){border-right:1px solid var(--ln2)}
+.ms-loc-region-title{font-size:12px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;padding:0 10px;margin-bottom:6px}
+.ms-loc-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:13px;color:var(--t2);font-weight:500;cursor:pointer;transition:all 120ms;margin-bottom:1px}
+.ms-loc-item:hover{background:var(--bg2);color:var(--t1)}
+.ms-loc-item.on{background:var(--bl-lt);color:var(--bl);font-weight:700}
+.ms-loc-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--ln);flex-shrink:0;transition:all 140ms;display:flex;align-items:center;justify-content:center}
+.ms-loc-item.on .ms-loc-check{background:var(--bl);border-color:var(--bl)}
+.ms-loc-count{margin-left:auto;font-size:11px;color:var(--t4)}
+/* Grid dropdowns (network, type) */
+.ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ms-grid-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--t2);cursor:pointer;transition:background 100ms;user-select:none}
+.ms-grid-item:hover{background:var(--bg2)}
+.ms-grid-item.on{color:var(--bl);font-weight:600}
+.ms-grid-item .sb-checkbox{width:16px;height:16px;border-radius:4px;flex-shrink:0}
+.ms-grid-item.on .sb-checkbox{background:var(--bl);border-color:var(--bl)}
+.ms-grid-item .sb-count{margin-left:auto;font-size:11px;color:var(--t4)}
+
+/* ── Tablet (768px+) ── */
+@media(min-width:768px){
+  .ms-pill{padding:6px 12px;gap:4px;border:1.5px solid var(--ln2)}
+  .ms-pill-txt{display:inline}
+  .ms-pill-chv{display:block}
+  .ms-pill:hover{border-color:var(--bl);background:rgba(42,79,246,.04)}
+  .ms-pill.on{border-color:var(--bl);background:rgba(42,79,246,.06)}
+  .ms-divider{margin:0 4px}
+  .ms-input{height:54px;font-size:15px;padding:0 16px}
+  .ms-submit{height:54px;padding:0 22px}
+  .ms-submit-txt{display:inline}
+  .ms-loc-cols{grid-template-columns:1fr 1fr 1fr}
+  .ms-grid{grid-template-columns:1fr 1fr 1fr}
+}
+
+/* ── Desktop (1024px+) ── */
+@media(min-width:1024px){
+  .ms-pill{padding:7px 14px;font-size:13px}
+  .ms-divider{margin:0 6px;height:28px}
+}
+
 /* ═══ Explore hero + mega search (mobile-first) ═══ */
 .ex-hero{background:var(--bg2);border-bottom:1px solid var(--ln2);padding:16px 0 14px}
 .ex-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .ex-title{font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.3px;margin:0}
 .ex-search-wrap{max-width:820px;margin:0 auto;position:relative}
 
-/* Search box — unified bar with inline filters */
-.ex-search-box{display:flex;align-items:center;background:#fff;border:1.5px solid var(--ln2);border-radius:980px;box-shadow:var(--sh2);overflow:hidden;transition:border-color 200ms,box-shadow 200ms}
-.ex-search-box:focus-within{border-color:var(--bl);box-shadow:0 0 0 4px rgba(42,79,246,.1),var(--sh2)}
-.ex-input{flex:1;height:48px;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--t1);padding:0 12px;background:transparent;min-width:0}
-.ex-input::placeholder{color:var(--t4)}
-.ex-submit{height:48px;padding:0 16px;flex-shrink:0;background:var(--bl);color:#fff;border:none;border-radius:0 980px 980px 0;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:background 140ms;display:flex;align-items:center;gap:6px}
-.ex-submit:hover{background:var(--bl-h)}
-.ex-submit-text{display:none}
-.ex-divider{width:1px;height:24px;background:var(--ln2);flex-shrink:0;margin:0 2px}
-/* Inline filter pills (inside search box) */
-.ex-pill{display:inline-flex;align-items:center;gap:3px;padding:6px 8px;border-radius:980px;border:1.5px solid var(--ln2);background:transparent;font-family:var(--font);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;transition:all 160ms;white-space:nowrap;flex-shrink:0;margin-left:4px;-webkit-tap-highlight-color:transparent}
-.ex-pill:first-child{margin-left:8px}
-.ex-pill svg:first-child{width:12px;height:12px;flex-shrink:0}
-.ex-pill-chv{width:12px;height:12px;color:var(--t4);transition:transform 200ms}
-.ex-pill:hover{border-color:var(--bl);color:var(--bl);background:rgba(42,79,246,.04)}
-.ex-pill.on{border-color:var(--bl);color:var(--bl);background:rgba(42,79,246,.06)}
-.ex-pill.on .ex-pill-chv{transform:rotate(180deg)}
-.ex-pill-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;background:var(--bl);color:#fff;border-radius:980px;font-size:9px;font-weight:800;margin-left:1px}
-/* Mobile: hide pill labels, show only icon + badge */
-.ex-pill-label{display:none}
-.ex-pill-chv{display:none}
-.ex-pill{border:none;padding:6px 8px;gap:2px}
-
-/* Active tags */
-.ex-active-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:0}
-.ex-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:980px;font-size:11px;font-weight:600;background:rgba(42,79,246,.08);color:var(--bl);cursor:default}
-.ex-tag-x{cursor:pointer;font-size:14px;line-height:1;opacity:.6;transition:opacity 100ms}
-.ex-tag-x:hover{opacity:1}
-.ex-tag-clear{background:transparent;color:var(--t4);cursor:pointer;border:1px dashed var(--ln2)}
-.ex-tag-clear:hover{color:var(--red);border-color:var(--red)}
-
-/* Mega dropdown backdrop + grid */
-.ex-drop-backdrop{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.12)}
-.ex-drop-backdrop.open{display:block}
-.exd-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.exd-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--t2);cursor:pointer;transition:background 100ms;user-select:none}
-.exd-item:hover{background:var(--bg2)}
-.exd-item.on{color:var(--bl);font-weight:600}
-.exd-item .sb-checkbox{width:16px;height:16px;border-radius:4px;flex-shrink:0}
-.exd-item.on .sb-checkbox{background:var(--bl);border-color:var(--bl)}
-.exd-item .sb-count{margin-left:auto;font-size:11px;color:var(--t4)}
-
-/* ── Tablet (768px+): show pill labels ── */
-@media(min-width:768px){
-  .ex-hero{padding:20px 0 16px}
-  .ex-title{font-size:24px}
-  .ex-input{height:54px;font-size:15px;padding:0 16px}
-  .ex-submit{height:54px;padding:0 22px}
-  .ex-submit-text{display:inline}
-  .ex-pill-label{display:inline}
-  .ex-pill-chv{display:block}
-  .ex-pill{padding:6px 12px;gap:4px;border:1.5px solid var(--ln2)}
-  .ex-divider{margin:0 4px}
-  .exd-grid{grid-template-columns:1fr 1fr 1fr}
-}
-
-/* ── Desktop (1024px+) ── */
-@media(min-width:1024px){
-  .ex-hero{padding:28px 0 20px}
-  .ex-title{font-size:28px;letter-spacing:-.5px}
-  .ex-pill{padding:7px 14px;font-size:13px}
-  .ex-divider{margin:0 6px;height:28px}
-}
+/* (old .ex-search-box/.ex-pill CSS removed — now uses unified .ms-* component)
+   Keep .ex-hero/.ex-top/.ex-title for explore page layout */
+@media(min-width:768px){.ex-hero{padding:20px 0 16px}.ex-title{font-size:24px}}
+@media(min-width:1024px){.ex-hero{padding:28px 0 20px}.ex-title{font-size:28px;letter-spacing:-.5px}}
 .fchips{display:flex;gap:8px;overflow-x:auto;padding-bottom:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;scroll-padding:0 16px}
 .fchips::-webkit-scrollbar{display:none}
 .fchip{display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border-radius:980px;font-size:13px;font-weight:600;border:1.5px solid var(--ln2);background:#fff;color:var(--t3);white-space:nowrap;cursor:pointer;transition:all 140ms;flex-shrink:0;-webkit-tap-highlight-color:transparent;scroll-snap-align:start;text-decoration:none}
