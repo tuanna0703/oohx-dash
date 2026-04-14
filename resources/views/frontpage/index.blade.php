@@ -201,10 +201,20 @@
             <h2 class="section-hed">Đang còn trống</h2>
             <p class="section-sub" style="margin-top:10px;font-size:16px">Ảnh thực địa · Traffic data xác thực · Đặt booking nhanh</p>
           </div>
-          <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+            <div class="hs-nav">
+              <button type="button" class="hs-nav-btn" id="premium-prev" aria-label="Trước">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+              </button>
+              <button type="button" class="hs-nav-btn" id="premium-next" aria-label="Sau">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              </button>
+            </div>
+            <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
+          </div>
         </div>
       </div>
-    <div class="hs" style="margin-left:-22px;margin-right:-22px;padding-left:22px;padding-right:22px">
+    <div class="hs" id="premium-slider">
     @forelse($featuredScreens as $screen)
         @include('frontpage.partials.screen-card', ['screen' => $screen])
     @empty
@@ -604,6 +614,21 @@
 
 // ── MEGA SEARCH (unified component) ──
 @include('frontpage.partials.mega-search-js')
+
+// ── Slider arrows (reusable for any .hs slider) ──
+(function(){
+    function bindSlider(sliderId, prevId, nextId) {
+        var slider = document.getElementById(sliderId);
+        var prev = document.getElementById(prevId);
+        var next = document.getElementById(nextId);
+        if (!slider || !prev || !next) return;
+        var card = slider.querySelector('.sc-card,.inv-card');
+        var scrollAmt = card ? card.offsetWidth + 16 : 300;
+        prev.addEventListener('click', function(){ slider.scrollBy({left: -scrollAmt, behavior: 'smooth'}); });
+        next.addEventListener('click', function(){ slider.scrollBy({left: scrollAmt, behavior: 'smooth'}); });
+    }
+    bindSlider('premium-slider', 'premium-prev', 'premium-next');
+})();
 
 
 </script>
