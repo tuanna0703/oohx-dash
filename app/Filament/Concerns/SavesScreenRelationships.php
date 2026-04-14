@@ -42,7 +42,27 @@ trait SavesScreenRelationships
     private function resolveExternalId(array $data): array
     {
         if (empty($data['external_id']) && ! empty($data['name'])) {
-            $data['external_id'] = strtoupper(\Illuminate\Support\Str::slug($data['name'], '-'));
+            $base = strtoupper(\Illuminate\Support\Str::slug($data['name'], '-'));
+            $ownerId = $data['owner_id'] ?? null;
+            $extId = $base;
+            $n = 1;
+            $query = \App\Models\Screen::withoutGlobalScopes()
+                ->where('owner_id', $ownerId)
+                ->where('external_id', $extId);
+            if ($this->record ?? null) {
+                $query->where('id', '!=', $this->record->id);
+            }
+            while ($query->exists()) {
+                $n++;
+                $extId = $base . '-' . str_pad($n, 2, '0', STR_PAD_LEFT);
+                $query = \App\Models\Screen::withoutGlobalScopes()
+                    ->where('owner_id', $ownerId)
+                    ->where('external_id', $extId);
+                if ($this->record ?? null) {
+                    $query->where('id', '!=', $this->record->id);
+                }
+            }
+            $data['external_id'] = $extId;
         }
 
         if (empty($data['slug']) && ! empty($data['name'])) {
