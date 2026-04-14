@@ -55,35 +55,9 @@
         </button>
     </div>
 
-    {{-- Active filter tags --}}
-    @if($hasFilters)
-    <div class="ms-tags" id="ms-tags">
-        @foreach($activeCities as $c)
-        <span class="ms-tag" data-type="city" data-val="{{ $c }}">{{ $c }} <span class="ms-tag-x">&times;</span></span>
-        @endforeach
-        @foreach($activeNetworks as $n)
-        <span class="ms-tag" data-type="network" data-val="{{ $n }}">{{ $n }} <span class="ms-tag-x">&times;</span></span>
-        @endforeach
-        @foreach($activeVenueTypes as $v)
-        <span class="ms-tag" data-type="venue_type" data-val="{{ $v }}">{{ $v }} <span class="ms-tag-x">&times;</span></span>
-        @endforeach
-        <span class="ms-tag ms-tag-clear" id="ms-clear-all">Xoá tất cả</span>
-    </div>
-    @endif
-
-    {{-- Search chips (hero variant only) --}}
-    @if($isHero && !empty($searchChips))
-    <div class="ms-chips">
-        @foreach($searchChips->take(4) as $chip)
-        <span class="ms-chip" data-q="{{ e($chip) }}">{{ $chip }}</span>
-        @endforeach
-    </div>
-    @endif
-</div>
-
-{{-- Mega Dropdowns --}}
-<div class="ms-backdrop" id="ms-backdrop"></div>
-<div class="mega-anchor" id="ms-anchor">
+    {{-- Mega Dropdowns — inside ms-wrap so position:absolute aligns to search box --}}
+    <div class="ms-backdrop" id="ms-backdrop"></div>
+    <div class="ms-drop-anchor" id="ms-anchor">
     {{-- Drop: Tỉnh/Thành (grouped by region) --}}
     <div class="mega-drop" id="ms-drop-city">
         <div class="mega-head">
@@ -157,4 +131,30 @@
             <button class="btn btn-p btn-sm" type="button" id="ms-apply-type">Áp dụng</button>
         </div>
     </div>
+    </div>
+
+    {{-- Active filter tags --}}
+    @if($hasFilters)
+    <div class="ms-tags" id="ms-tags">
+        @foreach($activeCities as $c)
+        <span class="ms-tag" data-type="city" data-val="{{ $c }}">{{ $c }} <span class="ms-tag-x">&times;</span></span>
+        @endforeach
+        @foreach($activeNetworks as $n)
+        <span class="ms-tag" data-type="network" data-val="{{ $n }}">{{ $n }} <span class="ms-tag-x">&times;</span></span>
+        @endforeach
+        @foreach($activeVenueTypes as $v)
+        <span class="ms-tag" data-type="venue_type" data-val="{{ $v }}">{{ $v }} <span class="ms-tag-x">&times;</span></span>
+        @endforeach
+        <span class="ms-tag ms-tag-clear" id="ms-clear-all">Xoá tất cả</span>
+    </div>
+    @endif
+
+    {{-- Search chips (hero variant only) --}}
+    @if($isHero && !empty($searchChips))
+    <div class="ms-chips">
+        @foreach($searchChips->take(4) as $chip)
+        <span class="ms-chip" data-q="{{ e($chip) }}">{{ $chip }}</span>
+        @endforeach
+    </div>
+    @endif
 </div>
