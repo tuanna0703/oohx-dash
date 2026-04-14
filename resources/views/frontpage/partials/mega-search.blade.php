@@ -55,8 +55,7 @@
         </button>
     </div>
 
-    {{-- Mega Dropdowns — inside ms-wrap so position:absolute aligns to search box --}}
-    <div class="ms-backdrop" id="ms-backdrop"></div>
+    {{-- Mega Dropdowns (fixed positioned via JS) --}}
     <div class="ms-drop-anchor" id="ms-anchor">
     {{-- Drop: Tỉnh/Thành (grouped by region) --}}
     <div class="mega-drop" id="ms-drop-city">
@@ -158,3 +157,5 @@
     </div>
     @endif
 </div>
+{{-- Backdrop — outside ms-wrap to avoid layout interference --}}
+<div class="ms-backdrop" id="ms-backdrop"></div>
