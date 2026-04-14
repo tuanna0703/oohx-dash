@@ -185,7 +185,7 @@
         @endforelse
     </div>
 
-    <div class="load-more">{{ $screens->withQueryString()->links() }}</div>
+    {{ $screens->withQueryString()->links('frontpage.partials.pagination') }}
 </div>
 @endsection
 
