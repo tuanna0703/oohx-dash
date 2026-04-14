@@ -88,7 +88,7 @@ Route::get('/geocode/search', function () {
     }
 
     $response = Http::withHeaders([
-        'User-Agent' => 'AdTRUE-SSP/1.0',
+        'User-Agent' => 'OOHX/1.0',
         'Accept-Language' => 'vi,en',
     ])->get('https://nominatim.openstreetmap.org/search', [
         'format' => 'json',

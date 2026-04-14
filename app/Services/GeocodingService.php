@@ -101,7 +101,7 @@ class GeocodingService
     {
         try {
             $response = Http::timeout(10)
-                ->withHeaders(['User-Agent' => 'AdTRUE-SSP/1.0 (contact@adtrue.vn)'])
+                ->withHeaders(['User-Agent' => 'OOHX/1.0 (hi@oohx.net)'])
                 ->get(self::NOMINATIM_URL, [
                     'lat'             => $lat,
                     'lon'             => $lon,

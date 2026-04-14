@@ -34,8 +34,8 @@ class AdminPanelProvider extends PanelProvider
             ->domain(app()->environment('local') ? null : config('domains.dash'))
             ->login(\Filament\Pages\Auth\Login::class)
             ->loginRouteSlug('login')
-            ->colors(['primary' => Color::hex('#E5007D')]) // AdTRUE brand pink
-            ->brandName('AdTRUE SSP')
+            ->colors(['primary' => Color::hex('#2A4FF6')]) // OOHX brand blue
+            ->brandName('OOHX Admin')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 NavigationGroup::make('Inventory')->icon('heroicon-o-squares-2x2'),

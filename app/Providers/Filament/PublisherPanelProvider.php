@@ -32,8 +32,8 @@ class PublisherPanelProvider extends PanelProvider
             ->path('publisher')
             ->domain(app()->environment('local') ? null : config('domains.dash'))
             ->login()
-            ->colors(['primary' => Color::hex('#E5007D')]) // AdTRUE brand pink
-            ->brandName('AdTRUE SSP')
+            ->colors(['primary' => Color::hex('#2A4FF6')]) // OOHX brand blue
+            ->brandName('OOHX Publisher')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 NavigationGroup::make('Bookings')->icon('heroicon-o-clipboard-document-list'),

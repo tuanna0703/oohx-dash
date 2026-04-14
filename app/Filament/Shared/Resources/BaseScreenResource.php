@@ -322,8 +322,8 @@ abstract class BaseScreenResource extends Resource
                     Forms\Components\Select::make('player_type')
                         ->label('Player type')
                         ->options([
-                            'adtrue_android' => 'AdTRUE Android',
-                            'adtrue_webview' => 'AdTRUE WebView',
+                            'adtrue_android' => 'OOHX Android',
+                            'adtrue_webview' => 'OOHX WebView',
                             'third_party'    => '3rd Party Player',
                             'vast_only'      => 'VAST Only',
                         ])
@@ -684,8 +684,8 @@ abstract class BaseScreenResource extends Resource
                             Infolists\Components\TextEntry::make('player_type')
                                 ->label('Player type')
                                 ->formatStateUsing(fn ($state) => match ($state) {
-                                    'adtrue_android' => 'AdTRUE Android',
-                                    'adtrue_webview' => 'AdTRUE WebView',
+                                    'adtrue_android' => 'OOHX Android',
+                                    'adtrue_webview' => 'OOHX WebView',
                                     'third_party'    => '3rd Party',
                                     'vast_only'      => 'VAST Only',
                                     default          => $state ?? '—',

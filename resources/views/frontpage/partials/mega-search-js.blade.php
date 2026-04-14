@@ -76,8 +76,8 @@
     });
 
     // ── Build URL from current state ──
-    // Detect target page: stay on current page path
-    var msTarget = window.location.pathname;
+    // Detect target page: homepage → /explore, others → stay on current path
+    var msTarget = (window.location.pathname === '/' || window.location.pathname === '') ? '/explore' : window.location.pathname;
 
     function buildUrl() {
         var params = new URLSearchParams();

@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// AdTRUE SSP — Database Migrations (run in order)
+// OOHX — Database Migrations (run in order)
 // Copy mỗi class vào file riêng trong database/migrations/
 // ============================================================
 
