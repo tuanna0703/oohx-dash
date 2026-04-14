@@ -69,11 +69,4 @@ trait HasSlug
         return $slug;
     }
 
-    /**
-     * Get the route key for Laravel route model binding.
-     */
-    public function getRouteKeyName(): string
-    {
-        return 'slug';
-    }
 }
