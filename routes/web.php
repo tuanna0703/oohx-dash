@@ -38,7 +38,7 @@ Route::domain($fpDomain)->group(function () {
     Route::get('/products/{slug}',    [ProductController::class, 'show'])->name('fp.product-detail');
 
     // ── Buyer auth (no guest middleware — accessible always) ──
-    Route::get('/login',              [BuyerAuthController::class, 'showLogin'])->name('buyer.login');
+    Route::get('/login',              [BuyerAuthController::class, 'showLogin'])->name('login');
     Route::post('/login',             [BuyerAuthController::class, 'login']);
     Route::get('/register',           [BuyerAuthController::class, 'showRegister'])->name('buyer.register');
     Route::post('/register',          [BuyerAuthController::class, 'register']);

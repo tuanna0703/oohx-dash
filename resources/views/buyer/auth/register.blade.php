@@ -57,7 +57,7 @@
         </form>
 
         <div class="auth-footer">
-            Đã có tài khoản? <a href="{{ route('buyer.login') }}">Đăng nhập</a>
+            Đã có tài khoản? <a href="{{ route('login') }}">Đăng nhập</a>
         </div>
     </div>
 </div>

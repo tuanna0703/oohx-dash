@@ -18,7 +18,7 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('buyer.login') }}" class="auth-form">
+        <form method="POST" action="/login" class="auth-form">
             @csrf
             <div class="auth-field">
                 <label for="email">Email</label>

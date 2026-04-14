@@ -61,7 +61,7 @@
             </div>
             @else
             {{-- Guest state --}}
-            <a href="{{ route('buyer.login') }}" class="btn btn-s btn-sm hdr-login">Đăng nhập</a>
+            <a href="{{ route('login') }}" class="btn btn-s btn-sm hdr-login">Đăng nhập</a>
             <a href="{{ route('buyer.register') }}" class="btn btn-p btn-sm hdr-register">Đăng ký</a>
             @endauth
             {{-- Hamburger — visible < 1024px --}}
@@ -120,7 +120,7 @@
         </form>
         @else
         <a href="{{ route('buyer.register') }}" class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px">Đăng ký</a>
-        <a href="{{ route('buyer.login') }}" class="btn btn-s" style="width:100%;justify-content:center;border-radius:10px">Đăng nhập</a>
+        <a href="{{ route('login') }}" class="btn btn-s" style="width:100%;justify-content:center;border-radius:10px">Đăng nhập</a>
         @endauth
     </div>
 </div>

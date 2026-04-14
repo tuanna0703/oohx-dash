@@ -42,7 +42,24 @@ class OwnerResource extends Resource
                     ->options(['pending'=>'Pending','active'=>'Active','suspended'=>'Suspended'])
                     ->default('pending')->required(),
             ]),
-            Forms\Components\Section::make('Revenue & Billing')->columns(2)->schema([
+
+            Forms\Components\Section::make('Hồ sơ công khai')->columns(2)->collapsible()->schema([
+                Forms\Components\TextInput::make('tagline')
+                    ->label('Tagline')->maxLength(255)->columnSpan(2),
+                Forms\Components\RichEditor::make('about')
+                    ->label('Giới thiệu')->columnSpan(2),
+                Forms\Components\FileUpload::make('logo_url')
+                    ->label('Logo')->image()->disk('public')->directory('owners/logos')->maxSize(5120),
+                Forms\Components\FileUpload::make('cover_url')
+                    ->label('Ảnh bìa')->image()->disk('public')->directory('owners/covers')->maxSize(10240),
+                Forms\Components\TextInput::make('website')->label('Website')->url(),
+                Forms\Components\TextInput::make('email')->label('Email')->email(),
+                Forms\Components\TextInput::make('phone')->label('Điện thoại')->tel()->maxLength(30),
+                Forms\Components\TextInput::make('founded')->label('Năm thành lập')->numeric(),
+                Forms\Components\Toggle::make('featured')->label('Featured'),
+            ]),
+
+            Forms\Components\Section::make('Revenue & Billing')->columns(2)->collapsible()->schema([
                 Forms\Components\TextInput::make('revenue_share_pct')
                     ->label('Revenue Share %')->numeric()->default(70)
                     ->minValue(0)->maxValue(100)->suffix('%'),
