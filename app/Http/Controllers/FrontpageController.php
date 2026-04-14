@@ -61,9 +61,10 @@ class FrontpageController extends Controller
     {
         $vnCatLabels = $this->fp->getVnCategoryLabels();
         $vnCatSlugs  = $this->fp->getVnCategorySlugs();
+        $vnCatIcons  = $this->fp->getVnCategoryIcons();
         $pins = $this->fp->getMapPins($request);
 
-        $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs) {
+        $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs, $vnCatIcons) {
             $catId = $p->inventory?->vn_category_id;
             $product = $p->relationLoaded('products') ? $p->products->first() : null;
             return [
@@ -77,6 +78,7 @@ class FrontpageController extends Controller
                 'price'     => (float) ($p->inventory?->floor_cpm ?? 0),
                 'type'      => $vnCatSlugs[$catId] ?? '',
                 'typeLabel' => $vnCatLabels[$catId] ?? '',
+                'icon'      => $vnCatIcons[$catId] ?? 'tv',
                 'product'   => $product ? [
                     'slug'        => $product->slug,
                     'name'        => $product->name,

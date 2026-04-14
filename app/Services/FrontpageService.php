@@ -123,6 +123,20 @@ class FrontpageService
         );
     }
 
+    /**
+     * Cached lookup: vn_category_id → icon (Material Icons name).
+     */
+    public function getVnCategoryIcons(): array
+    {
+        return Cache::remember('fp:vn_category_icons', 3600, fn () =>
+            DB::table('venue_categories')
+                ->where('is_active', true)
+                ->whereNotNull('icon')
+                ->pluck('icon', 'id')
+                ->all()
+        );
+    }
+
     public function getTopCities(int $limit = 8): Collection
     {
         return Cache::remember('fp:top_cities', 1800, function () use ($limit) {

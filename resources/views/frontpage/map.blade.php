@@ -9,15 +9,21 @@
 #leaflet-map{position:absolute;inset:0;z-index:0}
 #leaflet-map .leaflet-control-zoom{display:none}
 
-/* ── Individual pin (zoom 14+) ── */
+/* ── Pin: icon + label mode (zoom ≥ 15) ── */
 .oohx-pin{background:none;border:none}
-.oohx-pin-box{border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform 200ms var(--spring)}
+.oohx-pin-box{border-radius:10px;padding:5px 10px;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform 200ms var(--spring)}
 .oohx-pin-box:hover{transform:scale(1.1)}
+.oohx-pin-box svg{width:14px;height:14px;flex-shrink:0}
 .oohx-pin-arrow{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;margin:-1px auto 0}
-.oohx-pin--bl .oohx-pin-box{background:var(--bl)}.oohx-pin--bl .oohx-pin-arrow{border-top:8px solid var(--bl)}
-.oohx-pin--grn .oohx-pin-box{background:var(--grn)}.oohx-pin--grn .oohx-pin-arrow{border-top:8px solid var(--grn)}
-.oohx-pin--org .oohx-pin-box{background:var(--org)}.oohx-pin--org .oohx-pin-arrow{border-top:8px solid var(--org)}
-.oohx-pin--red .oohx-pin-box{background:var(--red)}.oohx-pin--red .oohx-pin-arrow{border-top:8px solid var(--red)}
+/* Pin: icon-only mode (zoom < 15) */
+.oohx-pin-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.25);cursor:pointer;transition:transform 200ms var(--spring);border:2px solid rgba(255,255,255,.9)}
+.oohx-pin-icon:hover{transform:scale(1.15)}
+.oohx-pin-icon svg{width:14px;height:14px;flex-shrink:0}
+/* Colors for both modes */
+.oohx-pin--bl .oohx-pin-box,.oohx-pin--bl .oohx-pin-icon{background:var(--bl)}.oohx-pin--bl .oohx-pin-arrow{border-top:8px solid var(--bl)}
+.oohx-pin--grn .oohx-pin-box,.oohx-pin--grn .oohx-pin-icon{background:var(--grn)}.oohx-pin--grn .oohx-pin-arrow{border-top:8px solid var(--grn)}
+.oohx-pin--org .oohx-pin-box,.oohx-pin--org .oohx-pin-icon{background:var(--org)}.oohx-pin--org .oohx-pin-arrow{border-top:8px solid var(--org)}
+.oohx-pin--red .oohx-pin-box,.oohx-pin--red .oohx-pin-icon{background:var(--red)}.oohx-pin--red .oohx-pin-arrow{border-top:8px solid var(--red)}
 
 /* ── Cluster circles ── */
 .marker-cluster{background:none !important;border:none !important}
@@ -215,13 +221,39 @@
     // ── Pin color by type ──
     function pinColor(type) {
         if (!type) return 'bl';
-        if (type.indexOf('outdoor') >= 0) return 'bl';
-        if (type.indexOf('indoor') >= 0 || type.indexOf('mall') >= 0) return 'grn';
-        if (type.indexOf('transit') >= 0 || type.indexOf('airport') >= 0) return 'org';
+        if (type === 'roadside') return 'bl';
+        if (type === 'mall' || type === 'retail') return 'grn';
+        if (type === 'transit') return 'org';
+        if (type === 'healthcare' || type === 'education') return 'red';
+        if (type === 'food-beverage' || type === 'entertainment') return 'org';
         return 'bl';
     }
 
-    // ── Format price ──
+    // ── SVG icons per venue type (inline, 16x16) ──
+    var PIN_ICONS = {
+        'mall':          '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
+        'retail':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
+        'transit':       '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>',
+        'roadside':      '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
+        'office':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>',
+        'residential':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>',
+        'food-beverage': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>',
+        'healthcare':    '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>',
+        'education':     '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>',
+        'hospitality':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2V10c0-2.21-1.79-4-4-4z"/></svg>',
+        'entertainment': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>',
+        'sports-fitness':'<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>',
+    };
+    var DEFAULT_ICON = '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
+
+    // Short labels for pins
+    var PIN_LABELS = {
+        'mall': 'TTTM', 'retail': 'Bán lẻ', 'transit': 'Giao thông', 'roadside': 'Outdoor',
+        'office': 'VP', 'residential': 'Khu DC', 'food-beverage': 'F&B', 'healthcare': 'Y tế',
+        'education': 'GD', 'hospitality': 'KS', 'entertainment': 'Giải trí', 'sports-fitness': 'Gym',
+    };
+
+    // ── Format price (for popup only) ──
     function fmtPrice(p) {
         if (p >= 1e9) return (p / 1e9).toFixed(1).replace('.0','') + 'B';
         if (p >= 1e6) return Math.round(p / 1e6) + 'M';
@@ -272,19 +304,42 @@
     });
     map.addLayer(clusterGroup);
 
+    // ── Build pin icon based on zoom level ──
+    function createPinIcon(pin, zoom) {
+        var col = pinColor(pin.type);
+        var svg = PIN_ICONS[pin.type] || DEFAULT_ICON;
+
+        if (zoom >= 15) {
+            // Icon + short label
+            var label = PIN_LABELS[pin.type] || pin.typeLabel || '';
+            return L.divIcon({
+                className: 'oohx-pin oohx-pin--' + col,
+                html: '<div class="oohx-pin-box">' + svg + '<span>' + label + '</span></div><div class="oohx-pin-arrow"></div>',
+                iconSize: [90, 36],
+                iconAnchor: [45, 36],
+            });
+        } else {
+            // Icon only (compact)
+            return L.divIcon({
+                className: 'oohx-pin oohx-pin--' + col,
+                html: '<div class="oohx-pin-icon">' + svg + '</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+            });
+        }
+    }
+
+    var currentZoom = map.getZoom();
+    var lastPinMode = currentZoom >= 15 ? 'label' : 'icon';
+
     function renderPins(pinList) {
         clusterGroup.clearLayers();
         markers = [];
+        currentZoom = map.getZoom();
 
         var markerArray = [];
         pinList.forEach(function(pin) {
-            var col = pinColor(pin.type);
-            var icon = L.divIcon({
-                className: 'oohx-pin oohx-pin--' + col,
-                html: '<div class="oohx-pin-box">' + fmtPrice(pin.price) + '</div><div class="oohx-pin-arrow"></div>',
-                iconSize: [70, 36],
-                iconAnchor: [35, 36],
-            });
+            var icon = createPinIcon(pin, currentZoom);
 
             var marker = L.marker([pin.lat, pin.lng], {icon: icon});
             marker._pinData = pin;
@@ -304,6 +359,18 @@
     }
 
     renderPins(PINS);
+
+    // Re-render pin icons when zoom crosses threshold (icon ↔ icon+label)
+    map.on('zoomend', function() {
+        var zoom = map.getZoom();
+        var mode = zoom >= 15 ? 'label' : 'icon';
+        if (mode !== lastPinMode) {
+            lastPinMode = mode;
+            markers.forEach(function(m) {
+                m.marker.setIcon(createPinIcon(m.pin, zoom));
+            });
+        }
+    });
 
     // Fit bounds
     if (PINS.length > 0) {
