@@ -290,6 +290,7 @@ class FrontpageService
         return Cache::remember("fp:owner:{$slug}", 900, function () use ($slug) {
             $owner = Owner::where('slug', $slug)
                 ->where('status', 'active')
+                ->with(['province:id,full_name', 'commune:id,full_name'])
                 ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
                 ->first();
 

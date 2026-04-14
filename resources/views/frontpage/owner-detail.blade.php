@@ -218,6 +218,23 @@
                         </div>
                     </div>
                     @endif
+
+                    @php
+                        $addressParts = array_filter([
+                            $owner->address,
+                            $owner->commune?->full_name,
+                            $owner->province?->full_name,
+                        ]);
+                    @endphp
+                    @if(!empty($addressParts))
+                    <div class="fp-info-row">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <div>
+                            <div class="fp-info-val">{{ implode(', ', $addressParts) }}</div>
+                            <div class="fp-info-label">Trụ sở</div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Card: Thống kê --}}
