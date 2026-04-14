@@ -17,12 +17,18 @@ trait HasSlug
         static::creating(function ($model) {
             if (empty($model->slug)) {
                 $model->slug = static::generateUniqueSlug($model->{$model->slugSource()}, $model);
+            } else {
+                // Validate user-provided slug is unique
+                $model->slug = static::ensureUniqueSlug($model->slug, $model);
             }
         });
 
         static::updating(function ($model) {
-            // Only auto-regenerate if name changed AND slug was not manually edited
-            if ($model->isDirty($model->slugSource()) && ! $model->isDirty('slug')) {
+            if ($model->isDirty('slug') && ! empty($model->slug)) {
+                // User manually edited slug — ensure unique
+                $model->slug = static::ensureUniqueSlug($model->slug, $model);
+            } elseif ($model->isDirty($model->slugSource()) && ! $model->isDirty('slug')) {
+                // Name changed, slug not manually edited — regenerate
                 $model->slug = static::generateUniqueSlug($model->{$model->slugSource()}, $model);
             }
         });
@@ -34,39 +40,56 @@ trait HasSlug
     }
 
     /**
-     * Generate a unique, SEO-friendly slug.
-     * Supports Vietnamese characters → ASCII transliteration.
+     * Generate a unique, SEO-friendly slug from source text.
+     * Supports Vietnamese → ASCII transliteration.
+     * Checks against ALL records including soft-deleted.
      */
     public static function generateUniqueSlug(string $source, $model = null): string
     {
         $slug = Str::slug($source, '-', 'vi');
 
-        // Fallback if slug is empty (e.g. all special chars)
         if ($slug === '') {
             $slug = 'item-' . Str::random(6);
         }
 
-        // Truncate to reasonable length for URLs
         $slug = Str::limit($slug, 120, '');
 
-        // Ensure uniqueness
+        return static::ensureUniqueSlug($slug, $model);
+    }
+
+    /**
+     * Ensure slug is unique across all records (including soft-deleted).
+     * Appends -2, -3, etc. if duplicate found.
+     */
+    public static function ensureUniqueSlug(string $slug, $model = null): string
+    {
         $original = $slug;
         $count = 1;
-        $query = static::withoutGlobalScopes()->where('slug', $slug);
-        if ($model && $model->exists) {
-            $query->where('id', '!=', $model->id);
-        }
 
-        while ($query->exists()) {
+        while (static::slugExists($slug, $model)) {
             $count++;
             $slug = $original . '-' . $count;
-            $query = static::withoutGlobalScopes()->where('slug', $slug);
-            if ($model && $model->exists) {
-                $query->where('id', '!=', $model->id);
-            }
         }
 
         return $slug;
     }
 
+    /**
+     * Check if slug exists in DB (including soft-deleted records).
+     */
+    private static function slugExists(string $slug, $model = null): bool
+    {
+        $query = static::withoutGlobalScopes()->where('slug', $slug);
+
+        // Include soft-deleted records if model uses SoftDeletes
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive(static::class))) {
+            $query->withTrashed();
+        }
+
+        if ($model && $model->exists) {
+            $query->where($model->getKeyName(), '!=', $model->getKey());
+        }
+
+        return $query->exists();
+    }
 }
