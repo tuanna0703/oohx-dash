@@ -117,10 +117,11 @@
         <div class="mega-body" style="max-height:50vh">
             <div class="ms-grid">
                 @foreach(($filters['formats'] ?? collect()) as $f)
-                <label class="ms-grid-item {{ in_array($f['type'], $activeVenueTypes) ? 'on' : '' }}" data-code="{{ $f['type'] }}">
+                @php $fType = is_array($f) ? $f['type'] : $f->type; $fLabel = is_array($f) ? $f['label'] : $f->label; $fCount = is_array($f) ? $f['count'] : $f->count; @endphp
+                <label class="ms-grid-item {{ in_array($fType, $activeVenueTypes) ? 'on' : '' }}" data-code="{{ $fType }}">
                     <div class="sb-checkbox"></div>
-                    <span>{{ $f['label'] }}</span>
-                    <span class="sb-count">{{ $f['count'] }}</span>
+                    <span>{{ $fLabel }}</span>
+                    <span class="sb-count">{{ $fCount }}</span>
                 </label>
                 @endforeach
             </div>
