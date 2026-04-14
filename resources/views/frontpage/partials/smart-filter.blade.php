@@ -69,7 +69,8 @@
         <div class="sft-label">Loại hình</div>
         <div class="sft-chips sft-chips-wrap" data-max="4">
             @foreach($filters['formats'] as $f)
-            <button type="button" class="sft-chip {{ in_array($f['type'], $activeTypes) ? 'on' : '' }}" data-group="venue_type" data-val="{{ $f['type'] }}">{{ $f['label'] }} <span class="sft-chip-count">{{ $f['count'] }}</span></button>
+            @php $fType = is_array($f) ? $f['type'] : $f->type; $fLabel = is_array($f) ? $f['label'] : $f->label; $fCount = is_array($f) ? $f['count'] : $f->count; @endphp
+            <button type="button" class="sft-chip {{ in_array($fType, $activeTypes) ? 'on' : '' }}" data-group="venue_type" data-val="{{ $fType }}">{{ $fLabel }} <span class="sft-chip-count">{{ $fCount }}</span></button>
             @endforeach
         </div>
     </div>
