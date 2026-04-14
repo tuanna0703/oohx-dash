@@ -201,25 +201,23 @@
             <h2 class="section-hed">Đang còn trống</h2>
             <p class="section-sub" style="margin-top:10px;font-size:16px">Ảnh thực địa · Traffic data xác thực · Đặt booking nhanh</p>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-            <div class="hs-nav">
-              <button type="button" class="hs-nav-btn" id="premium-prev" aria-label="Trước">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-              </button>
-              <button type="button" class="hs-nav-btn" id="premium-next" aria-label="Sau">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-              </button>
-            </div>
-            <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
-          </div>
+          <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="flex-shrink:0;align-self:flex-end">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
         </div>
       </div>
-    <div class="hs" id="premium-slider">
-    @forelse($featuredScreens as $screen)
-        @include('frontpage.partials.screen-card', ['screen' => $screen])
-    @empty
-        <div style="padding:40px;text-align:center;color:var(--t4)">Chưa có inventory</div>
-    @endforelse
+    <div class="hs-container">
+      <button type="button" class="hs-arrow hs-arrow--prev" id="premium-prev" aria-label="Trước">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      </button>
+      <div class="hs" id="premium-slider">
+        @forelse($featuredScreens as $screen)
+            @include('frontpage.partials.screen-card', ['screen' => $screen])
+        @empty
+            <div style="padding:40px;text-align:center;color:var(--t4)">Chưa có inventory</div>
+        @endforelse
+      </div>
+      <button type="button" class="hs-arrow hs-arrow--next" id="premium-next" aria-label="Sau">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </button>
     </div>
   </div>
 </section>
