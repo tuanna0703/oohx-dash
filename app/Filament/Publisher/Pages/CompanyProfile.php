@@ -126,20 +126,38 @@ class CompanyProfile extends Page implements HasForms
                                     ->helperText('Owner sẽ xuất hiện ở mục Featured trên trang chủ'),
                             ]),
 
-                        // ── Tab 4: Vị trí trụ sở ──
+                        // ── Tab 4: Trụ sở ──
                         Forms\Components\Tabs\Tab::make('Trụ sở')
                             ->icon('heroicon-o-map-pin')
                             ->columns(2)
                             ->schema([
+                                Forms\Components\TextInput::make('address')
+                                    ->label('Địa chỉ')
+                                    ->maxLength(255)
+                                    ->placeholder('Số 123, Đường ABC')
+                                    ->columnSpan(2),
+
+                                Forms\Components\TextInput::make('district')
+                                    ->label('Quận / Huyện')
+                                    ->maxLength(100)
+                                    ->placeholder('Quận Cầu Giấy'),
+
+                                Forms\Components\TextInput::make('city')
+                                    ->label('Tỉnh / Thành phố')
+                                    ->maxLength(100)
+                                    ->placeholder('Hà Nội'),
+
                                 Forms\Components\TextInput::make('headquarters_lat')
                                     ->label('Latitude')
                                     ->numeric()
-                                    ->step(0.0000001),
+                                    ->step(0.0000001)
+                                    ->placeholder('21.0285'),
 
                                 Forms\Components\TextInput::make('headquarters_lng')
                                     ->label('Longitude')
                                     ->numeric()
-                                    ->step(0.0000001),
+                                    ->step(0.0000001)
+                                    ->placeholder('105.8542'),
                             ]),
                     ])
                     ->persistTabInQueryString('tab')
@@ -165,6 +183,9 @@ class CompanyProfile extends Page implements HasForms
             'website'          => $state['website'] ?? null,
             'email'            => $state['email'] ?? null,
             'phone'            => $state['phone'] ?? null,
+            'address'          => $state['address'] ?? null,
+            'city'             => $state['city'] ?? null,
+            'district'         => $state['district'] ?? null,
             'founded'          => $state['founded'] ?? null,
             'featured'         => $state['featured'] ?? false,
             'headquarters_lat' => $state['headquarters_lat'] ?? null,

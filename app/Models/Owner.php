@@ -16,8 +16,8 @@ class Owner extends Model
         'name', 'slug', 'type', 'onboard_method',
         'revenue_share_pct', 'status', 'billing_info', 'notes',
         'tagline', 'about', 'logo_url', 'cover_url',
-        'website', 'email', 'phone', 'founded',
-        'featured', 'headquarters_lat', 'headquarters_lng',
+        'website', 'email', 'phone', 'address', 'city', 'district',
+        'founded', 'featured', 'headquarters_lat', 'headquarters_lng',
     ];
 
     protected $casts = [
