@@ -99,6 +99,7 @@ class SiteImportService
                 ['owner_id' => $ownerId, 'external_id' => $s['external_id']],
                 [
                     'name'        => $s['name'],
+                    'slug'        => Site::generateUniqueSlug($s['name']),
                     'address'     => $s['address'],
                     'city'        => $s['city'],
                     'lat'         => $s['lat'],
@@ -144,6 +145,7 @@ class SiteImportService
                 [
                     'site_id' => $siteId,
                     'name'    => $sc['name'],
+                    'slug'    => Screen::generateUniqueSlug($sc['name']),
                     'active'  => true,
                     'status'  => 'offline',
                 ]
