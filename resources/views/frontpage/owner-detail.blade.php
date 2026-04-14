@@ -33,8 +33,9 @@
 .fp-header-actions { display:flex; gap:8px; flex-shrink:0; padding-bottom:4px; }
 
 /* Divider + Tabs */
-.fp-nav-wrap { max-width:var(--mw); margin:16px auto 0; padding:0 24px; border-bottom:1px solid var(--ln2); }
-.fp-tabs { display:flex; gap:0; overflow-x:auto; }
+.fp-nav-wrap { max-width:var(--mw); margin:16px auto 0; padding:0 24px; border-bottom:1px solid var(--ln2); overflow:hidden; }
+.fp-tabs { display:flex; gap:0; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+.fp-tabs::-webkit-scrollbar { display:none; }
 .fp-tab { padding:12px 16px; font-size:15px; font-weight:600; color:var(--t3); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; white-space:nowrap; transition:color .15s; border-radius:8px 8px 0 0; }
 .fp-tab:hover { background:var(--bg2); color:var(--t1); }
 .fp-tab.on { color:var(--bl); border-bottom-color:var(--bl); }
