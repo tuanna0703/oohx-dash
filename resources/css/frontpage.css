@@ -696,14 +696,10 @@ ul{list-style:none}
 .hs>.sc-card,.hs>.inv-card{min-width:260px;max-width:300px;flex-shrink:0;scroll-snap-align:start}
 @media(min-width:768px){.hs>.sc-card,.hs>.inv-card{min-width:260px;max-width:280px}}
 @media(min-width:1200px){.hs>.sc-card,.hs>.inv-card{min-width:0;width:calc(25% - 12px);max-width:none}}
-/* Slider container + arrows beside cards */
-.hs-container{position:relative}
-.hs-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--ln2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);transition:all 140ms;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.hs-arrow:hover{border-color:var(--bl);color:var(--bl);background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-.hs-arrow svg{width:16px;height:16px}
-.hs-arrow--prev{left:-18px}
-.hs-arrow--next{right:-18px}
-@media(max-width:1023px){.hs-arrow{display:none}}
+/* Slider dash dots */
+.hs-dots{display:flex;justify-content:center;gap:6px;margin-top:4px}
+.hs-dot{width:24px;height:4px;border-radius:2px;background:var(--ln2);border:none;padding:0;cursor:pointer;transition:all 200ms}
+.hs-dot.on{width:36px;background:var(--bl)}
 
 /* Inventory card (index.html long names) */
 .inv-photo{position:relative;height:180px;overflow:hidden;background:var(--bg2)}

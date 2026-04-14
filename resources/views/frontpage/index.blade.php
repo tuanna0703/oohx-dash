@@ -204,21 +204,14 @@
           <a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="flex-shrink:0;align-self:flex-end">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a>
         </div>
       </div>
-    <div class="hs-container">
-      <button type="button" class="hs-arrow hs-arrow--prev" id="premium-prev" aria-label="Trước">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-      </button>
-      <div class="hs" id="premium-slider">
-        @forelse($featuredScreens as $screen)
-            @include('frontpage.partials.screen-card', ['screen' => $screen])
-        @empty
-            <div style="padding:40px;text-align:center;color:var(--t4)">Chưa có inventory</div>
-        @endforelse
-      </div>
-      <button type="button" class="hs-arrow hs-arrow--next" id="premium-next" aria-label="Sau">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-      </button>
+    <div class="hs" id="premium-slider">
+      @forelse($featuredScreens as $screen)
+          @include('frontpage.partials.screen-card', ['screen' => $screen])
+      @empty
+          <div style="padding:40px;text-align:center;color:var(--t4)">Chưa có inventory</div>
+      @endforelse
     </div>
+    <div class="hs-dots" id="premium-dots"></div>
   </div>
 </section>
 
@@ -613,19 +606,59 @@
 // ── MEGA SEARCH (unified component) ──
 @include('frontpage.partials.mega-search-js')
 
-// ── Slider arrows (reusable for any .hs slider) ──
+// ── Slider dots (reusable) ──
 (function(){
-    function bindSlider(sliderId, prevId, nextId) {
+    function initDots(sliderId, dotsId) {
         var slider = document.getElementById(sliderId);
-        var prev = document.getElementById(prevId);
-        var next = document.getElementById(nextId);
-        if (!slider || !prev || !next) return;
-        var card = slider.querySelector('.sc-card,.inv-card');
-        var scrollAmt = card ? card.offsetWidth + 16 : 300;
-        prev.addEventListener('click', function(){ slider.scrollBy({left: -scrollAmt, behavior: 'smooth'}); });
-        next.addEventListener('click', function(){ slider.scrollBy({left: scrollAmt, behavior: 'smooth'}); });
+        var dotsEl = document.getElementById(dotsId);
+        if (!slider || !dotsEl) return;
+
+        var cards = slider.querySelectorAll('.sc-card,.inv-card');
+        if (cards.length === 0) return;
+
+        // Calculate how many "pages" of visible cards
+        function getPages() {
+            var sliderW = slider.offsetWidth;
+            var cardW = cards[0].offsetWidth + 16; // card + gap
+            var visible = Math.max(1, Math.floor(sliderW / cardW));
+            return Math.ceil(cards.length / visible);
+        }
+
+        function renderDots() {
+            var pages = getPages();
+            dotsEl.innerHTML = '';
+            for (var i = 0; i < pages; i++) {
+                var dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'hs-dot' + (i === 0 ? ' on' : '');
+                dot.dataset.page = i;
+                dot.addEventListener('click', function() {
+                    var pg = parseInt(this.dataset.page);
+                    var cardW = cards[0].offsetWidth + 16;
+                    var sliderW = slider.offsetWidth;
+                    var visible = Math.max(1, Math.floor(sliderW / cardW));
+                    slider.scrollTo({ left: pg * visible * cardW, behavior: 'smooth' });
+                });
+                dotsEl.appendChild(dot);
+            }
+        }
+
+        // Update active dot on scroll
+        slider.addEventListener('scroll', function() {
+            var cardW = cards[0].offsetWidth + 16;
+            var sliderW = slider.offsetWidth;
+            var visible = Math.max(1, Math.floor(sliderW / cardW));
+            var current = Math.round(slider.scrollLeft / (visible * cardW));
+            dotsEl.querySelectorAll('.hs-dot').forEach(function(d, i) {
+                d.classList.toggle('on', i === current);
+            });
+        }, { passive: true });
+
+        renderDots();
+        window.addEventListener('resize', renderDots);
     }
-    bindSlider('premium-slider', 'premium-prev', 'premium-next');
+
+    initDots('premium-slider', 'premium-dots');
 })();
 
 
