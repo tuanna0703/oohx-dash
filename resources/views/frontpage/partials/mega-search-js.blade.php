@@ -1,7 +1,6 @@
-{{-- Mega Search JS — include once per page via @push('scripts')
+{{-- Mega Search JS — raw JS, include inside existing <script> block
      Handles: dropdown toggle, item selection, URL building, tag removal, chip click
 --}}
-<script>
 (function(){
     var openDrop = null;
     var backdrop = document.getElementById('ms-backdrop');
@@ -125,4 +124,3 @@
         });
     });
 })();
-</script>
