@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasOwnerScope;
 use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,6 +66,17 @@ class Screen extends Model
                 $screen->uuid = (string) Str::uuid();
             }
         });
+
+        // Clear frontpage caches when screen data changes
+        $clearCache = function () {
+            Cache::forget('fp:locations');
+            Cache::forget('fp:filters');
+            Cache::forget('fp:hero_stats');
+            Cache::forget('fp:featured_screens');
+        };
+        static::created($clearCache);
+        static::updated($clearCache);
+        static::deleted($clearCache);
 
         static::deleting(function (Screen $screen) {
             if (! $screen->isForceDeleting()) {

@@ -44,11 +44,11 @@
     <a href="{{ route('fp.listing') }}">Inventory</a>
     @if($bcCatLabel)
     {!! $bcSep !!}
-    <a href="{{ route('fp.listing', ['venue_type' => [$bcCatSlug]]) }}">{{ $bcCatLabel }}</a>
+    <a href="/explore?venue_type[]={{ $bcCatSlug }}">{{ $bcCatLabel }}</a>
     @endif
     @if($screen->site?->city)
     {!! $bcSep !!}
-    <a href="{{ route('fp.listing', ['city' => [\Illuminate\Support\Str::slug(explode('>', $screen->site->city)[0])]]) }}">{{ trim(explode('>', $screen->site->city)[0]) }}</a>
+    <a href="/explore?city[]={{ \Illuminate\Support\Str::slug(explode('>', $screen->site->city)[0]) }}">{{ trim(explode('>', $screen->site->city)[0]) }}</a>
     @endif
     {!! $bcSep !!}
     <span style="color:var(--t2)">{{ $screen->name }}</span>

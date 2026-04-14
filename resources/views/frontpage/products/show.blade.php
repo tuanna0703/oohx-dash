@@ -37,7 +37,7 @@
         <a href="/products?category[]={{ $product->category }}" style="color:var(--bl);text-decoration:none">{{ $product->category_label }}</a>
         @if($product->city)
         <span>›</span>
-        <a href="/products?city[]={{ urlencode($product->city) }}" style="color:var(--bl);text-decoration:none">{{ $product->city }}</a>
+        <a href="/products?city[]={{ $product->city }}" style="color:var(--bl);text-decoration:none">{{ $product->city }}</a>
         @endif
         <span>›</span>
         <span style="color:var(--t2)">{{ $product->name }}</span>

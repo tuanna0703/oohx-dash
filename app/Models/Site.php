@@ -29,6 +29,15 @@ class Site extends Model
 
     protected static function booted(): void
     {
+        // Clear frontpage location caches when site data changes
+        $clearCache = function () {
+            \Illuminate\Support\Facades\Cache::forget('fp:locations');
+            \Illuminate\Support\Facades\Cache::forget('fp:filters');
+        };
+        static::created($clearCache);
+        static::updated($clearCache);
+        static::deleted($clearCache);
+
         // Khi Site đổi owner → đồng bộ owner_id cho tất cả Screens con
         static::updating(function (Site $site) {
             if ($site->isDirty('owner_id') && $site->owner_id) {
