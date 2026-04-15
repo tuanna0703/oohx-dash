@@ -64,9 +64,9 @@ class VenueCategoryResource extends Resource
                     ->imageCropAspectRatio('16:9')
                     ->imageResizeTargetWidth('800')
                     ->imageResizeTargetHeight('450')
-                    ->maxSize(2048)
+                    ->maxSize(51200)
                     ->columnSpan(2)
-                    ->helperText('Ảnh đại diện cho danh mục, hiển thị ở trang chủ. Khuyến nghị 800×450px, tối đa 2MB.'),
+                    ->helperText('Ảnh đại diện cho danh mục, hiển thị ở trang chủ. Khuyến nghị 800×450px, tối đa 50MB.'),
 
                 Forms\Components\Textarea::make('description')
                     ->label('Mô tả')
