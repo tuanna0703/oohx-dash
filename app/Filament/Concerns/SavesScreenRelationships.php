@@ -149,11 +149,16 @@ trait SavesScreenRelationships
         // (ví dụ: frequency_cap khi user không có quyền pricing)
         $existing = $screen->inventory;
 
+        // Auto-fill vn_category_id: form → existing → network's category
+        $vnCatId = $i['vn_category_id']
+            ?? $existing?->vn_category_id
+            ?? $screen->site?->network?->vn_category_id;
+
         ScreenInventory::updateOrCreate(
             ['screen_id' => $screen->id],
             [
                 'network_id'           => $i['network_id']           ?? null,
-                'vn_category_id'       => $i['vn_category_id']       ?? $existing?->vn_category_id,
+                'vn_category_id'       => $vnCatId,
                 'venue_type'           => $i['venue_type']           ?? $existing?->venue_type,
                 'spot_length'          => $i['spot_length']          ?? 15,
                 'max_spot_length'      => $i['max_spot_length']      ?? 30,

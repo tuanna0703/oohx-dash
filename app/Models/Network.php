@@ -18,6 +18,7 @@ class Network extends Model
         'owner_id', 'code', 'name', 'description',
         'logo', 'banner',
         'default_floor_cpm', 'default_floor_cpm_currency', 'status',
+        'vn_category_id',
     ];
 
     protected $casts = [
@@ -39,6 +40,11 @@ class Network extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(Owner::class);
+    }
+
+    public function vnCategory(): BelongsTo
+    {
+        return $this->belongsTo(VenueCategory::class, 'vn_category_id');
     }
 
     public function sites(): HasMany

@@ -4,6 +4,7 @@ namespace App\Filament\Shared\Resources;
 
 use App\Models\Network;
 use App\Models\Screen;
+use App\Models\VenueCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -84,6 +85,16 @@ abstract class BaseNetworkResource extends Resource
                         ->maxLength(100)
                         ->helperText('Tự động từ tên. Dùng để liên kết screens.'),
 
+                    Forms\Components\Select::make('vn_category_id')
+                        ->label('Loại hình (Venue Category)')
+                        ->options(fn () => VenueCategory::where('is_active', true)
+                            ->orderBy('sort_order')
+                            ->pluck('name_vi', 'id')
+                            ->toArray())
+                        ->required()
+                        ->searchable()
+                        ->helperText('Phân loại network theo danh mục OOHX. VD: Aeon Mall → Trung tâm thương mại'),
+
                     Forms\Components\Textarea::make('description')
                         ->columnSpan(2),
 
@@ -163,6 +174,12 @@ abstract class BaseNetworkResource extends Resource
                     ->placeholder('—')
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('vnCategory.name_vi')
+                    ->label('Loại hình')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('—'),
+
                 Tables\Columns\TextColumn::make('default_floor_cpm')
                     ->label('Floor CPM')
                     ->numeric(thousandsSeparator: ',')
@@ -200,6 +217,13 @@ abstract class BaseNetworkResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('vn_category_id')
+                    ->label('Loại hình')
+                    ->options(fn () => VenueCategory::where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name_vi', 'id')
+                        ->toArray()),
+
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(['active' => 'Active', 'paused' => 'Paused']),
