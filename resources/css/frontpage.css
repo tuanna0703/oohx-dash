@@ -1233,6 +1233,7 @@ input[type=range]{width:100%;accent-color:var(--bl);cursor:pointer}
 .gal-btn:hover{background:#fff;transform:scale(1.08)}
 .gal-btn.on{color:var(--red)}
 .gal-badge{position:absolute;bottom:14px;left:14px;z-index:3}
+.gal-badge .badge{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);color:#1a7d37;box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:700}
 .gal-count{position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,.58);backdrop-filter:blur(8px);color:#fff;border-radius:980px;padding:5px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;z-index:3}
 .gal-count svg{width:13px;height:13px}
 .gal-thumbs{display:grid;grid-template-columns:1fr 1fr;gap:4px}
