@@ -27,6 +27,7 @@
 @endsection
 
 @push('head')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>@media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}</style>
 @endpush
 
@@ -68,7 +69,7 @@
 <div class="detail-layout">
 <div>
 <h1 class="dtitle">{{ $screen->name }}</h1>
-<div class="dmeta"><div class="dloc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $screen->site?->city ?? '' }}</div><span class="msep"></span><div class="drat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--org)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> 4.9 <span style="font-size:13px;color:var(--t4);font-weight:500">(23 đánh giá)</span></div><span class="msep"></span><span class="badge b-bl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified</span></div>
+<div class="dmeta"><div class="dloc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $screen->site?->city ?? '' }}</div><span class="msep"></span><span style="font-size:13px;color:var(--t3)">{{ $screen->owner?->name ?? '' }}</span></div>
 <a href="{{ route('fp.owner-detail', $screen->owner?->slug ?? '#') }}" class="owner-mini"><div class="om-logo">{{ $screen->owner ? strtoupper(substr($screen->owner->name, 0, 2)) : '—' }}</div><div><div class="om-name">{{ $screen->owner?->name ?? '—' }}</div><div class="om-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified Partner</div></div><div class="om-r"><div style="text-align:right"><div style="font-size:12px;color:var(--t4)">{{ $screen->site?->network?->name ?? '' }}</div></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div></a>
 <div class="stats-row rv"><div class="stat-box"><div class="stat-n">{{ $screen->site?->name ?? '—' }}</div><div class="stat-l">Site</div></div><div class="stat-box"><div class="stat-n">{{ $screen->site?->network?->name ?? '—' }}</div><div class="stat-l">Network</div></div><div class="stat-box"><div class="stat-n">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'×'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div><div class="stat-l">Kích thước</div></div><div class="stat-box"><div class="stat-n">{{ $screen->inventory?->floor_cpm ? number_format((float)$screen->inventory->floor_cpm, 0, ',', '.') . 'đ' : '—' }}</div><div class="stat-l">Floor CPM</div></div></div>
 <div class="tabs"><div class="tab on" onclick="sw(this,'tp-info')">Thông tin</div><div class="tab" onclick="sw(this,'tp-avail')">Lịch trống</div><div class="tab" onclick="sw(this,'tp-map')">Vị trí</div><div class="tab" onclick="sw(this,'tp-review')">Đánh giá</div></div>
@@ -83,7 +84,18 @@
 <p style="font-size:14px;color:var(--t3);margin-bottom:20px">Xanh = còn trống · Cam = còn 1–2 slot · Đỏ = đã đặt hết.</p><div class="avail-grid"><div class="month-card"><div class="month-name">Tháng 5/2025</div><div class="cal-grid"><div class="cal-dh">T2</div><div class="cal-dh">T3</div><div class="cal-dh">T4</div><div class="cal-dh">T5</div><div class="cal-dh">T6</div><div class="cal-dh">T7</div><div class="cal-dh">CN</div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-ok">1</div><div class="cal-day cd-ok">2</div><div class="cal-day cd-ok">3</div><div class="cal-day cd-ok">4</div><div class="cal-day cd-ok">5</div><div class="cal-day cd-bk">6</div><div class="cal-day cd-pt">7</div><div class="cal-day cd-ok">8</div><div class="cal-day cd-ok">9</div><div class="cal-day cd-ok">10</div><div class="cal-day cd-ok">11</div><div class="cal-day cd-ok">12</div><div class="cal-day cd-bk">13</div><div class="cal-day cd-pt">14</div><div class="cal-day cd-ok">15</div><div class="cal-day cd-ok">16</div><div class="cal-day cd-ok">17</div><div class="cal-day cd-ok">18</div><div class="cal-day cd-ok">19</div><div class="cal-day cd-bk">20</div><div class="cal-day cd-ok">21</div><div class="cal-day cd-ok">22</div><div class="cal-day cd-ok">23</div><div class="cal-day cd-ok">24</div><div class="cal-day cd-ok">25</div><div class="cal-day cd-ok">26</div><div class="cal-day cd-ok">27</div><div class="cal-day cd-ok">28</div><div class="cal-day cd-ok">29</div><div class="cal-day cd-ok">30</div><div class="cal-day cd-ok">31</div></div></div><div class="month-card"><div class="month-name">Tháng 6/2025</div><div class="cal-grid"><div class="cal-dh">T2</div><div class="cal-dh">T3</div><div class="cal-dh">T4</div><div class="cal-dh">T5</div><div class="cal-dh">T6</div><div class="cal-dh">T7</div><div class="cal-dh">CN</div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-em"></div><div class="cal-day cd-ok">1</div><div class="cal-day cd-ok">2</div><div class="cal-day cd-bk">3</div><div class="cal-day cd-bk">4</div><div class="cal-day cd-pt">5</div><div class="cal-day cd-ok">6</div><div class="cal-day cd-ok">7</div><div class="cal-day cd-ok">8</div><div class="cal-day cd-ok">9</div><div class="cal-day cd-bk">10</div><div class="cal-day cd-bk">11</div><div class="cal-day cd-pt">12</div><div class="cal-day cd-ok">13</div><div class="cal-day cd-ok">14</div><div class="cal-day cd-ok">15</div><div class="cal-day cd-ok">16</div><div class="cal-day cd-ok">17</div><div class="cal-day cd-pt">18</div><div class="cal-day cd-ok">19</div><div class="cal-day cd-ok">20</div><div class="cal-day cd-ok">21</div><div class="cal-day cd-ok">22</div><div class="cal-day cd-ok">23</div><div class="cal-day cd-ok">24</div><div class="cal-day cd-ok">25</div><div class="cal-day cd-ok">26</div><div class="cal-day cd-ok">27</div><div class="cal-day cd-ok">28</div><div class="cal-day cd-ok">29</div><div class="cal-day cd-ok">30</div></div></div></div><div class="cal-legend"><div class="cl-i"><div class="cl-d" style="background:rgba(52,199,89,.4)"></div>Còn trống</div><div class="cl-i"><div class="cl-d" style="background:rgba(255,159,10,.4)"></div>Còn 1–2 slot</div><div class="cl-i"><div class="cl-d" style="background:rgba(255,59,48,.3)"></div>Đã đặt hết</div></div>
 </div>
 <div id="tp-map" class="tp">
-<div class="map-mock"><div class="map-bg"></div><div class="mpin" style="top:50%;left:48%"><div class="mpc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div></div><div class="map-chip"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Láng Hạ × Lê Văn Lương, Đống Đa, HN</div></div><div class="dist-grid"><div class="dist-box"><div class="dist-n">0.8 km</div><div class="dist-l">Vincom Nguyễn Chí Thanh</div></div><div class="dist-box"><div class="dist-n">1.2 km</div><div class="dist-l">Lotte Center</div></div><div class="dist-box"><div class="dist-n">2.1 km</div><div class="dist-l">Hồ Gươm</div></div></div>
+@if($screen->site?->lat && $screen->site?->lon)
+<div id="detail-map" style="width:100%;height:350px;border-radius:14px;border:1px solid var(--ln2);overflow:hidden;margin-bottom:16px"></div>
+<div style="font-size:13px;color:var(--t3)">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;vertical-align:-2px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    {{ $screen->site->address ?? '' }}{{ $screen->site->address && $screen->site->city ? ', ' : '' }}{{ $screen->site->city ?? '' }}
+</div>
+@else
+<div style="text-align:center;padding:48px 20px;color:var(--t4)">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--ln2)" style="width:48px;height:48px;margin:0 auto 16px;display:block"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+    <div style="font-size:14px;font-weight:600">Chưa có tọa độ GPS</div>
+</div>
+@endif
 </div>
 <div id="tp-review" class="tp">
 <div style="text-align:center;padding:48px 20px;color:var(--t4)">
@@ -101,9 +113,42 @@
 <div class="detail-sidebar">
 <div class="bp">
 <div class="bp-head"><div class="bp-price">{{ number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫</div><div style="font-size:13px;color:var(--t4);margin:4px 0 10px">/ tháng · Chưa bao gồm VAT</div><div class="bp-avail"><div class="bp-dot"></div>Còn trống</div></div>
-<div class="bp-body"><div class="bp-field"><div class="bp-lbl">Ngày bắt đầu</div><input class="bp-inp" type="date" value="{{ now()->addDays(7)->format('Y-m-d') }}"></div><div class="bp-field"><div class="bp-lbl">Thời lượng</div><select class="bp-inp"><option>1 tháng</option><option>2 tháng</option><option selected>3 tháng</option><option>6 tháng</option><option>12 tháng</option></select></div><div class="bp-field"><div class="bp-lbl">Brand / Campaign</div><input class="bp-inp" type="text" placeholder="VD: Honda Civic Launch Q2"></div><div class="bp-sum"><div class="bp-row"><span class="bp-rl">{{ number_format(($screen->inventory?->floor_cpm ?? 0)/1000000, 1) }}M × 3 tháng</span><span class="bp-rv">{{ number_format(($screen->inventory?->floor_cpm ?? 0) * 3, 0, ',', '.') }} ₫</span></div><div class="bp-row"><span class="bp-rl">VAT (10%)</span><span class="bp-rv">{{ number_format(($screen->inventory?->floor_cpm ?? 0) * 3 * 0.1, 0, ',', '.') }} ₫</span></div><div class="bp-row bp-total"><span class="bp-rl">Tổng cộng</span><span class="bp-rv">{{ number_format(($screen->inventory?->floor_cpm ?? 0) * 3 * 1.1, 0, ',', '.') }} ₫</span></div></div><div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div></div>
+@php $cpm = (float)($screen->inventory?->floor_cpm ?? 0); @endphp
+<div class="bp-body">
+<div class="bp-field"><div class="bp-lbl">Ngày bắt đầu</div><input class="bp-inp" type="date" value="{{ now()->addDays(7)->format('Y-m-d') }}" id="bp-start"></div>
+<div class="bp-field"><div class="bp-lbl">Thời lượng</div><select class="bp-inp" id="bp-duration"><option value="1">1 tháng</option><option value="2">2 tháng</option><option value="3" selected>3 tháng</option><option value="6">6 tháng</option><option value="12">12 tháng</option></select></div>
+<div class="bp-field"><div class="bp-lbl">Brand / Campaign</div><input class="bp-inp" type="text" placeholder="VD: Honda Civic Launch Q2"></div>
+<div class="bp-sum">
+<div class="bp-row"><span class="bp-rl" id="bp-calc-label">{{ number_format($cpm/1000000, 1) }}M × 3 tháng</span><span class="bp-rv" id="bp-calc-sub">{{ number_format($cpm * 3, 0, ',', '.') }} ₫</span></div>
+<div class="bp-row"><span class="bp-rl">VAT (10%)</span><span class="bp-rv" id="bp-calc-vat">{{ number_format($cpm * 3 * 0.1, 0, ',', '.') }} ₫</span></div>
+<div class="bp-row bp-total"><span class="bp-rl">Tổng cộng</span><span class="bp-rv" id="bp-calc-total">{{ number_format($cpm * 3 * 1.1, 0, ',', '.') }} ₫</span></div>
+</div>
+<div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div>
+</div>
 <div class="bp-foot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--grn)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> Thanh toán bảo mật bởi OOHX · Hoàn tiền 100% nếu hủy trước 48h</div></div>
-<div style="margin-top:16px;padding:18px;background:var(--bg2);border-radius:16px;border:1px solid var(--ln2)"><div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:12px">Cần tư vấn thêm?</div><div style="display:flex;flex-direction:column;gap:9px"><button class="btn btn-s" style="justify-content:flex-start;gap:10px;border-radius:10px;height:44px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:16px;height:16px;flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> Gọi ngay: 024 3xxx xxxx</button><button class="btn btn-s" style="justify-content:flex-start;gap:10px;border-radius:10px;height:44px;font-weight:600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:16px;height:16px;flex-shrink:0"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> Email: hi@oohx.net</button></div><div style="margin-top:12px;font-size:12px;color:var(--t4);display:flex;align-items:center;gap:5px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:13px;height:13px;flex-shrink:0"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-11h2v6h-2zm0-4h2v2h-2z"/></svg> AI sẽ đề xuất thêm vị trí phù hợp</div></div>
+@php
+    $ownerPhone = $screen->owner?->phone;
+    $ownerEmail = $screen->owner?->email;
+    $ownerName  = $screen->owner?->name ?? 'OOHX';
+@endphp
+<div style="margin-top:16px;padding:18px;background:var(--bg2);border-radius:16px;border:1px solid var(--ln2)">
+<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px">Liên hệ {{ $ownerName }}</div>
+<div style="font-size:12px;color:var(--t4);margin-bottom:12px">Media Owner quản lý vị trí này</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+@if($ownerPhone)
+<a href="tel:{{ $ownerPhone }}" class="btn btn-s" style="justify-content:flex-start;gap:10px;border-radius:10px;height:44px;font-weight:600;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:16px;height:16px;flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> Gọi: {{ $ownerPhone }}</a>
+@endif
+@if($ownerEmail)
+<a href="mailto:{{ $ownerEmail }}" class="btn btn-s" style="justify-content:flex-start;gap:10px;border-radius:10px;height:44px;font-weight:600;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:16px;height:16px;flex-shrink:0"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> Email: {{ $ownerEmail }}</a>
+@endif
+@if(!$ownerPhone && !$ownerEmail)
+<a href="mailto:hi@oohx.net" class="btn btn-s" style="justify-content:flex-start;gap:10px;border-radius:10px;height:44px;font-weight:600;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:16px;height:16px;flex-shrink:0"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> Liên hệ OOHX: hi@oohx.net</a>
+@endif
+</div>
+@if($screen->owner?->slug)
+<a href="/owners/{{ $screen->owner->slug }}" style="display:block;margin-top:10px;font-size:12px;color:var(--bl);font-weight:600;text-decoration:none">Xem hồ sơ {{ $ownerName }} &rarr;</a>
+@endif
+</div>
 </div>
 </div>{{-- /detail-sidebar --}}
 </div>{{-- /detail-layout --}}
@@ -113,18 +158,75 @@
 
 @push('scripts')
 <script>
+// Tab switching
 function sw(el,id){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
   document.querySelectorAll(".tp").forEach(p=>p.classList.remove("on"));
   el.classList.add("on");
   document.getElementById(id).classList.add("on");
 }
+
 (function(){
+  // Save button toggle
   var sb=document.getElementById("savebtn");
   if(sb)sb.addEventListener("click",function(){
     sb.classList.toggle("on");
     sb.querySelector("svg").setAttribute("fill",sb.classList.contains("on")?"var(--red)":"var(--t3)");
   });
+
+  // Share button — copy URL
+  var shareBtn = document.querySelectorAll('.gal-btn')[1];
+  if (shareBtn) shareBtn.addEventListener('click', function(){
+    if (navigator.share) {
+      navigator.share({title:document.title, url:window.location.href});
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(function(){
+        shareBtn.style.background='var(--bl-lt)';
+        setTimeout(function(){shareBtn.style.background='';},1500);
+      });
+    }
+  });
+
+  // Dynamic booking cost calculator
+  var cpm = {{ $cpm }};
+  var durSel = document.getElementById('bp-duration');
+  if (durSel) {
+    function fmtVND(n){ return n.toLocaleString('vi-VN'); }
+    function updateCalc(){
+      var months = parseInt(durSel.value) || 3;
+      var sub = cpm * months;
+      var vat = sub * 0.1;
+      var total = sub + vat;
+      var label = (cpm >= 1e6 ? (cpm/1e6).toFixed(1).replace('.0','') + 'M' : fmtVND(cpm)) + ' × ' + months + ' tháng';
+      document.getElementById('bp-calc-label').textContent = label;
+      document.getElementById('bp-calc-sub').textContent = fmtVND(sub) + ' ₫';
+      document.getElementById('bp-calc-vat').textContent = fmtVND(Math.round(vat)) + ' ₫';
+      document.getElementById('bp-calc-total').textContent = fmtVND(Math.round(total)) + ' ₫';
+    }
+    durSel.addEventListener('change', updateCalc);
+  }
+
+  // Leaflet map for location tab
+  @if($screen->site?->lat && $screen->site?->lon)
+  var mapEl = document.getElementById('detail-map');
+  if (mapEl) {
+    var mapTab = document.querySelector('[onclick*="tp-map"]');
+    var mapInited = false;
+    function initDetailMap(){
+      if (mapInited) return;
+      mapInited = true;
+      var lat = {{ (float)$screen->site->lat }};
+      var lng = {{ (float)$screen->site->lon }};
+      var dmap = L.map('detail-map',{center:[lat,lng],zoom:16,zoomControl:true,scrollWheelZoom:false});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(dmap);
+      L.marker([lat,lng]).addTo(dmap).bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}').openPopup();
+      setTimeout(function(){dmap.invalidateSize();},200);
+    }
+    // Init on tab click (lazy — map tab may be hidden)
+    if (mapTab) mapTab.addEventListener('click',function(){ setTimeout(initDetailMap,100); });
+  }
+  @endif
 })();
 </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 @endpush
