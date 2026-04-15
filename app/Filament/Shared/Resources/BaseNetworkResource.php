@@ -89,8 +89,9 @@ abstract class BaseNetworkResource extends Resource
 
                     Forms\Components\TextInput::make('default_floor_cpm')
                         ->label('Default Floor CPM')
-                        ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
-                        ->stripCharacters('.')
+                        ->formatStateUsing(fn ($state) => $state !== null ? (int) round((float) $state) : null)
+                        ->mask(RawJs::make("\$money(\$input, '.', ',', 0)"))
+                        ->stripCharacters(',')
                         ->numeric()
                         ->minValue(0)
                         ->helperText('Giá sàn CPM mặc định cho toàn network'),

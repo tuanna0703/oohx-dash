@@ -77,8 +77,9 @@ class OrganizationResource extends Resource
                     Forms\Components\TextInput::make('credit_limit')
                         ->label('Hạn mức tín dụng (₫)')
                         ->prefix('₫')
-                        ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
-                        ->stripCharacters('.')
+                        ->formatStateUsing(fn ($state) => $state !== null ? (int) round((float) $state) : null)
+                        ->mask(RawJs::make("\$money(\$input, '.', ',', 0)"))
+                        ->stripCharacters(',')
                         ->numeric()
                         ->minValue(0),
                     Forms\Components\TextInput::make('payment_terms_days')

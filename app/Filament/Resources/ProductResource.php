@@ -95,6 +95,7 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('floor_price')
                         ->label('Giá gói')
                         ->prefix('₫')
+                        ->formatStateUsing(fn ($state) => $state !== null ? (int) round((float) $state) : null)
                         ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                         ->stripCharacters('.')
                         ->numeric()
@@ -104,6 +105,7 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('individual_price')
                         ->label('Giá lẻ / screen')
                         ->prefix('₫')
+                        ->formatStateUsing(fn ($state) => $state !== null ? (int) round((float) $state) : null)
                         ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                         ->stripCharacters('.')
                         ->numeric()
@@ -148,7 +150,7 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('name')->label('Tên gói')->required(),
                         Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->minValue(1)->required(),
-                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required(),
+                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->formatStateUsing(fn ($state) => $state !== null ? (int) round((float) $state) : null)->mask(RawJs::make("\$money(\$input, '.', ',', 0)"))->stripCharacters(',')->numeric()->minValue(0)->required(),
                     ])
                     ->columns(3)
                     ->visible(fn (Forms\Get $get) => $get('type') === 'package')
