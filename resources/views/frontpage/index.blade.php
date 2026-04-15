@@ -139,7 +139,7 @@
       <a href="/explore?venue_type[]={{ $vt['type'] }}" class="cat-card">
         <div class="cat-img">
           @if($vt['thumb'])<img src="{{ $vt['thumb'] }}" alt="{{ $vt['label'] }}" loading="lazy">@endif
-          <div class="cat-icon"><span class="material-icons">{{ $vt['icon'] ?? 'tv' }}</span></div>
+          <div class="cat-icon"><span class="material-symbols-outlined">{{ $vt['icon'] ?? 'tv' }}</span></div>
         </div>
         <div class="cat-body">
           <div class="cat-name">{{ $vt['label'] }}</div>

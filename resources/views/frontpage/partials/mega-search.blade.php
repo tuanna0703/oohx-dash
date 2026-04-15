@@ -80,13 +80,14 @@
         </div>
     </div>
 
-    {{-- Drop: Loại hình + Networks (hierarchical) --}}
+    {{-- Drop: Loại hình + Networks (tree-view) --}}
     <div class="mega-drop" id="ms-drop-type">
         <div class="mega-head">
-            <div class="mega-head-title">Chọn loại hình & network</div>
+            <div class="mega-head-title">Loại hình & Network</div>
             <span class="mega-head-clear" id="ms-clear-type">Xoá tất cả</span>
         </div>
-        <div class="mega-body" style="max-height:55vh">
+        <div class="mega-body" style="max-height:55vh;padding:8px 12px">
+            <div class="ms-tree">
             @foreach($categoriesNetworks as $cat)
             @php
                 $catSlug = is_array($cat) ? $cat['type'] : $cat->type;
@@ -95,27 +96,31 @@
                 $catCount = is_array($cat) ? $cat['count'] : $cat->count;
                 $catNetworks = is_array($cat) ? ($cat['networks'] ?? []) : [];
                 $isCatActive = in_array($catSlug, $activeVenueTypes);
+                $hasNets = !empty($catNetworks);
             @endphp
-            <div class="ms-cat-group">
-                <label class="ms-cat-head {{ $isCatActive ? 'on' : '' }}" data-code="{{ $catSlug }}" data-group="venue_type">
-                    <div class="sb-checkbox"></div>
-                    <span class="material-icons" style="font-size:18px;color:var(--t3)">{{ $catIcon }}</span>
-                    <span class="ms-cat-name">{{ $catLabel }}</span>
-                    <span class="sb-count">{{ $catCount }}</span>
-                </label>
-                @if(!empty($catNetworks))
-                <div class="ms-cat-nets">
+            <div class="ms-tree-node{{ $hasNets ? ' has-children' : '' }}">
+                <div class="ms-tree-row ms-tree-parent {{ $isCatActive ? 'on' : '' }}" data-code="{{ $catSlug }}" data-group="venue_type">
+                    @if($hasNets)<span class="ms-tree-toggle"><span class="material-symbols-outlined">expand_more</span></span>
+                    @else<span class="ms-tree-toggle ms-tree-toggle--leaf"></span>@endif
+                    <span class="ms-tree-check"></span>
+                    <span class="material-symbols-outlined ms-tree-icon">{{ $catIcon }}</span>
+                    <span class="ms-tree-label">{{ $catLabel }}</span>
+                    <span class="ms-tree-count">{{ $catCount }}</span>
+                </div>
+                @if($hasNets)
+                <div class="ms-tree-children">
                     @foreach($catNetworks as $net)
-                    <label class="ms-net-item {{ in_array($net['code'], $activeNetworks) ? 'on' : '' }}" data-code="{{ $net['code'] }}" data-group="network">
-                        <div class="sb-checkbox"></div>
-                        <span>{{ $net['name'] }}</span>
-                        <span class="sb-count">{{ $net['count'] }}</span>
-                    </label>
+                    <div class="ms-tree-row ms-tree-child {{ in_array($net['code'], $activeNetworks) ? 'on' : '' }}" data-code="{{ $net['code'] }}" data-group="network">
+                        <span class="ms-tree-check"></span>
+                        <span class="ms-tree-label">{{ $net['name'] }}</span>
+                        <span class="ms-tree-count">{{ $net['count'] }}</span>
+                    </div>
                     @endforeach
                 </div>
                 @endif
             </div>
             @endforeach
+            </div>
         </div>
         <div class="mega-foot">
             <button class="btn btn-s btn-sm ms-drop-close" type="button">Đóng</button>

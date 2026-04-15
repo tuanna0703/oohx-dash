@@ -57,19 +57,42 @@
         item.addEventListener('click', function(){ item.classList.toggle('on'); });
     });
 
-    // ── Item selection (category header — venue_type) ──
-    document.querySelectorAll('.ms-cat-head').forEach(function(item) {
-        item.addEventListener('click', function(e){
-            e.preventDefault();
-            item.classList.toggle('on');
+    // ── Tree-view: toggle expand/collapse ──
+    document.querySelectorAll('.ms-tree-toggle').forEach(function(tog) {
+        tog.addEventListener('click', function(e){
+            e.stopPropagation();
+            var node = tog.closest('.ms-tree-node');
+            if (node) node.classList.toggle('collapsed');
         });
     });
 
-    // ── Item selection (network under category) ──
-    document.querySelectorAll('.ms-net-item').forEach(function(item) {
-        item.addEventListener('click', function(e){
-            e.preventDefault();
-            item.classList.toggle('on');
+    // ── Tree-view: parent row click → toggle all children ──
+    document.querySelectorAll('.ms-tree-parent').forEach(function(row) {
+        row.addEventListener('click', function(e){
+            if (e.target.closest('.ms-tree-toggle')) return;
+            var isOn = row.classList.toggle('on');
+            var node = row.closest('.ms-tree-node');
+            if (node) {
+                node.querySelectorAll('.ms-tree-child').forEach(function(child){
+                    child.classList.toggle('on', isOn);
+                });
+                // Expand if checking
+                if (isOn) node.classList.remove('collapsed');
+            }
+        });
+    });
+
+    // ── Tree-view: child row click → update parent state ──
+    document.querySelectorAll('.ms-tree-child').forEach(function(row) {
+        row.addEventListener('click', function(){
+            row.classList.toggle('on');
+            // Sync parent: on if ALL children on, off otherwise
+            var node = row.closest('.ms-tree-node');
+            if (node) {
+                var children = node.querySelectorAll('.ms-tree-child');
+                var allOn = Array.from(children).every(function(c){ return c.classList.contains('on'); });
+                node.querySelector('.ms-tree-parent').classList.toggle('on', allOn);
+            }
         });
     });
 
@@ -96,12 +119,12 @@
         document.querySelectorAll('#ms-drop-city .ms-loc-item.on').forEach(function(el) {
             params.append('city[]', el.dataset.code);
         });
-        // Venue types (category headers)
-        document.querySelectorAll('#ms-drop-type .ms-cat-head.on').forEach(function(el) {
+        // Venue types (tree parent rows)
+        document.querySelectorAll('#ms-drop-type .ms-tree-parent.on').forEach(function(el) {
             params.append('venue_type[]', el.dataset.code);
         });
-        // Networks (nested under categories)
-        document.querySelectorAll('#ms-drop-type .ms-net-item.on').forEach(function(el) {
+        // Networks (tree child rows)
+        document.querySelectorAll('#ms-drop-type .ms-tree-child.on').forEach(function(el) {
             params.append('network[]', el.dataset.code);
         });
 
