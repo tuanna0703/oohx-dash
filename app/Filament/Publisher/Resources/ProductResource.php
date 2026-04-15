@@ -85,10 +85,10 @@ class ProductResource extends Resource
             Forms\Components\Section::make('Giá & Số lượng')->schema([
                 Forms\Components\Grid::make(4)->schema([
                     Forms\Components\TextInput::make('floor_price')->label('Giá gói')->prefix('₫')
-                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required()
+                        ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required()
                         ->helperText('Giá cả gói / giá mặc định'),
                     Forms\Components\TextInput::make('individual_price')->label('Giá lẻ / screen')->prefix('₫')
-                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->nullable()
+                        ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->nullable()
                         ->visible(fn (Forms\Get $get) => in_array($get('listing_mode'), ['individual_only', 'both']))
                         ->helperText('Giá khi buyer mua từng screen'),
                     Forms\Components\TextInput::make('package_discount_pct')->label('Giảm giá gói (%)')->numeric()->default(0)->minValue(0)->maxValue(100)->suffix('%')
@@ -107,7 +107,7 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('name')->label('Tên gói')->required(),
                         Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->minValue(1)->required(),
-                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required(),
+                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required(),
                     ])
                     ->columns(3)
                     ->visible(fn (Forms\Get $get) => $get('type') === 'package')

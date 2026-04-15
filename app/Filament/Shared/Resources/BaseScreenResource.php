@@ -271,7 +271,7 @@ abstract class BaseScreenResource extends Resource
                             Forms\Components\TextInput::make('inventory.floor_cpm')
                                 ->label('Đơn giá CPM (₫/1000 impressions)')
                                 ->prefix('₫')
-                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                 ->stripCharacters('.')
                                 ->numeric()
                                 ->default(0)
@@ -283,7 +283,7 @@ abstract class BaseScreenResource extends Resource
                             Forms\Components\TextInput::make('inventory.io_rate')
                                 ->label('Đơn giá I/O')
                                 ->prefix('₫')
-                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                 ->stripCharacters('.')
                                 ->numeric()
                                 ->minValue(0)
@@ -311,7 +311,7 @@ abstract class BaseScreenResource extends Resource
                             // ── Common fields ──
                             Forms\Components\TextInput::make('inventory.weekly_impressions')
                                 ->label('Lượt xem / tuần')
-                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
                                 ->stripCharacters('.')
                                 ->numeric()
                                 ->minValue(0),
