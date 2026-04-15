@@ -48,6 +48,17 @@ Route::domain($fpDomain)->group(function () {
     Route::post('/register',          [BuyerAuthController::class, 'register']);
     Route::post('/logout',            [BuyerAuthController::class, 'logout'])->name('buyer.logout')->middleware('auth');
 
+    // ── Save/Bookmark (auth required) ──
+    Route::post('/save/{screen}', function (\Illuminate\Http\Request $request, string $screen) {
+        $exists = \App\Models\SavedItem::where('user_id', $request->user()->id)->where('screen_id', $screen)->first();
+        if ($exists) {
+            $exists->delete();
+            return response()->json(['saved' => false]);
+        }
+        \App\Models\SavedItem::create(['user_id' => $request->user()->id, 'screen_id' => $screen]);
+        return response()->json(['saved' => true]);
+    })->middleware('auth')->name('screen.save');
+
     // ── Cart (auth required, no org needed) ──
     Route::middleware(['auth'])->group(function () {
         Route::get('/cart',           [CartController::class, 'index'])->name('buyer.cart');

@@ -20,13 +20,14 @@ class Owner extends Model
         'tagline', 'about', 'logo_url', 'cover_url',
         'website', 'email', 'phone', 'address', 'city', 'district',
         'province_id', 'commune_id',
-        'founded', 'featured', 'headquarters_lat', 'headquarters_lng',
+        'founded', 'featured', 'verified', 'headquarters_lat', 'headquarters_lng',
     ];
 
     protected $casts = [
         'billing_info'       => 'array',
         'revenue_share_pct'  => 'decimal:2',
         'featured'           => 'boolean',
+        'verified'           => 'boolean',
         'founded'            => 'integer',
         'headquarters_lat'   => 'decimal:7',
         'headquarters_lng'   => 'decimal:7',

@@ -55,10 +55,33 @@ class FrontpageController extends Controller
             return redirect()->route('fp.detail', $screenModel->slug, 301);
         }
 
+        // Get booked dates for next 2 months
+        $bookedDates = \App\Models\BookingLine::where('screen_id', $screenModel->id)
+            ->whereIn('status', ['approved', 'active'])
+            ->where('end_date', '>=', now())
+            ->where('start_date', '<=', now()->addMonths(2)->endOfMonth())
+            ->get(['start_date', 'end_date', 'share_of_voice_pct'])
+            ->flatMap(function ($line) {
+                $dates = [];
+                $start = $line->start_date->copy();
+                $end = $line->end_date->copy();
+                while ($start->lte($end)) {
+                    $dates[$start->format('Y-m-d')] = ($dates[$start->format('Y-m-d')] ?? 0) + ($line->share_of_voice_pct ?? 100);
+                    $start->addDay();
+                }
+                return $dates;
+            })->toArray();
+
+        $isSaved = auth()->check()
+            ? \App\Models\SavedItem::where('user_id', auth()->id())->where('screen_id', $screenModel->id)->exists()
+            : false;
+
         return view('frontpage.detail', [
             'screen'         => $screenModel,
             'similarScreens' => $this->fp->getSimilarScreens($screenModel),
             'vnCatLabels'    => $this->fp->getVnCategoryLabels(),
+            'bookedDates'    => $bookedDates,
+            'isSaved'        => $isSaved,
         ]);
     }
 

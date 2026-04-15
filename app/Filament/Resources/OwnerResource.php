@@ -59,6 +59,8 @@ class OwnerResource extends Resource
                 Forms\Components\TextInput::make('phone')->label('Điện thoại')->tel()->maxLength(30),
                 Forms\Components\TextInput::make('founded')->label('Năm thành lập')->numeric(),
                 Forms\Components\Toggle::make('featured')->label('Featured'),
+                Forms\Components\Toggle::make('verified')->label('Verified')
+                    ->helperText('Hiển thị badge "Verified" trên frontpage'),
             ]),
 
             Forms\Components\Section::make('Revenue & Billing')->columns(2)->collapsible()->schema([
