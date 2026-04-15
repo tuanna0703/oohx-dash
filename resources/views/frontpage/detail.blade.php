@@ -184,7 +184,7 @@
 <div class="bp-row"><span class="bp-rl">VAT (10%)</span><span class="bp-rv" id="bp-calc-vat">{{ number_format($cpm * 3 * 0.1, 0, ',', '.') }} ₫</span></div>
 <div class="bp-row bp-total"><span class="bp-rl">Tổng cộng</span><span class="bp-rv" id="bp-calc-total">{{ number_format($cpm * 3 * 1.1, 0, ',', '.') }} ₫</span></div>
 </div>
-<div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div>
+<div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><input type="hidden" name="start_date" id="bp-h-start" value="{{ now()->addDays(7)->format('Y-m-d') }}"><input type="hidden" name="end_date" id="bp-h-end" value="{{ now()->addDays(7)->addMonths(3)->format('Y-m-d') }}"><button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div>
 </div>
 <div class="bp-foot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--grn)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> Thanh toán bảo mật bởi OOHX · Hoàn tiền 100% nếu hủy trước 48h</div></div>
 @php
@@ -302,11 +302,18 @@ function sw(el,id){
     }
   });
 
-  // Dynamic booking cost calculator
+  // Dynamic booking cost calculator + sync hidden form fields
   var cpm = {{ $cpm }};
   var durSel = document.getElementById('bp-duration');
+  var startInp = document.getElementById('bp-start');
+  var hStart = document.getElementById('bp-h-start');
+  var hEnd = document.getElementById('bp-h-end');
   if (durSel) {
     function fmtVND(n){ return n.toLocaleString('vi-VN'); }
+    function addMonths(dateStr, m){
+      var d = new Date(dateStr); d.setMonth(d.getMonth() + m);
+      return d.toISOString().slice(0,10);
+    }
     function updateCalc(){
       var months = parseInt(durSel.value) || 3;
       var sub = cpm * months;
@@ -317,8 +324,12 @@ function sw(el,id){
       document.getElementById('bp-calc-sub').textContent = fmtVND(sub) + ' ₫';
       document.getElementById('bp-calc-vat').textContent = fmtVND(Math.round(vat)) + ' ₫';
       document.getElementById('bp-calc-total').textContent = fmtVND(Math.round(total)) + ' ₫';
+      // Sync hidden fields for cart form
+      if(hStart && startInp) hStart.value = startInp.value;
+      if(hEnd && startInp) hEnd.value = addMonths(startInp.value, months);
     }
     durSel.addEventListener('change', updateCalc);
+    if(startInp) startInp.addEventListener('change', updateCalc);
   }
 
   // Leaflet map for location tab

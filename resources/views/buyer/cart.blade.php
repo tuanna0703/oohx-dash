@@ -36,7 +36,9 @@
             @php
                 $screen = $item->screen;
                 $photo = $screen->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=No+Photo';
-                $city = $screen->site?->city ?? '';
+                $province = $screen->site?->province?->name ?? $screen->site?->city ?? '';
+                $commune = $screen->site?->commune?->name ?? '';
+                $loc = collect([$province, $commune])->filter()->join(' > ');
             @endphp
             <div class="cart-item">
                 <div class="cart-item-img">
@@ -45,8 +47,8 @@
                 <div class="cart-item-body">
                     <div class="cart-item-top">
                         <div>
-                            <a href="{{ route('fp.detail', $screen->uuid ?? $screen->id) }}" class="cart-item-name">{{ $screen->name }}</a>
-                            <div class="cart-item-loc">{{ $city }} &middot; {{ $screen->owner?->name ?? '' }}</div>
+                            <a href="{{ route('fp.detail', $screen->slug ?? $screen->id) }}" class="cart-item-name">{{ $screen->name }}</a>
+                            <div class="cart-item-loc">{{ $loc }} &middot; {{ $screen->owner?->name ?? '' }}</div>
                         </div>
                         <form method="POST" action="{{ route('buyer.cart.remove', $item) }}">
                             @csrf @method('DELETE')

@@ -148,21 +148,31 @@ class CartService
 
     /**
      * Estimate cost for a screen booking.
+     *
+     * floor_cpm is a MONTHLY rate (displayed as "₫/tháng" on frontpage).
+     * Convert days → months for pricing. Impressions still use daily calc.
      */
     public function estimateCost(Screen $screen, string $startDate, string $endDate, int $sovPct = 100): array
     {
-        $cpm = $screen->inventory?->floor_cpm ?? 0;
+        $monthlyRate = $screen->inventory?->floor_cpm ?? 0;
         $dailyImpressions = $screen->inventory?->daily_impressions ?? 0;
 
-        $days = max(1, now()->parse($startDate)->diffInDays(now()->parse($endDate)) + 1);
+        $start = now()->parse($startDate);
+        $end = now()->parse($endDate);
+        $days = max(1, $start->diffInDays($end) + 1);
+
+        // Convert days to months (30-day basis) for pricing
+        $months = $days / 30;
+
         $totalImpressions = (int) round($dailyImpressions * $days * ($sovPct / 100));
-        $cost = round($cpm * $days * ($sovPct / 100), 2);
+        $cost = round($monthlyRate * $months * ($sovPct / 100), 2);
 
         return [
             'impressions' => $totalImpressions,
             'cost' => $cost,
             'days' => $days,
-            'cpm' => $cpm,
+            'months' => round($months, 2),
+            'monthly_rate' => $monthlyRate,
         ];
     }
 

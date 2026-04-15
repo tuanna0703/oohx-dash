@@ -21,7 +21,7 @@ class CartController extends Controller
     {
         $cart = $this->cartService->getOrCreateCart($request->user());
         $items = $cart->items()
-            ->with(['screen.spec', 'screen.inventory', 'screen.owner', 'screen.site.network'])
+            ->with(['screen.spec', 'screen.inventory', 'screen.owner', 'screen.site.network', 'screen.site.province', 'screen.site.commune'])
             ->get();
 
         return view('buyer.cart', [
