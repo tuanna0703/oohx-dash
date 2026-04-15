@@ -166,8 +166,8 @@ trait SavesScreenRelationships
                 'operating_hours'      => $i['operating_hours']      ?? null,
                 'timezone'             => $i['timezone']             ?? 'Asia/Ho_Chi_Minh',
                 'programmatic_enabled' => $i['programmatic_enabled'] ?? false,
-                // Pricing model
-                'pricing_model'        => array_key_exists('pricing_model', $i)
+                // Pricing model — validate enum value
+                'pricing_model'        => in_array($i['pricing_model'] ?? null, ['cpm', 'io', 'both'])
                                             ? $i['pricing_model']
                                             : ($existing?->pricing_model ?? 'io'),
                 'io_rate'              => array_key_exists('io_rate', $i)
