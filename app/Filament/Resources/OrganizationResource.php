@@ -6,6 +6,7 @@ use App\Filament\Resources\OrganizationResource\Pages;
 use App\Models\Organization;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Support\RawJs;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -67,17 +68,26 @@ class OrganizationResource extends Resource
                         ->email(),
                     Forms\Components\TextInput::make('billing_phone')
                         ->label('Điện thoại')
-                        ->maxLength(30),
+                        ->tel()
+                        ->mask('9999 999 9999')
+                        ->placeholder('0912 345 6789')
+                        ->maxLength(20),
                 ]),
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\TextInput::make('credit_limit')
                         ->label('Hạn mức tín dụng (₫)')
+                        ->prefix('₫')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                        ->stripCharacters('.')
                         ->numeric()
-                        ->prefix('₫'),
+                        ->minValue(0),
                     Forms\Components\TextInput::make('payment_terms_days')
                         ->label('Kỳ thanh toán (ngày)')
                         ->numeric()
-                        ->default(30),
+                        ->default(30)
+                        ->minValue(1)
+                        ->maxValue(365)
+                        ->suffix('ngày'),
                 ]),
                 Forms\Components\Textarea::make('billing_address')
                     ->label('Địa chỉ')

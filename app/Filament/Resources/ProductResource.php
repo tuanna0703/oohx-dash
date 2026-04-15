@@ -11,6 +11,7 @@ use App\Models\Site;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -93,14 +94,20 @@ class ProductResource extends Resource
                 Forms\Components\Grid::make(4)->schema([
                     Forms\Components\TextInput::make('floor_price')
                         ->label('Giá gói')
-                        ->numeric()
                         ->prefix('₫')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                        ->stripCharacters('.')
+                        ->numeric()
+                        ->minValue(0)
                         ->required()
                         ->helperText('Giá cả gói / giá mặc định'),
                     Forms\Components\TextInput::make('individual_price')
                         ->label('Giá lẻ / screen')
-                        ->numeric()
                         ->prefix('₫')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                        ->stripCharacters('.')
+                        ->numeric()
+                        ->minValue(0)
                         ->nullable()
                         ->visible(fn (Forms\Get $get) => in_array($get('listing_mode'), ['individual_only', 'both']))
                         ->helperText('Giá khi buyer mua từng screen'),
@@ -108,6 +115,8 @@ class ProductResource extends Resource
                         ->label('Giảm giá gói (%)')
                         ->numeric()
                         ->default(0)
+                        ->minValue(0)
+                        ->maxValue(100)
                         ->suffix('%')
                         ->visible(fn (Forms\Get $get) => $get('listing_mode') === 'both')
                         ->helperText('% giảm khi mua cả gói so với mua lẻ'),
@@ -120,23 +129,26 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('min_quantity')
                         ->label('SL tối thiểu')
                         ->numeric()
-                        ->default(1),
+                        ->default(1)
+                        ->minValue(1),
                     Forms\Components\TextInput::make('max_quantity')
                         ->label('SL tối đa')
                         ->numeric()
-                        ->nullable(),
+                        ->nullable()
+                        ->minValue(1),
                     Forms\Components\TextInput::make('total_units')
                         ->label('Tổng đơn vị')
                         ->numeric()
                         ->default(1)
+                        ->minValue(1)
                         ->helperText('Tổng screens/items khả dụng'),
                 ]),
                 Forms\Components\Repeater::make('package_options')
                     ->label('Gói booking (chỉ cho type Package)')
                     ->schema([
                         Forms\Components\TextInput::make('name')->label('Tên gói')->required(),
-                        Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->required(),
-                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->numeric()->required(),
+                        Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->minValue(1)->required(),
+                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required(),
                     ])
                     ->columns(3)
                     ->visible(fn (Forms\Get $get) => $get('type') === 'package')

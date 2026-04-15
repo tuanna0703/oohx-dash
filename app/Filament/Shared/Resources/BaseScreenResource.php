@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\VenueCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Support\RawJs;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
@@ -269,17 +270,23 @@ abstract class BaseScreenResource extends Resource
                             // ── CPM fields (visible when cpm or both) ──
                             Forms\Components\TextInput::make('inventory.floor_cpm')
                                 ->label('Đơn giá CPM (₫/1000 impressions)')
-                                ->numeric()
                                 ->prefix('₫')
+                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->stripCharacters('.')
+                                ->numeric()
                                 ->default(0)
+                                ->minValue(0)
                                 ->helperText('Giá cho mỗi 1,000 lượt hiển thị. VD: 45,000 ₫/CPM')
                                 ->visible(fn (Forms\Get $get) => $canPricing && in_array($get('inventory.pricing_model'), ['cpm', 'both'])),
 
                             // ── I/O fields (visible when io or both) ──
                             Forms\Components\TextInput::make('inventory.io_rate')
                                 ->label('Đơn giá I/O')
-                                ->numeric()
                                 ->prefix('₫')
+                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->stripCharacters('.')
+                                ->numeric()
+                                ->minValue(0)
                                 ->helperText('VD: 350,000 ₫/màn hình/tuần')
                                 ->visible(fn (Forms\Get $get) => $canPricing && in_array($get('inventory.pricing_model') ?? 'io', ['io', 'both'])),
 
@@ -295,18 +302,26 @@ abstract class BaseScreenResource extends Resource
                             Forms\Components\TextInput::make('inventory.io_kpi_spots_per_day')
                                 ->label('KPI spots/màn hình/ngày')
                                 ->numeric()
+                                ->minValue(1)
+                                ->maxValue(9999)
+                                ->inputMode('numeric')
                                 ->helperText('Số spots cam kết phát mỗi ngày. VD: 120')
                                 ->visible(fn (Forms\Get $get) => $canPricing && in_array($get('inventory.pricing_model') ?? 'io', ['io', 'both'])),
 
                             // ── Common fields ──
                             Forms\Components\TextInput::make('inventory.weekly_impressions')
                                 ->label('Lượt xem / tuần')
-                                ->numeric(),
+                                ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                                ->stripCharacters('.')
+                                ->numeric()
+                                ->minValue(0),
 
                             Forms\Components\TextInput::make('inventory.spot_length')
                                 ->label('Thời lượng QC')
                                 ->numeric()
                                 ->default(15)
+                                ->minValue(3)
+                                ->maxValue(300)
                                 ->suffix('giây'),
 
                             Forms\Components\Section::make('Lịch hoạt động')
@@ -396,35 +411,46 @@ abstract class BaseScreenResource extends Resource
                         ->label('Max SOV (%)')
                         ->numeric()
                         ->default(100)
+                        ->minValue(1)
+                        ->maxValue(100)
                         ->suffix('%'),
 
                     Forms\Components\TextInput::make('inventory.screen_count_override')
                         ->label('Screen count')
                         ->numeric()
                         ->nullable()
+                        ->minValue(1)
+                        ->maxValue(9999)
                         ->placeholder('1'),
 
                     Forms\Components\TextInput::make('inventory.max_spot_length')
                         ->label('Max duration')
                         ->numeric()
                         ->default(180)
+                        ->minValue(3)
+                        ->maxValue(600)
                         ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.min_spot_length')
                         ->label('Min duration')
                         ->numeric()
                         ->default(3)
+                        ->minValue(1)
+                        ->maxValue(300)
                         ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.loop_length')
                         ->label('Loop length')
                         ->numeric()
+                        ->minValue(1)
+                        ->maxValue(3600)
                         ->suffix('s'),
 
                     Forms\Components\TextInput::make('inventory.frequency_cap')
                         ->label('Freq cap')
                         ->numeric()
                         ->default(0)
+                        ->minValue(0)
                         ->suffix('s')
                         ->helperText('0 = unlimited'),
 
@@ -432,6 +458,7 @@ abstract class BaseScreenResource extends Resource
                         ->label('Cat freq cap')
                         ->numeric()
                         ->default(0)
+                        ->minValue(0)
                         ->suffix('s'),
 
                     Forms\Components\Toggle::make('inventory.strict_frequency_capping')

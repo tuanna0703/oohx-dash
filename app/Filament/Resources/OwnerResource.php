@@ -56,8 +56,12 @@ class OwnerResource extends Resource
                     ->label('Ảnh bìa')->image()->disk('public')->directory('owners/covers')->maxSize(10240),
                 Forms\Components\TextInput::make('website')->label('Website')->url(),
                 Forms\Components\TextInput::make('email')->label('Email')->email(),
-                Forms\Components\TextInput::make('phone')->label('Điện thoại')->tel()->maxLength(30),
-                Forms\Components\TextInput::make('founded')->label('Năm thành lập')->numeric(),
+                Forms\Components\TextInput::make('phone')->label('Điện thoại')
+                    ->tel()->maxLength(20)
+                    ->mask('9999 999 9999')
+                    ->placeholder('0912 345 6789'),
+                Forms\Components\TextInput::make('founded')->label('Năm thành lập')
+                    ->numeric()->minValue(1900)->maxValue(2030),
                 Forms\Components\Toggle::make('featured')->label('Featured'),
                 Forms\Components\Toggle::make('verified')->label('Verified')
                     ->helperText('Hiển thị badge "Verified" trên frontpage'),

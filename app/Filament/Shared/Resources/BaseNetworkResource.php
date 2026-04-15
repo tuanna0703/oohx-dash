@@ -8,6 +8,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -88,7 +89,10 @@ abstract class BaseNetworkResource extends Resource
 
                     Forms\Components\TextInput::make('default_floor_cpm')
                         ->label('Default Floor CPM')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))
+                        ->stripCharacters('.')
                         ->numeric()
+                        ->minValue(0)
                         ->helperText('Giá sàn CPM mặc định cho toàn network'),
 
                     Forms\Components\Select::make('default_floor_cpm_currency')

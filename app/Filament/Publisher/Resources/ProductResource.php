@@ -10,6 +10,7 @@ use App\Models\Site;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,28 +84,30 @@ class ProductResource extends Resource
 
             Forms\Components\Section::make('Giá & Số lượng')->schema([
                 Forms\Components\Grid::make(4)->schema([
-                    Forms\Components\TextInput::make('floor_price')->label('Giá gói')->numeric()->prefix('₫')->required()
+                    Forms\Components\TextInput::make('floor_price')->label('Giá gói')->prefix('₫')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required()
                         ->helperText('Giá cả gói / giá mặc định'),
-                    Forms\Components\TextInput::make('individual_price')->label('Giá lẻ / screen')->numeric()->prefix('₫')->nullable()
+                    Forms\Components\TextInput::make('individual_price')->label('Giá lẻ / screen')->prefix('₫')
+                        ->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->nullable()
                         ->visible(fn (Forms\Get $get) => in_array($get('listing_mode'), ['individual_only', 'both']))
                         ->helperText('Giá khi buyer mua từng screen'),
-                    Forms\Components\TextInput::make('package_discount_pct')->label('Giảm giá gói (%)')->numeric()->default(0)->suffix('%')
+                    Forms\Components\TextInput::make('package_discount_pct')->label('Giảm giá gói (%)')->numeric()->default(0)->minValue(0)->maxValue(100)->suffix('%')
                         ->visible(fn (Forms\Get $get) => $get('listing_mode') === 'both')
                         ->helperText('% giảm khi mua cả gói'),
                     Forms\Components\Select::make('price_unit')->label('Đơn vị')
                         ->options(['month'=>'Tháng','week'=>'Tuần','day'=>'Ngày','campaign'=>'Campaign'])->default('month'),
                 ]),
                 Forms\Components\Grid::make(3)->schema([
-                    Forms\Components\TextInput::make('min_quantity')->label('SL tối thiểu')->numeric()->default(1),
-                    Forms\Components\TextInput::make('max_quantity')->label('SL tối đa')->numeric()->nullable(),
-                    Forms\Components\TextInput::make('total_units')->label('Tổng đơn vị')->numeric()->default(1),
+                    Forms\Components\TextInput::make('min_quantity')->label('SL tối thiểu')->numeric()->default(1)->minValue(1),
+                    Forms\Components\TextInput::make('max_quantity')->label('SL tối đa')->numeric()->nullable()->minValue(1),
+                    Forms\Components\TextInput::make('total_units')->label('Tổng đơn vị')->numeric()->default(1)->minValue(1),
                 ]),
                 Forms\Components\Repeater::make('package_options')
                     ->label('Gói booking')
                     ->schema([
                         Forms\Components\TextInput::make('name')->label('Tên gói')->required(),
-                        Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->required(),
-                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->numeric()->required(),
+                        Forms\Components\TextInput::make('quantity')->label('Số lượng')->numeric()->minValue(1)->required(),
+                        Forms\Components\TextInput::make('price')->label('Giá (₫)')->prefix('₫')->mask(RawJs::make("$money($input, ',', '.', 0)"))->stripCharacters('.')->numeric()->minValue(0)->required(),
                     ])
                     ->columns(3)
                     ->visible(fn (Forms\Get $get) => $get('type') === 'package')

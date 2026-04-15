@@ -120,8 +120,9 @@ class CompanyProfile extends Page implements HasForms
                                 Forms\Components\TextInput::make('phone')
                                     ->label('Số điện thoại')
                                     ->tel()
-                                    ->maxLength(30)
-                                    ->placeholder('0912 345 678'),
+                                    ->mask('9999 999 9999')
+                                    ->maxLength(20)
+                                    ->placeholder('0912 345 6789'),
 
                                 Forms\Components\Toggle::make('featured')
                                     ->label('Hiển thị nổi bật trên frontpage')
