@@ -166,6 +166,19 @@ trait SavesScreenRelationships
                 'operating_hours'      => $i['operating_hours']      ?? null,
                 'timezone'             => $i['timezone']             ?? 'Asia/Ho_Chi_Minh',
                 'programmatic_enabled' => $i['programmatic_enabled'] ?? false,
+                // Pricing model
+                'pricing_model'        => array_key_exists('pricing_model', $i)
+                                            ? $i['pricing_model']
+                                            : ($existing?->pricing_model ?? 'io'),
+                'io_rate'              => array_key_exists('io_rate', $i)
+                                            ? $i['io_rate']
+                                            : $existing?->io_rate,
+                'io_rate_unit'         => array_key_exists('io_rate_unit', $i)
+                                            ? $i['io_rate_unit']
+                                            : ($existing?->io_rate_unit ?? 'month'),
+                'io_kpi_spots_per_day' => array_key_exists('io_kpi_spots_per_day', $i)
+                                            ? ($i['io_kpi_spots_per_day'] ?: null)
+                                            : $existing?->io_kpi_spots_per_day,
                 'pmp_only'             => $i['pmp_only']             ?? false,
                 'ad_server_enabled'    => $i['ad_server_enabled']    ?? true,
                 'deals_enabled'        => $i['deals_enabled']        ?? true,

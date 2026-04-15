@@ -40,8 +40,11 @@ class CampaignService
                 'notes'                       => $data['notes'] ?? null,
             ]);
 
-            // Convert cart items → booking lines
+            // Convert cart items → booking lines (freeze pricing at booking time)
             foreach ($items as $item) {
+                $inv = $item->screen->inventory;
+                $pricingModel = $item->pricing_model ?? $inv?->pricing_model ?? 'io';
+
                 BookingLine::create([
                     'campaign_id'          => $campaign->id,
                     'screen_id'            => $item->screen_id,
@@ -50,10 +53,17 @@ class CampaignService
                     'end_date'             => $item->end_date,
                     'spot_length'          => $item->spot_length,
                     'share_of_voice_pct'   => $item->share_of_voice_pct,
-                    'floor_cpm_at_booking' => $item->screen->inventory?->floor_cpm ?? 0,
+                    'floor_cpm_at_booking' => $inv?->floor_cpm ?? 0,
                     'estimated_impressions'=> $item->estimated_impressions,
                     'estimated_cost'       => $item->estimated_cost,
                     'status'               => 'pending',
+                    // Pricing model freeze
+                    'pricing_model'        => $pricingModel,
+                    'io_rate_at_booking'   => $pricingModel === 'io' ? ($inv?->io_rate ?? 0) : null,
+                    'io_rate_unit'         => $pricingModel === 'io' ? ($inv?->io_rate_unit ?? 'month') : null,
+                    'kpi_spots_per_day'    => $pricingModel === 'io' ? $inv?->io_kpi_spots_per_day : null,
+                    'booked_cpms'          => $pricingModel === 'cpm' ? $item->booked_cpms : null,
+                    'screen_count'         => $item->screen_count ?? 1,
                 ]);
             }
 

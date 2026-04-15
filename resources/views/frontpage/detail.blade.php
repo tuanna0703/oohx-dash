@@ -5,7 +5,7 @@
 @section('seo')
 @include('frontpage.partials.seo-meta', [
     'seoTitle'       => ($screen->name ?? 'Chi tiết vị trí') . ' | OOHX',
-    'seoDescription' => $screen->name . ' tại ' . ($screen->site?->name ?? '') . ', ' . ($screen->site?->city ?? '') . '. ' . ($screen->spec?->width_px ?? '') . 'x' . ($screen->spec?->height_px ?? '') . 'px. Giá từ ' . number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') . 'đ/tháng.',
+    'seoDescription' => $screen->name . ' tại ' . ($screen->site?->name ?? '') . ', ' . ($screen->site?->city ?? '') . '. ' . ($screen->spec?->width_px ?? '') . 'x' . ($screen->spec?->height_px ?? '') . 'px. Giá từ ' . number_format($screen->inventory?->display_price ?? 0, 0, ',', '.') . 'đ/' . ($screen->inventory?->display_price_unit ?? 'tháng') . '.',
     'seoImage'       => $screen->spec?->photo_url ? asset('storage/' . $screen->spec->photo_url) : null,
     'seoUrl'         => route('fp.detail', $screen->slug ?? $screen->uuid),
     'seoType'        => 'product',
@@ -18,7 +18,7 @@
         'brand'    => ['@type' => 'Organization', 'name' => $screen->owner?->name ?? 'OOHX'],
         'offers'   => [
             '@type'         => 'Offer',
-            'price'         => (float) ($screen->inventory?->floor_cpm ?? 0),
+            'price'         => (float) ($screen->inventory?->display_price ?? 0),
             'priceCurrency' => $screen->inventory?->floor_cpm_currency ?? 'VND',
             'availability'  => 'https://schema.org/InStock',
         ],
@@ -172,19 +172,59 @@
 </div>{{-- /tp-review --}}
 </div>{{-- /left column --}}
 <div class="detail-sidebar">
+@php
+    $inv = $screen->inventory;
+    $pricingModel = $inv?->pricing_model ?? 'io';
+    $isCpm = $pricingModel === 'cpm';
+    $displayPrice = $inv?->display_price ?? 0;
+    $displayUnit = $inv?->display_price_unit ?? 'màn hình/tháng';
+    $ioRateUnit = $inv?->io_rate_unit ?? 'month';
+    $kpiSpots = $inv?->io_kpi_spots_per_day;
+@endphp
 <div class="bp">
-<div class="bp-head"><div class="bp-price">{{ number_format($screen->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫</div><div style="font-size:13px;color:var(--t4);margin:4px 0 10px">/ tháng · Chưa bao gồm VAT</div><div class="bp-avail"><div class="bp-dot"></div>Còn trống</div></div>
-@php $cpm = (float)($screen->inventory?->floor_cpm ?? 0); @endphp
+<div class="bp-head">
+<div class="bp-price">{{ number_format($displayPrice, 0, ',', '.') }} ₫</div>
+<div style="font-size:13px;color:var(--t4);margin:4px 0 10px">/ {{ $displayUnit }} · Chưa bao gồm VAT</div>
+@if(!$isCpm && $kpiSpots)
+<div style="font-size:12px;color:var(--bl);font-weight:600;margin-bottom:8px">KPI: {{ number_format($kpiSpots) }} spots/màn hình/ngày</div>
+@endif
+<div class="bp-avail"><div class="bp-dot"></div>Còn trống</div>
+</div>
 <div class="bp-body">
 <div class="bp-field"><div class="bp-lbl">Ngày bắt đầu</div><input class="bp-inp" type="date" value="{{ now()->addDays(7)->format('Y-m-d') }}" id="bp-start"></div>
-<div class="bp-field"><div class="bp-lbl">Thời lượng</div><select class="bp-inp" id="bp-duration"><option value="1">1 tháng</option><option value="2">2 tháng</option><option value="3" selected>3 tháng</option><option value="6">6 tháng</option><option value="12">12 tháng</option></select></div>
+@if($isCpm)
+{{-- CPM mode: buyer nhập số CPM muốn mua --}}
+<div class="bp-field"><div class="bp-lbl">Số CPM (× 1,000 impressions)</div><input class="bp-inp" type="number" min="1" value="1000" id="bp-cpms"></div>
+@else
+{{-- I/O mode: buyer chọn thời lượng + số màn hình --}}
+<div class="bp-field"><div class="bp-lbl">Thời lượng</div><select class="bp-inp" id="bp-duration">
+@if($ioRateUnit === 'week')
+<option value="1">1 tuần</option><option value="2">2 tuần</option><option value="4" selected>4 tuần</option><option value="8">8 tuần</option><option value="12">12 tuần</option>
+@else
+<option value="1">1 tháng</option><option value="2">2 tháng</option><option value="3" selected>3 tháng</option><option value="6">6 tháng</option><option value="12">12 tháng</option>
+@endif
+</select></div>
+<div class="bp-field"><div class="bp-lbl">Số màn hình</div><input class="bp-inp" type="number" min="1" value="1" id="bp-screens"></div>
+@endif
 <div class="bp-field"><div class="bp-lbl">Brand / Campaign</div><input class="bp-inp" type="text" placeholder="VD: Honda Civic Launch Q2"></div>
 <div class="bp-sum">
-<div class="bp-row"><span class="bp-rl" id="bp-calc-label">{{ number_format($cpm/1000000, 1) }}M × 3 tháng</span><span class="bp-rv" id="bp-calc-sub">{{ number_format($cpm * 3, 0, ',', '.') }} ₫</span></div>
-<div class="bp-row"><span class="bp-rl">VAT (10%)</span><span class="bp-rv" id="bp-calc-vat">{{ number_format($cpm * 3 * 0.1, 0, ',', '.') }} ₫</span></div>
-<div class="bp-row bp-total"><span class="bp-rl">Tổng cộng</span><span class="bp-rv" id="bp-calc-total">{{ number_format($cpm * 3 * 1.1, 0, ',', '.') }} ₫</span></div>
+@if($isCpm)
+@php $defCpms = 1000; $defSub = $displayPrice * $defCpms; @endphp
+<div class="bp-row"><span class="bp-rl" id="bp-calc-label">{{ number_format($displayPrice, 0, ',', '.') }} ₫ × {{ number_format($defCpms) }} CPM</span><span class="bp-rv" id="bp-calc-sub">{{ number_format($defSub, 0, ',', '.') }} ₫</span></div>
+@else
+@php
+    $defUnits = $ioRateUnit === 'week' ? 4 : 3;
+    $defSub = $displayPrice * 1 * $defUnits;
+    $unitLabel = $ioRateUnit === 'week' ? 'tuần' : 'tháng';
+@endphp
+<div class="bp-row"><span class="bp-rl" id="bp-calc-label">{{ number_format($displayPrice, 0, ',', '.') }} × 1 mh × {{ $defUnits }} {{ $unitLabel }}</span><span class="bp-rv" id="bp-calc-sub">{{ number_format($defSub, 0, ',', '.') }} ₫</span></div>
+@endif
+<div class="bp-row"><span class="bp-rl">VAT (10%)</span><span class="bp-rv" id="bp-calc-vat">{{ number_format($defSub * 0.1, 0, ',', '.') }} ₫</span></div>
+<div class="bp-row bp-total"><span class="bp-rl">Tổng cộng</span><span class="bp-rv" id="bp-calc-total">{{ number_format($defSub * 1.1, 0, ',', '.') }} ₫</span></div>
 </div>
-<div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><input type="hidden" name="start_date" id="bp-h-start" value="{{ now()->addDays(7)->format('Y-m-d') }}"><input type="hidden" name="end_date" id="bp-h-end" value="{{ now()->addDays(7)->addMonths(3)->format('Y-m-d') }}"><button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div>
+<div class="bp-ctas">@auth<form method="POST" action="{{ route('buyer.cart.add') }}" class="cart-add-form"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="screen_id" value="{{ $screen->id }}"><input type="hidden" name="start_date" id="bp-h-start" value="{{ now()->addDays(7)->format('Y-m-d') }}"><input type="hidden" name="end_date" id="bp-h-end" value="{{ now()->addDays(7)->addMonths(3)->format('Y-m-d') }}">
+@if($isCpm)<input type="hidden" name="booked_cpms" id="bp-h-cpms" value="1000">@else<input type="hidden" name="screen_count" id="bp-h-screens" value="1"><input type="hidden" name="duration_units" id="bp-h-dunits" value="{{ $defUnits }}">@endif
+<button type="submit" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Thêm vào Plan</button></form>@else<a href="{{ route('login') }}" class="btn btn-p btn-lg" style="width:100%;justify-content:center;border-radius:12px;height:52px;text-decoration:none"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px;flex-shrink:0"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Đăng nhập để Booking</a>@endauth</div>
 </div>
 <div class="bp-foot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--grn)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> Thanh toán bảo mật bởi OOHX · Hoàn tiền 100% nếu hủy trước 48h</div></div>
 @php
@@ -303,33 +343,58 @@ function sw(el,id){
   });
 
   // Dynamic booking cost calculator + sync hidden form fields
-  var cpm = {{ $cpm }};
-  var durSel = document.getElementById('bp-duration');
+  var pricingModel = '{{ $pricingModel }}';
+  var unitPrice = {{ $displayPrice }};
   var startInp = document.getElementById('bp-start');
   var hStart = document.getElementById('bp-h-start');
   var hEnd = document.getElementById('bp-h-end');
-  if (durSel) {
-    function fmtVND(n){ return n.toLocaleString('vi-VN'); }
-    function addMonths(dateStr, m){
-      var d = new Date(dateStr); d.setMonth(d.getMonth() + m);
-      return d.toISOString().slice(0,10);
-    }
-    function updateCalc(){
-      var months = parseInt(durSel.value) || 3;
-      var sub = cpm * months;
+  function fmtVND(n){ return n.toLocaleString('vi-VN'); }
+  function fmtPrice(n){ return n >= 1e6 ? (n/1e6).toFixed(1).replace('.0','') + 'M' : fmtVND(n); }
+  function addMonths(dateStr, m){ var d = new Date(dateStr); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0,10); }
+  function addWeeks(dateStr, w){ var d = new Date(dateStr); d.setDate(d.getDate() + w * 7); return d.toISOString().slice(0,10); }
+
+  if (pricingModel === 'cpm') {
+    // ── CPM calculator ──
+    var cpmsInp = document.getElementById('bp-cpms');
+    var hCpms = document.getElementById('bp-h-cpms');
+    function updateCpmCalc(){
+      var cpms = parseInt(cpmsInp?.value) || 1;
+      var sub = unitPrice * cpms;
       var vat = sub * 0.1;
-      var total = sub + vat;
-      var label = (cpm >= 1e6 ? (cpm/1e6).toFixed(1).replace('.0','') + 'M' : fmtVND(cpm)) + ' × ' + months + ' tháng';
-      document.getElementById('bp-calc-label').textContent = label;
+      document.getElementById('bp-calc-label').textContent = fmtVND(unitPrice) + ' ₫ × ' + fmtVND(cpms) + ' CPM';
       document.getElementById('bp-calc-sub').textContent = fmtVND(sub) + ' ₫';
       document.getElementById('bp-calc-vat').textContent = fmtVND(Math.round(vat)) + ' ₫';
-      document.getElementById('bp-calc-total').textContent = fmtVND(Math.round(total)) + ' ₫';
-      // Sync hidden fields for cart form
+      document.getElementById('bp-calc-total').textContent = fmtVND(Math.round(sub + vat)) + ' ₫';
+      if(hCpms) hCpms.value = cpms;
       if(hStart && startInp) hStart.value = startInp.value;
-      if(hEnd && startInp) hEnd.value = addMonths(startInp.value, months);
     }
-    durSel.addEventListener('change', updateCalc);
-    if(startInp) startInp.addEventListener('change', updateCalc);
+    if(cpmsInp) cpmsInp.addEventListener('input', updateCpmCalc);
+    if(startInp) startInp.addEventListener('change', updateCpmCalc);
+  } else {
+    // ── I/O calculator ──
+    var durSel = document.getElementById('bp-duration');
+    var screensInp = document.getElementById('bp-screens');
+    var hScreens = document.getElementById('bp-h-screens');
+    var hDunits = document.getElementById('bp-h-dunits');
+    var rateUnit = '{{ $ioRateUnit }}';
+    var unitLabel = rateUnit === 'week' ? 'tuần' : 'tháng';
+    function updateIoCalc(){
+      var units = parseInt(durSel?.value) || 1;
+      var screens = parseInt(screensInp?.value) || 1;
+      var sub = unitPrice * screens * units;
+      var vat = sub * 0.1;
+      document.getElementById('bp-calc-label').textContent = fmtPrice(unitPrice) + ' × ' + screens + ' mh × ' + units + ' ' + unitLabel;
+      document.getElementById('bp-calc-sub').textContent = fmtVND(sub) + ' ₫';
+      document.getElementById('bp-calc-vat').textContent = fmtVND(Math.round(vat)) + ' ₫';
+      document.getElementById('bp-calc-total').textContent = fmtVND(Math.round(sub + vat)) + ' ₫';
+      if(hScreens) hScreens.value = screens;
+      if(hDunits) hDunits.value = units;
+      if(hStart && startInp) hStart.value = startInp.value;
+      if(hEnd && startInp) hEnd.value = rateUnit === 'week' ? addWeeks(startInp.value, units) : addMonths(startInp.value, units);
+    }
+    if(durSel) durSel.addEventListener('change', updateIoCalc);
+    if(screensInp) screensInp.addEventListener('input', updateIoCalc);
+    if(startInp) startInp.addEventListener('change', updateIoCalc);
   }
 
   // Leaflet map for location tab

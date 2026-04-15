@@ -252,13 +252,51 @@ abstract class BaseScreenResource extends Resource
                         ->icon('heroicon-o-currency-dollar')
                         ->columns(3)
                         ->schema([
-                            Forms\Components\TextInput::make('inventory.floor_cpm')
-                                ->label('Giá sàn (Floor CPM)')
-                                ->numeric()
-                                ->prefix('₫')
-                                ->default(10.00)
+                            Forms\Components\Select::make('inventory.pricing_model')
+                                ->label('Kiểu bán')
+                                ->options([
+                                    'io'  => 'I/O Booking (giá/màn hình/tuần hoặc tháng)',
+                                    'cpm' => 'CPM (giá/1000 impressions)',
+                                ])
+                                ->default('io')
+                                ->required()
+                                ->live()
+                                ->columnSpan(3)
                                 ->visible($canPricing),
 
+                            // ── CPM fields ──
+                            Forms\Components\TextInput::make('inventory.floor_cpm')
+                                ->label('Đơn giá CPM (₫/1000 impressions)')
+                                ->numeric()
+                                ->prefix('₫')
+                                ->default(0)
+                                ->helperText('Giá cho mỗi 1,000 lượt hiển thị. VD: 45,000 ₫/CPM')
+                                ->visible(fn (Forms\Get $get) => $canPricing && $get('inventory.pricing_model') === 'cpm'),
+
+                            // ── I/O fields ──
+                            Forms\Components\TextInput::make('inventory.io_rate')
+                                ->label('Đơn giá I/O')
+                                ->numeric()
+                                ->prefix('₫')
+                                ->helperText('VD: 350,000 ₫/màn hình/tuần')
+                                ->visible(fn (Forms\Get $get) => $canPricing && ($get('inventory.pricing_model') ?? 'io') === 'io'),
+
+                            Forms\Components\Select::make('inventory.io_rate_unit')
+                                ->label('Đơn vị thời gian')
+                                ->options([
+                                    'week'  => 'Tuần',
+                                    'month' => 'Tháng',
+                                ])
+                                ->default('month')
+                                ->visible(fn (Forms\Get $get) => $canPricing && ($get('inventory.pricing_model') ?? 'io') === 'io'),
+
+                            Forms\Components\TextInput::make('inventory.io_kpi_spots_per_day')
+                                ->label('KPI spots/màn hình/ngày')
+                                ->numeric()
+                                ->helperText('Số spots cam kết phát mỗi ngày. VD: 120')
+                                ->visible(fn (Forms\Get $get) => $canPricing && ($get('inventory.pricing_model') ?? 'io') === 'io'),
+
+                            // ── Common fields ──
                             Forms\Components\TextInput::make('inventory.weekly_impressions')
                                 ->label('Lượt xem / tuần')
                                 ->numeric(),

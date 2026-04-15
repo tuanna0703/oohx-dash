@@ -62,10 +62,25 @@
                             <span class="cart-item-label">Thời gian</span>
                             <span>{{ $item->start_date->format('d/m/Y') }} → {{ $item->end_date->format('d/m/Y') }}</span>
                         </div>
+                        @if($item->pricing_model === 'cpm')
                         <div class="cart-item-field">
-                            <span class="cart-item-label">SOV</span>
-                            <span>{{ $item->share_of_voice_pct }}%</span>
+                            <span class="cart-item-label">Kiểu bán</span>
+                            <span style="color:var(--bl);font-weight:600">CPM</span>
                         </div>
+                        <div class="cart-item-field">
+                            <span class="cart-item-label">Chi tiết</span>
+                            <span>{{ number_format($item->unit_price, 0, ',', '.') }} ₫/CPM × {{ number_format($item->booked_cpms) }} CPM</span>
+                        </div>
+                        @else
+                        <div class="cart-item-field">
+                            <span class="cart-item-label">Kiểu bán</span>
+                            <span style="color:var(--grn);font-weight:600">I/O Booking</span>
+                        </div>
+                        <div class="cart-item-field">
+                            <span class="cart-item-label">Chi tiết</span>
+                            <span>{{ number_format($item->unit_price, 0, ',', '.') }} ₫ × {{ $item->screen_count }} mh × {{ $item->duration_units }} {{ $item->duration_unit === 'week' ? 'tuần' : 'tháng' }}</span>
+                        </div>
+                        @endif
                         <div class="cart-item-field">
                             <span class="cart-item-label">Ước tính</span>
                             <span style="font-weight:700;color:var(--t1)">{{ number_format($item->estimated_cost, 0, ',', '.') }} ₫</span>

@@ -4,8 +4,9 @@
 --}}
 @php
     $photo = $screen->spec?->photo ?? 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
-    $price = $screen->inventory?->floor_cpm ?? 0;
+    $price = $screen->inventory?->display_price ?? 0;
     $priceDisplay = number_format($price, 0, ',', '.');
+    $priceUnit = $screen->inventory?->display_price_unit ?? 'tháng';
     $vnCatId = $screen->inventory?->vn_category_id;
     $venueLabel = ($vnCatLabels ?? [])[$vnCatId] ?? '—';
     $city = $screen->site?->city ?? '';
@@ -68,7 +69,7 @@
     <div class="sc-foot">
         <div>
             <div class="sc-price">{{ $priceDisplay }}<sup>đ</sup></div>
-            <div class="sc-price-sub">/ tháng</div>
+            <div class="sc-price-sub">/ {{ $priceUnit }}</div>
         </div>
         <span class="btn btn-p btn-sm sc-btn">Chi tiết</span>
     </div>

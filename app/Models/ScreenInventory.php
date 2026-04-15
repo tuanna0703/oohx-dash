@@ -46,6 +46,8 @@ class ScreenInventory extends Model
         'spot_length', 'floor_cpm', 'floor_cpm_currency',
         'weekly_impressions', 'operating_hours', 'timezone',
         'programmatic_enabled',
+        // Pricing model
+        'pricing_model', 'io_rate', 'io_rate_unit', 'io_kpi_spots_per_day',
 
         // AdOps (Phase 2)
         'max_spot_length', 'min_spot_length', 'loop_length',
@@ -65,6 +67,8 @@ class ScreenInventory extends Model
         'strict_frequency_capping' => 'boolean',
         'floor_cpm'                => 'decimal:2',
         'floor_cpm_usd'            => 'decimal:4',
+        'io_rate'                  => 'decimal:2',
+        'io_kpi_spots_per_day'     => 'integer',
     ];
 
     // ── Relationships ───────────────────────────────────────
@@ -103,6 +107,36 @@ class ScreenInventory extends Model
         return $this->weekly_impressions
             ? (int) round($this->weekly_impressions / 7)
             : null;
+    }
+
+    public function isCpm(): bool
+    {
+        return $this->pricing_model === 'cpm';
+    }
+
+    public function isIo(): bool
+    {
+        return ($this->pricing_model ?? 'io') === 'io';
+    }
+
+    /**
+     * Get display price for frontpage.
+     * CPM: floor_cpm (₫/CPM)
+     * I/O: io_rate (₫/màn hình/tuần hoặc tháng)
+     */
+    public function getDisplayPriceAttribute(): float
+    {
+        return $this->isCpm()
+            ? (float) ($this->floor_cpm ?? 0)
+            : (float) ($this->io_rate ?? 0);
+    }
+
+    public function getDisplayPriceUnitAttribute(): string
+    {
+        if ($this->isCpm()) {
+            return 'CPM';
+        }
+        return $this->io_rate_unit === 'week' ? 'màn hình/tuần' : 'màn hình/tháng';
     }
 
     /** @internal AdOps — số màn hình thực tế (override hoặc mặc định 1) */

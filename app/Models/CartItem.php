@@ -13,6 +13,9 @@ class CartItem extends Model
         'quantity', 'selected_screen_ids', 'selected_region',
         'share_of_voice_pct', 'estimated_impressions', 'estimated_cost',
         'notes',
+        // Pricing model fields
+        'pricing_model', 'booked_cpms', 'screen_count',
+        'duration_units', 'duration_unit', 'unit_price',
     ];
 
     protected $casts = [
@@ -24,6 +27,10 @@ class CartItem extends Model
         'share_of_voice_pct' => 'integer',
         'estimated_impressions' => 'integer',
         'estimated_cost' => 'decimal:2',
+        'booked_cpms' => 'integer',
+        'screen_count' => 'integer',
+        'duration_units' => 'integer',
+        'unit_price' => 'decimal:2',
     ];
 
     public function cart(): BelongsTo

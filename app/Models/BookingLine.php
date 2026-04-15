@@ -20,6 +20,9 @@ class BookingLine extends Model
         'actual_impressions', 'actual_cost',
         'status', 'approved_by', 'approved_at',
         'rejected_reason', 'notes',
+        // Pricing model fields
+        'pricing_model', 'io_rate_at_booking', 'io_rate_unit',
+        'kpi_spots_per_day', 'booked_cpms', 'screen_count', 'actual_spots',
     ];
 
     protected $casts = [
@@ -29,6 +32,11 @@ class BookingLine extends Model
         'share_of_voice_pct' => 'integer',
         'floor_cpm_at_booking' => 'decimal:2',
         'negotiated_cpm' => 'decimal:2',
+        'io_rate_at_booking' => 'decimal:2',
+        'kpi_spots_per_day' => 'integer',
+        'booked_cpms' => 'integer',
+        'screen_count' => 'integer',
+        'actual_spots' => 'integer',
         'estimated_impressions' => 'integer',
         'estimated_cost' => 'decimal:2',
         'actual_impressions' => 'integer',
