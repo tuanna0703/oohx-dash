@@ -1,5 +1,5 @@
 {{-- Mega Search JS — raw JS, include inside existing <script> block
-     Handles: dropdown toggle, item selection, URL building, tag removal, chip click
+     Handles: dropdown toggle, hierarchical category+network selection, URL building, tag removal
 --}}
 (function(){
     var openDrop = null;
@@ -12,7 +12,6 @@
         var rect = msBox.getBoundingClientRect();
         var dropW = Math.min(720, window.innerWidth * 0.96);
         var left = rect.left + (rect.width / 2) - (dropW / 2);
-        // Keep within viewport
         if (left < 8) left = 8;
         if (left + dropW > window.innerWidth - 8) left = window.innerWidth - 8 - dropW;
         drop.style.top = (rect.bottom + 8) + 'px';
@@ -44,7 +43,6 @@
     }
 
     bindDrop('ms-btn-city', 'ms-drop-city');
-    bindDrop('ms-btn-network', 'ms-drop-network');
     bindDrop('ms-btn-type', 'ms-drop-type');
 
     // Reposition on scroll/resize
@@ -59,13 +57,24 @@
         item.addEventListener('click', function(){ item.classList.toggle('on'); });
     });
 
-    // ── Item selection (grid: network, type) ──
-    document.querySelectorAll('.ms-grid-item').forEach(function(item) {
-        item.addEventListener('click', function(){ item.classList.toggle('on'); });
+    // ── Item selection (category header — venue_type) ──
+    document.querySelectorAll('.ms-cat-head').forEach(function(item) {
+        item.addEventListener('click', function(e){
+            e.preventDefault();
+            item.classList.toggle('on');
+        });
+    });
+
+    // ── Item selection (network under category) ──
+    document.querySelectorAll('.ms-net-item').forEach(function(item) {
+        item.addEventListener('click', function(e){
+            e.preventDefault();
+            item.classList.toggle('on');
+        });
     });
 
     // ── Clear inside dropdowns ──
-    ['city','network','type'].forEach(function(key) {
+    ['city','type'].forEach(function(key) {
         var clearBtn = document.getElementById('ms-clear-' + key);
         if (!clearBtn) return;
         clearBtn.addEventListener('click', function() {
@@ -76,7 +85,6 @@
     });
 
     // ── Build URL from current state ──
-    // Detect target page: homepage → /explore, others → stay on current path
     var msTarget = (window.location.pathname === '/' || window.location.pathname === '') ? '/explore' : window.location.pathname;
 
     function buildUrl() {
@@ -84,24 +92,24 @@
         var q = document.getElementById('ms-q');
         if (q && q.value.trim()) params.append('q', q.value.trim());
 
-        // Cities from location dropdown
+        // Cities
         document.querySelectorAll('#ms-drop-city .ms-loc-item.on').forEach(function(el) {
             params.append('city[]', el.dataset.code);
         });
-        // Networks
-        document.querySelectorAll('#ms-drop-network .ms-grid-item.on').forEach(function(el) {
-            params.append('network[]', el.dataset.code);
-        });
-        // Types
-        document.querySelectorAll('#ms-drop-type .ms-grid-item.on').forEach(function(el) {
+        // Venue types (category headers)
+        document.querySelectorAll('#ms-drop-type .ms-cat-head.on').forEach(function(el) {
             params.append('venue_type[]', el.dataset.code);
         });
+        // Networks (nested under categories)
+        document.querySelectorAll('#ms-drop-type .ms-net-item.on').forEach(function(el) {
+            params.append('network[]', el.dataset.code);
+        });
 
-        // Preserve sort if on /explore
+        // Preserve sort
         var sortSel = document.getElementById('sort-sel');
         if (sortSel && sortSel.value) params.append('sort', sortSel.value);
 
-        // Preserve tab context (e.g. owner detail inventory tab)
+        // Preserve tab context
         var curTab = new URLSearchParams(window.location.search).get('tab');
         if (curTab) params.append('tab', curTab);
 
@@ -110,7 +118,7 @@
     }
 
     // ── Apply buttons ──
-    ['city','network','type'].forEach(function(key) {
+    ['city','type'].forEach(function(key) {
         var applyBtn = document.getElementById('ms-apply-' + key);
         if (applyBtn) applyBtn.addEventListener('click', function(){ closeDrop(); buildUrl(); });
     });

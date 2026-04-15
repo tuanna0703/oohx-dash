@@ -96,6 +96,42 @@ class FrontpageService
     }
 
     /**
+     * Venue categories with nested networks (for mega-search dropdown).
+     * Returns: [{slug, label, icon, count, networks: [{code, name, count}]}]
+     */
+    public function getCategoriesWithNetworks(): Collection
+    {
+        return Cache::remember('fp:categories_networks', 1800, function () {
+            // Get venue categories with screen counts
+            $categories = $this->getVenueTypesWithCounts();
+
+            // Get networks grouped by vn_category_id with screen counts
+            $networks = DB::table('networks')
+                ->join('sites', 'networks.id', '=', 'sites.network_id')
+                ->join('screens', 'sites.id', '=', 'screens.site_id')
+                ->join('venue_categories', 'networks.vn_category_id', '=', 'venue_categories.id')
+                ->where('screens.active', true)
+                ->whereNull('screens.deleted_at')
+                ->whereNull('sites.deleted_at')
+                ->whereNull('networks.deleted_at')
+                ->where('networks.status', 'active')
+                ->selectRaw('venue_categories.slug as cat_slug, networks.code, networks.name, COUNT(DISTINCT screens.id) as count')
+                ->groupBy('venue_categories.slug', 'networks.code', 'networks.name')
+                ->orderByDesc('count')
+                ->get()
+                ->groupBy('cat_slug');
+
+            return $categories->map(function ($cat) use ($networks) {
+                $cat['networks'] = ($networks[$cat['type']] ?? collect())
+                    ->map(fn ($n) => ['code' => $n->code, 'name' => $n->name, 'count' => (int) $n->count])
+                    ->values()
+                    ->toArray();
+                return $cat;
+            });
+        });
+    }
+
+    /**
      * Cached lookup: vn_category_id → VN category name.
      * Used by Blade views to display VN label for individual screens.
      */
@@ -572,12 +608,13 @@ class FrontpageService
                 ->get();
 
             return [
-                'formats'   => $formats,
-                'cities'    => $cities,
-                'networks'  => $networks,
-                'owners'    => $owners,
-                'min_price' => (float) ($priceRange->min_price ?? 0),
-                'max_price' => (float) ($priceRange->max_price ?? 0),
+                'formats'              => $formats,
+                'categories_networks'  => $this->getCategoriesWithNetworks(),
+                'cities'               => $cities,
+                'networks'             => $networks,
+                'owners'               => $owners,
+                'min_price'            => (float) ($priceRange->min_price ?? 0),
+                'max_price'            => (float) ($priceRange->max_price ?? 0),
             ];
         });
     }

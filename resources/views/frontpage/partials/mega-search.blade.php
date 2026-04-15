@@ -1,7 +1,7 @@
 {{-- Mega Search Box — unified component
      Props:
        $locationsByRegion — array (region_name => [{code, name, count}, ...])
-       $filters           — array (networks, formats, cities)
+       $filters           — array (categories_networks, networks, formats, cities)
        $variant           — 'hero' (homepage) | 'compact' (explore, default)
        $activeQ           — string (optional, pre-filled search text)
        $activeCities      — array (optional, active city codes)
@@ -20,6 +20,7 @@
     $activeVenueTypes = array_filter($activeVenueTypes);
     $hasFilters = !empty($activeCities) || !empty($activeNetworks) || !empty($activeVenueTypes) || !empty($activeQ);
     $isHero = $variant === 'hero';
+    $categoriesNetworks = $filters['categories_networks'] ?? $filters['formats'] ?? collect();
 @endphp
 
 <div class="ms-wrap {{ $isHero ? 'ms-hero' : 'ms-compact' }}">
@@ -32,18 +33,12 @@
             @if(count($activeCities) > 0)<span class="ms-pill-badge">{{ count($activeCities) }}</span>@endif
             <svg class="ms-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
-        {{-- Filter: Network --}}
-        <button class="ms-pill" type="button" id="ms-btn-network">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm4 4H8v-2h2v2zm0-4H8v-2h2v2zm10 4h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>
-            <span class="ms-pill-txt" id="ms-lbl-network">{{ count($activeNetworks) > 0 ? count($activeNetworks) . ' network' : 'Network' }}</span>
-            @if(count($activeNetworks) > 0)<span class="ms-pill-badge">{{ count($activeNetworks) }}</span>@endif
-            <svg class="ms-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-        </button>
-        {{-- Filter: Loại hình --}}
+        {{-- Filter: Loại hình (with nested networks) --}}
         <button class="ms-pill" type="button" id="ms-btn-type">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            <span class="ms-pill-txt" id="ms-lbl-type">{{ count($activeVenueTypes) > 0 ? count($activeVenueTypes) . ' loại' : 'Loại hình' }}</span>
-            @if(count($activeVenueTypes) > 0)<span class="ms-pill-badge">{{ count($activeVenueTypes) }}</span>@endif
+            @php $activeCount = count($activeVenueTypes) + count($activeNetworks); @endphp
+            <span class="ms-pill-txt" id="ms-lbl-type">{{ $activeCount > 0 ? $activeCount . ' bộ lọc' : 'Loại hình' }}</span>
+            @if($activeCount > 0)<span class="ms-pill-badge">{{ $activeCount }}</span>@endif
             <svg class="ms-pill-chv" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
         <div class="ms-divider"></div>
@@ -85,46 +80,42 @@
         </div>
     </div>
 
-    {{-- Drop: Network --}}
-    <div class="mega-drop" id="ms-drop-network">
-        <div class="mega-head">
-            <div class="mega-head-title">Chọn network</div>
-            <span class="mega-head-clear" id="ms-clear-network">Xoá tất cả</span>
-        </div>
-        <div class="mega-body" style="max-height:50vh">
-            <div class="ms-grid">
-                @foreach(($filters['networks'] ?? collect()) as $n)
-                <label class="ms-grid-item {{ in_array($n->code, $activeNetworks) ? 'on' : '' }}" data-code="{{ $n->code }}">
-                    <div class="sb-checkbox"></div>
-                    <span>{{ $n->name }}</span>
-                    <span class="sb-count">{{ $n->count }}</span>
-                </label>
-                @endforeach
-            </div>
-        </div>
-        <div class="mega-foot">
-            <button class="btn btn-s btn-sm ms-drop-close" type="button">Đóng</button>
-            <button class="btn btn-p btn-sm" type="button" id="ms-apply-network">Áp dụng</button>
-        </div>
-    </div>
-
-    {{-- Drop: Loại hình --}}
+    {{-- Drop: Loại hình + Networks (hierarchical) --}}
     <div class="mega-drop" id="ms-drop-type">
         <div class="mega-head">
-            <div class="mega-head-title">Chọn loại hình</div>
+            <div class="mega-head-title">Chọn loại hình & network</div>
             <span class="mega-head-clear" id="ms-clear-type">Xoá tất cả</span>
         </div>
-        <div class="mega-body" style="max-height:50vh">
-            <div class="ms-grid">
-                @foreach(($filters['formats'] ?? collect()) as $f)
-                @php $fType = is_array($f) ? $f['type'] : $f->type; $fLabel = is_array($f) ? $f['label'] : $f->label; $fCount = is_array($f) ? $f['count'] : $f->count; @endphp
-                <label class="ms-grid-item {{ in_array($fType, $activeVenueTypes) ? 'on' : '' }}" data-code="{{ $fType }}">
+        <div class="mega-body" style="max-height:55vh">
+            @foreach($categoriesNetworks as $cat)
+            @php
+                $catSlug = is_array($cat) ? $cat['type'] : $cat->type;
+                $catLabel = is_array($cat) ? $cat['label'] : $cat->label;
+                $catIcon = is_array($cat) ? ($cat['icon'] ?? 'tv') : ($cat->icon ?? 'tv');
+                $catCount = is_array($cat) ? $cat['count'] : $cat->count;
+                $catNetworks = is_array($cat) ? ($cat['networks'] ?? []) : [];
+                $isCatActive = in_array($catSlug, $activeVenueTypes);
+            @endphp
+            <div class="ms-cat-group">
+                <label class="ms-cat-head {{ $isCatActive ? 'on' : '' }}" data-code="{{ $catSlug }}" data-group="venue_type">
                     <div class="sb-checkbox"></div>
-                    <span>{{ $fLabel }}</span>
-                    <span class="sb-count">{{ $fCount }}</span>
+                    <span class="material-symbols-outlined" style="font-size:18px;color:var(--t3)">{{ $catIcon }}</span>
+                    <span class="ms-cat-name">{{ $catLabel }}</span>
+                    <span class="sb-count">{{ $catCount }}</span>
                 </label>
-                @endforeach
+                @if(!empty($catNetworks))
+                <div class="ms-cat-nets">
+                    @foreach($catNetworks as $net)
+                    <label class="ms-net-item {{ in_array($net['code'], $activeNetworks) ? 'on' : '' }}" data-code="{{ $net['code'] }}" data-group="network">
+                        <div class="sb-checkbox"></div>
+                        <span>{{ $net['name'] }}</span>
+                        <span class="sb-count">{{ $net['count'] }}</span>
+                    </label>
+                    @endforeach
+                </div>
+                @endif
             </div>
+            @endforeach
         </div>
         <div class="mega-foot">
             <button class="btn btn-s btn-sm ms-drop-close" type="button">Đóng</button>
