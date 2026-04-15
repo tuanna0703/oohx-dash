@@ -99,7 +99,7 @@
             <div class="ms-cat-group">
                 <label class="ms-cat-head {{ $isCatActive ? 'on' : '' }}" data-code="{{ $catSlug }}" data-group="venue_type">
                     <div class="sb-checkbox"></div>
-                    <span class="material-symbols-outlined" style="font-size:18px;color:var(--t3)">{{ $catIcon }}</span>
+                    <span class="material-icons" style="font-size:18px;color:var(--t3)">{{ $catIcon }}</span>
                     <span class="ms-cat-name">{{ $catLabel }}</span>
                     <span class="sb-count">{{ $catCount }}</span>
                 </label>
