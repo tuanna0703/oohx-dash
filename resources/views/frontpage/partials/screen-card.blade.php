@@ -6,7 +6,7 @@
     $photo = $screen->spec?->photo ?? 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
     $price = $screen->inventory?->display_price ?? 0;
     $priceDisplay = number_format($price, 0, ',', '.');
-    $priceUnit = $screen->inventory?->display_price_unit ?? 'tháng';
+    $priceUnit = $screen->inventory?->display_price_unit ?? (($screen->inventory?->io_rate_unit ?? 'month') === 'week' ? 'màn hình/tuần' : 'màn hình/tháng');
     $vnCatId = $screen->inventory?->vn_category_id;
     $venueLabel = ($vnCatLabels ?? [])[$vnCatId] ?? '—';
     $city = $screen->site?->city ?? '';

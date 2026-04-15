@@ -58,10 +58,18 @@ class CartService
             }
         }
 
+        // Determine pricing model from first screen's inventory
+        $firstScreen = $product->screens->first();
+        $inv = $firstScreen?->inventory;
+        $pricingModel = $inv?->pricing_model ?? 'io';
+        if ($pricingModel === 'both') {
+            $pricingModel = 'io'; // Products default to I/O
+        }
+
         return CartItem::updateOrCreate(
             ['cart_id' => $cart->id, 'product_id' => $productId],
             [
-                'screen_id' => $product->screens->first()?->id,
+                'screen_id' => $firstScreen?->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'spot_length' => $data['spot_length'] ?? 15,
@@ -72,6 +80,12 @@ class CartService
                 'estimated_impressions' => $impressions,
                 'estimated_cost' => $cost,
                 'notes' => $data['notes'] ?? null,
+                // Pricing model fields
+                'pricing_model' => $pricingModel,
+                'unit_price' => $cost, // product price = total cost
+                'screen_count' => $quantity,
+                'duration_units' => 1,
+                'duration_unit' => $inv?->io_rate_unit ?? 'month',
             ]
         );
     }
@@ -147,7 +161,10 @@ class CartService
     {
         $screen = $item->screen()->with('inventory')->first();
 
+        // Preserve pricing_model from item (already resolved on addItem)
+        $pricingModel = $item->pricing_model ?? 'io';
         $mergedData = array_merge([
+            '_resolved_pricing_model' => $pricingModel,
             'start_date' => $item->start_date->toDateString(),
             'end_date' => $item->end_date->toDateString(),
             'share_of_voice_pct' => $item->share_of_voice_pct,
@@ -165,9 +182,11 @@ class CartService
             'share_of_voice_pct' => $mergedData['share_of_voice_pct'],
             'estimated_impressions' => $estimated['impressions'],
             'estimated_cost' => $estimated['cost'],
+            'pricing_model' => $pricingModel,
             'booked_cpms' => $estimated['booked_cpms'] ?? $item->booked_cpms,
             'screen_count' => $estimated['screen_count'] ?? $item->screen_count,
             'duration_units' => $estimated['duration_units'] ?? $item->duration_units,
+            'duration_unit' => $estimated['duration_unit'] ?? $item->duration_unit,
             'unit_price' => $estimated['unit_price'] ?? $item->unit_price,
             'notes' => $data['notes'] ?? $item->notes,
         ]);

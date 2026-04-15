@@ -73,9 +73,9 @@
     }
     $mainPhoto = $photos[0] ?? 'https://placehold.co/800x500/F5F5F7/6E6E73?text=No+Photo';
 @endphp
-<div class="gallery">
+<div class="gallery{{ count($photos) <= 1 ? ' gallery--single' : '' }}">
   <div class="gal-main">
-    <img src="{{ $mainPhoto }}" id="gal-main-img" alt="">
+    <img src="{{ $mainPhoto }}" id="gal-main-img" alt="{{ $screen->name }}">
     <div class="gal-actions"><button class="gal-btn" id="savebtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:17px;height:17px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></button><button class="gal-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:17px;height:17px;flex-shrink:0"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button><button class="gal-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:17px;height:17px;flex-shrink:0"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button></div>
     <div class="gal-badge"><span class="badge b-grn"><span style="width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block"></span> Còn trống</span></div>
     <div class="gal-count"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:13px;height:13px;flex-shrink:0"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> {{ count($photos) }} ảnh</div>
@@ -105,7 +105,26 @@
 <div>
 <h1 class="dtitle">{{ $screen->name }}</h1>
 <div class="dmeta"><div class="dloc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $screen->site?->city ?? '' }}</div><span class="msep"></span><span style="font-size:13px;color:var(--t3)">{{ $screen->owner?->name ?? '' }}</span></div>
-<a href="{{ route('fp.owner-detail', $screen->owner?->slug ?? '#') }}" class="owner-mini"><div class="om-logo">{{ $screen->owner ? strtoupper(substr($screen->owner->name, 0, 2)) : '—' }}</div><div><div class="om-name">{{ $screen->owner?->name ?? '—' }}</div><div class="om-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified Partner</div></div><div class="om-r"><div style="text-align:right"><div style="font-size:12px;color:var(--t4)">{{ $screen->site?->network?->name ?? '' }}</div></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div></a>
+@php
+    $ownerSlug = $screen->owner?->slug ?? '#';
+    $networkCode = $screen->site?->network?->code ?? '';
+    $ownerLink = route('fp.owner-detail', $ownerSlug) . '?tab=inventory' . ($networkCode ? '&network[]=' . $networkCode : '');
+    $ownerLogo = $screen->owner?->logo_url;
+    $ownerInitials = $screen->owner ? strtoupper(collect(explode(' ', $screen->owner->name))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->join('')) : '—';
+    $isVerified = $screen->owner?->verified ?? false;
+@endphp
+<a href="{{ $ownerLink }}" class="owner-mini">
+@if($ownerLogo)
+<img src="{{ asset('storage/' . $ownerLogo) }}" class="om-logo om-logo--img" alt="{{ $screen->owner->name }}">
+@else
+<div class="om-logo">{{ $ownerInitials }}</div>
+@endif
+<div>
+<div class="om-name">{{ $screen->owner?->name ?? '—' }}</div>
+@if($isVerified)<div class="om-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified Partner</div>@endif
+</div>
+<div class="om-r"><div style="text-align:right"><div style="font-size:12px;color:var(--t4)">{{ $screen->site?->network?->name ?? '' }}</div></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+</a>
 <div class="stats-row rv"><div class="stat-box"><div class="stat-n">{{ $screen->site?->name ?? '—' }}</div><div class="stat-l">Site</div></div><div class="stat-box"><div class="stat-n">{{ $screen->site?->network?->name ?? '—' }}</div><div class="stat-l">Network</div></div><div class="stat-box"><div class="stat-n">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'×'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div><div class="stat-l">Kích thước</div></div><div class="stat-box"><div class="stat-n">{{ $screen->inventory?->floor_cpm ? number_format((float)$screen->inventory->floor_cpm, 0, ',', '.') . 'đ' : '—' }}</div><div class="stat-l">Floor CPM</div></div></div>
 <div class="tabs"><div class="tab on" onclick="sw(this,'tp-info')">Thông tin</div><div class="tab" onclick="sw(this,'tp-avail')">Lịch trống</div><div class="tab" onclick="sw(this,'tp-map')">Vị trí</div><div class="tab" onclick="sw(this,'tp-review')">Đánh giá</div></div>
 <div id="tp-info" class="tp on">
