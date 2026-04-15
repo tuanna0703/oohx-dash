@@ -1393,6 +1393,11 @@ input[type=range]{width:100%;accent-color:var(--bl);cursor:pointer}
 .bp-ctas{display:flex;flex-direction:column;gap:10px}
 .bp-foot{padding:14px 22px;border-top:1px solid var(--ln2);font-size:12px;color:var(--t4);display:flex;align-items:flex-start;gap:7px;background:var(--bg3);line-height:1.5}
 .bp-foot svg{width:14px;height:14px;flex-shrink:0;color:var(--grn);margin-top:1px}
+/* Pricing mode toggle (CPM vs I/O) */
+.bp-toggle{display:flex;border:1.5px solid var(--ln2);border-radius:10px;overflow:hidden;background:var(--bg2)}
+.bp-tog-btn{flex:1;padding:10px 12px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all 140ms}
+.bp-tog-btn.bp-tog-on{background:var(--bl);color:#fff}
+.bp-tog-btn:not(.bp-tog-on):hover{background:var(--bg3)}
 /* Booking panel tabs (listing_mode: both) */
 .bp-tabs{display:flex;border-bottom:1px solid var(--ln2);background:var(--bg3)}
 .bp-tab{flex:1;padding:12px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:700;color:var(--t4);cursor:pointer;transition:all 140ms;border-bottom:2px solid transparent}

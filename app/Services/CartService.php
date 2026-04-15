@@ -87,7 +87,18 @@ class CartService
     {
         $screen = Screen::with('inventory')->findOrFail($screenId);
         $inv = $screen->inventory;
-        $pricingModel = $inv?->pricing_model ?? 'io';
+        $invModel = $inv?->pricing_model ?? 'io';
+
+        // When screen supports 'both', buyer chooses. Otherwise use screen's model.
+        $buyerChoice = $data['pricing_model'] ?? null;
+        if ($invModel === 'both' && in_array($buyerChoice, ['cpm', 'io'])) {
+            $pricingModel = $buyerChoice;
+        } elseif ($invModel === 'both') {
+            $pricingModel = 'io'; // default to I/O
+        } else {
+            $pricingModel = $invModel;
+        }
+        $data['_resolved_pricing_model'] = $pricingModel;
 
         $startDate = $data['start_date'] ?? now()->addDays(7)->toDateString();
         $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString();
@@ -110,7 +121,7 @@ class CartService
                 'estimated_impressions' => $estimated['impressions'],
                 'estimated_cost' => $estimated['cost'],
                 'notes' => $data['notes'] ?? null,
-                // Pricing model snapshot
+                // Pricing model — buyer's actual choice (cpm or io, never 'both')
                 'pricing_model' => $pricingModel,
                 'booked_cpms' => $estimated['booked_cpms'] ?? null,
                 'screen_count' => $estimated['screen_count'] ?? 1,
@@ -173,7 +184,12 @@ class CartService
     public function estimateCost(Screen $screen, array $data = []): array
     {
         $inv = $screen->inventory;
-        $pricingModel = $inv?->pricing_model ?? 'io';
+        // Use resolved model from addItem(), or determine from inventory
+        $pricingModel = $data['_resolved_pricing_model'] ?? $inv?->pricing_model ?? 'io';
+        // If screen allows 'both' but no explicit choice, default to 'io'
+        if ($pricingModel === 'both') {
+            $pricingModel = 'io';
+        }
 
         $startDate = $data['start_date'] ?? now()->addDays(7)->toDateString();
         $endDate = $data['end_date'] ?? now()->addDays(37)->toDateString();

@@ -5,8 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Add dual pricing model support: CPM + I/O Booking.
+ * Add dual pricing model support: CPM + I/O Booking + Both.
  *
+ * pricing_model: 'io' (I/O only), 'cpm' (CPM only), 'both' (buyer chọn)
  * CPM:  floor_cpm = giá/CPM (VNĐ per 1000 impressions)
  * I/O:  io_rate = giá/màn hình/tuần hoặc tháng, với KPI spots
  */
@@ -16,7 +17,7 @@ return new class extends Migration
     {
         // ── screen_inventory: pricing model + I/O fields ──
         Schema::table('screen_inventory', function (Blueprint $table) {
-            $table->enum('pricing_model', ['cpm', 'io'])->default('io')->after('programmatic_enabled');
+            $table->enum('pricing_model', ['cpm', 'io', 'both'])->default('io')->after('programmatic_enabled');
             $table->decimal('io_rate', 15, 2)->nullable()->after('pricing_model');
             $table->enum('io_rate_unit', ['week', 'month'])->default('month')->after('io_rate');
             $table->unsignedSmallInteger('io_kpi_spots_per_day')->nullable()->after('io_rate_unit');

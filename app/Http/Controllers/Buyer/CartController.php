@@ -50,13 +50,14 @@ class CartController extends Controller
 
             $item = $this->cartService->addProduct($cart, $data['product_id'], $data);
         } else {
-            // Screen-based add (supports CPM + I/O)
+            // Screen-based add (supports CPM + I/O + both)
             $data = $request->validate([
                 'screen_id'      => ['required', 'string', 'exists:screens,id'],
                 'product_id'     => ['nullable', 'string', 'exists:products,id'],
                 'start_date'     => ['nullable', 'date', 'after_or_equal:today'],
                 'end_date'       => ['nullable', 'date', 'after:start_date'],
                 'quantity'       => ['nullable', 'integer', 'min:1'],
+                'pricing_model'  => ['nullable', 'in:cpm,io'],
                 'booked_cpms'    => ['nullable', 'integer', 'min:1'],
                 'screen_count'   => ['nullable', 'integer', 'min:1'],
                 'duration_units' => ['nullable', 'integer', 'min:1'],

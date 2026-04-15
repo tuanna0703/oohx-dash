@@ -109,34 +109,41 @@ class ScreenInventory extends Model
             : null;
     }
 
-    public function isCpm(): bool
+    public function allowsCpm(): bool
     {
-        return $this->pricing_model === 'cpm';
+        return in_array($this->pricing_model, ['cpm', 'both']);
     }
 
-    public function isIo(): bool
+    public function allowsIo(): bool
     {
-        return ($this->pricing_model ?? 'io') === 'io';
+        return in_array($this->pricing_model ?? 'io', ['io', 'both']);
+    }
+
+    public function isBoth(): bool
+    {
+        return $this->pricing_model === 'both';
     }
 
     /**
-     * Get display price for frontpage.
-     * CPM: floor_cpm (₫/CPM)
-     * I/O: io_rate (₫/màn hình/tuần hoặc tháng)
+     * Get display price for frontpage (uses I/O rate as primary if available).
+     * both: show I/O rate as headline, CPM as secondary
+     * cpm-only: show floor_cpm
+     * io-only: show io_rate
      */
     public function getDisplayPriceAttribute(): float
     {
-        return $this->isCpm()
-            ? (float) ($this->floor_cpm ?? 0)
-            : (float) ($this->io_rate ?? 0);
+        if ($this->allowsIo() && $this->io_rate > 0) {
+            return (float) $this->io_rate;
+        }
+        return (float) ($this->floor_cpm ?? 0);
     }
 
     public function getDisplayPriceUnitAttribute(): string
     {
-        if ($this->isCpm()) {
-            return 'CPM';
+        if ($this->allowsIo() && $this->io_rate > 0) {
+            return $this->io_rate_unit === 'week' ? 'màn hình/tuần' : 'màn hình/tháng';
         }
-        return $this->io_rate_unit === 'week' ? 'màn hình/tuần' : 'màn hình/tháng';
+        return 'CPM';
     }
 
     /** @internal AdOps — số màn hình thực tế (override hoặc mặc định 1) */
