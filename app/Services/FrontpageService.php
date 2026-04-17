@@ -673,9 +673,9 @@ class FrontpageService
             ->with([
                 'spec:screen_id,photo_url,photos',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                'owner:id,name,slug',
+                'owner:id,name,slug,logo_url',
                 'site:id,network_id,name,lat,lon,city,address',
-                'site.network:id,name',
+                'site.network:id,name,code',
                 'products:id,slug,name,total_units,listing_mode',
             ])
             ->get();

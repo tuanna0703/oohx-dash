@@ -95,6 +95,7 @@ class FrontpageController extends Controller
         $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs, $vnCatIcons) {
             $catId = $p->inventory?->vn_category_id;
             $product = $p->relationLoaded('products') ? $p->products->first() : null;
+            $ownerLogo = $p->owner?->logo_url;
             return [
                 'id'        => $p->slug ?? $p->uuid ?? $p->id,
                 'name'      => $p->name,
@@ -108,6 +109,11 @@ class FrontpageController extends Controller
                 'type'      => $vnCatSlugs[$catId] ?? '',
                 'typeLabel' => $vnCatLabels[$catId] ?? '',
                 'icon'      => $vnCatIcons[$catId] ?? 'tv',
+                'ownerName' => $p->owner?->name ?? '',
+                'ownerLogo' => $ownerLogo ? asset('storage/' . $ownerLogo) : '',
+                'ownerInitials' => $p->owner ? strtoupper(mb_substr($p->owner->name, 0, 2)) : '',
+                'networkName' => $p->site?->network?->name ?? '',
+                'siteName'    => $p->site?->name ?? '',
                 'product'   => $product ? [
                     'slug'        => $product->slug,
                     'name'        => $product->name,

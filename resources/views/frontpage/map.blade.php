@@ -9,21 +9,41 @@
 #leaflet-map{position:absolute;inset:0;z-index:0}
 #leaflet-map .leaflet-control-zoom{display:none}
 
-/* ── Pin: icon + label mode (zoom ≥ 15) ── */
+/* ── Pin base ── */
 .oohx-pin{background:none;border:none}
-.oohx-pin-box{border-radius:10px;padding:5px 10px;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform 200ms var(--spring)}
-.oohx-pin-box:hover{transform:scale(1.1)}
+
+/* Tier 1: Dot (zoom < 14) */
+.oohx-dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
+.oohx-dot:hover{transform:scale(1.4)}
+.oohx-dot--bl{background:var(--bl)}.oohx-dot--grn{background:var(--grn)}.oohx-dot--org{background:var(--org)}.oohx-dot--red{background:var(--red)}
+
+/* Tier 2: Pill (zoom 14-15) — icon + network name */
+.oohx-pin-box{border-radius:10px;padding:5px 10px;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);cursor:pointer;transition:transform 200ms var(--spring);max-width:160px;overflow:hidden}
+.oohx-pin-box:hover{transform:scale(1.08)}
 .oohx-pin-box svg{width:14px;height:14px;flex-shrink:0}
+.oohx-pin-box span{overflow:hidden;text-overflow:ellipsis}
 .oohx-pin-arrow{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;margin:-1px auto 0}
-/* Pin: icon-only mode (zoom < 15) */
-.oohx-pin-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.25);cursor:pointer;transition:transform 200ms var(--spring);border:2px solid rgba(255,255,255,.9)}
-.oohx-pin-icon:hover{transform:scale(1.15)}
-.oohx-pin-icon svg{width:14px;height:14px;flex-shrink:0}
-/* Colors for both modes */
-.oohx-pin--bl .oohx-pin-box,.oohx-pin--bl .oohx-pin-icon{background:var(--bl)}.oohx-pin--bl .oohx-pin-arrow{border-top:8px solid var(--bl)}
-.oohx-pin--grn .oohx-pin-box,.oohx-pin--grn .oohx-pin-icon{background:var(--grn)}.oohx-pin--grn .oohx-pin-arrow{border-top:8px solid var(--grn)}
-.oohx-pin--org .oohx-pin-box,.oohx-pin--org .oohx-pin-icon{background:var(--org)}.oohx-pin--org .oohx-pin-arrow{border-top:8px solid var(--org)}
-.oohx-pin--red .oohx-pin-box,.oohx-pin--red .oohx-pin-icon{background:var(--red)}.oohx-pin--red .oohx-pin-arrow{border-top:8px solid var(--red)}
+/* Pill colors */
+.oohx-pin--bl .oohx-pin-box{background:var(--bl)}.oohx-pin--bl .oohx-pin-arrow{border-top:8px solid var(--bl)}
+.oohx-pin--grn .oohx-pin-box{background:var(--grn)}.oohx-pin--grn .oohx-pin-arrow{border-top:8px solid var(--grn)}
+.oohx-pin--org .oohx-pin-box{background:var(--org)}.oohx-pin--org .oohx-pin-arrow{border-top:8px solid var(--org)}
+.oohx-pin--red .oohx-pin-box{background:var(--red)}.oohx-pin--red .oohx-pin-arrow{border-top:8px solid var(--red)}
+
+/* Tier 3: Rich (zoom >= 16) — logo + name + meta */
+.oohx-rich{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 10px 6px 6px;box-shadow:0 4px 20px rgba(0,0,0,.18);cursor:pointer;transition:transform 200ms var(--spring);border:1px solid var(--ln2);max-width:200px}
+.oohx-rich:hover{transform:scale(1.05);box-shadow:0 6px 24px rgba(0,0,0,.22)}
+.oohx-rich-logo{width:32px;height:32px;border-radius:8px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--ln2);padding:2px}
+.oohx-rich-initials{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.oohx-rich-initials--bl{background:rgba(42,79,246,.1);color:var(--bl)}
+.oohx-rich-initials--grn{background:rgba(52,199,89,.1);color:#1a7d37}
+.oohx-rich-initials--org{background:rgba(255,159,10,.1);color:#c93400}
+.oohx-rich-initials--red{background:rgba(255,59,48,.1);color:#d70015}
+.oohx-rich-body{min-width:0;flex:1}
+.oohx-rich-name{font-size:12px;font-weight:700;color:var(--t1);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oohx-rich-meta{font-size:10px;color:var(--t4);line-height:1.2;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Rich border accent by type */
+.oohx-rich--bl{border-left:3px solid var(--bl)}.oohx-rich--grn{border-left:3px solid var(--grn)}
+.oohx-rich--org{border-left:3px solid var(--org)}.oohx-rich--red{border-left:3px solid var(--red)}
 
 /* ── Cluster circles ── */
 .marker-cluster{background:none !important;border:none !important}
@@ -304,33 +324,57 @@
     });
     map.addLayer(clusterGroup);
 
-    // ── Build pin icon based on zoom level ──
+    // ── Build pin icon based on 3-tier zoom ──
+    // < 14: dot  |  14-15: pill (icon + network)  |  >= 16: rich (logo + name + meta)
+    function pinMode(zoom) { return zoom >= 16 ? 'rich' : zoom >= 14 ? 'pill' : 'dot'; }
+
     function createPinIcon(pin, zoom) {
         var col = pinColor(pin.type);
         var svg = PIN_ICONS[pin.type] || DEFAULT_ICON;
+        var mode = pinMode(zoom);
 
-        if (zoom >= 15) {
-            // Icon + short label
-            var label = PIN_LABELS[pin.type] || pin.typeLabel || '';
+        if (mode === 'rich') {
+            // Rich marker: logo/initials + network name + site
+            var logoHtml = pin.ownerLogo
+                ? '<img src="' + pin.ownerLogo + '" class="oohx-rich-logo" alt="">'
+                : '<div class="oohx-rich-initials oohx-rich-initials--' + col + '">' + (pin.ownerInitials || '?') + '</div>';
+            var netLabel = pin.networkName || pin.ownerName || '';
+            var meta = pin.siteName || pin.typeLabel || '';
+            return L.divIcon({
+                className: 'oohx-pin oohx-pin--rich',
+                html: '<div class="oohx-rich oohx-rich--' + col + '">'
+                    + logoHtml
+                    + '<div class="oohx-rich-body">'
+                    + '<div class="oohx-rich-name">' + netLabel + '</div>'
+                    + '<div class="oohx-rich-meta">' + meta + '</div>'
+                    + '</div></div>',
+                iconSize: [180, 48],
+                iconAnchor: [16, 48],
+            });
+        }
+
+        if (mode === 'pill') {
+            // Pill: icon + network name
+            var label = pin.networkName || PIN_LABELS[pin.type] || pin.typeLabel || '';
             return L.divIcon({
                 className: 'oohx-pin oohx-pin--' + col,
                 html: '<div class="oohx-pin-box">' + svg + '<span>' + label + '</span></div><div class="oohx-pin-arrow"></div>',
-                iconSize: [90, 36],
-                iconAnchor: [45, 36],
-            });
-        } else {
-            // Icon only (compact)
-            return L.divIcon({
-                className: 'oohx-pin oohx-pin--' + col,
-                html: '<div class="oohx-pin-icon">' + svg + '</div>',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
+                iconSize: [120, 36],
+                iconAnchor: [16, 36],
             });
         }
+
+        // Dot: colored circle
+        return L.divIcon({
+            className: 'oohx-pin oohx-pin--dot',
+            html: '<div class="oohx-dot oohx-dot--' + col + '"></div>',
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+        });
     }
 
     var currentZoom = map.getZoom();
-    var lastPinMode = currentZoom >= 15 ? 'label' : 'icon';
+    var lastPinMode = pinMode(currentZoom);
 
     function renderPins(pinList) {
         clusterGroup.clearLayers();
@@ -360,10 +404,10 @@
 
     renderPins(PINS);
 
-    // Re-render pin icons when zoom crosses threshold (icon ↔ icon+label)
+    // Re-render pin icons when zoom crosses tier threshold
     map.on('zoomend', function() {
         var zoom = map.getZoom();
-        var mode = zoom >= 15 ? 'label' : 'icon';
+        var mode = pinMode(zoom);
         if (mode !== lastPinMode) {
             lastPinMode = mode;
             markers.forEach(function(m) {
