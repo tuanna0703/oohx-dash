@@ -1577,6 +1577,10 @@ body.page-map{overflow:hidden}
 @media(min-width:768px){.mt-btn svg{width:14px;height:14px}}
 .mt-btn:hover{background:rgba(255,255,255,1)}
 .mt-btn.on{background:var(--bl);color:#fff}
+.mt-btn-count{font-size:10px;font-weight:700;opacity:.55;margin-left:2px}
+.mt-btn.on .mt-btn-count{opacity:.8}
+.mt-top-chips{display:flex;gap:6px;flex-shrink:0}
+@media(min-width:768px){.mt-top-chips{gap:8px}}
 .mt-more{position:relative;flex-shrink:0}
 .mt-more-trigger{gap:3px !important}
 .mt-dropdown{display:none;position:absolute;top:calc(100% + 6px);right:0;width:220px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:20;overflow:hidden}

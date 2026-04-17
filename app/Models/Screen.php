@@ -123,6 +123,44 @@ class Screen extends Model
         return $this->site?->network;
     }
 
+    /**
+     * Display photo with fallback chain:
+     * 1. Screen spec photo (first of photos[] or photo_url)
+     * 2. Site banner
+     * 3. Network banner
+     * 4. Owner cover
+     * 5. Venue category thumb
+     * Returns null if all fallbacks miss — view should use placeholder.
+     */
+    public function getDisplayPhotoAttribute(): ?string
+    {
+        // 1. Screen spec photo (already formatted as full URL by spec accessor)
+        $specPhoto = $this->spec?->photo;
+        if ($specPhoto) return $specPhoto;
+
+        // 2. Site banner
+        if ($this->site?->banner) {
+            return asset('storage/' . $this->site->banner);
+        }
+
+        // 3. Network banner (via site)
+        if ($this->site?->network?->banner) {
+            return asset('storage/' . $this->site->network->banner);
+        }
+
+        // 4. Owner cover
+        if ($this->owner?->cover_url) {
+            return asset('storage/' . $this->owner->cover_url);
+        }
+
+        // 5. Venue category thumb
+        if ($this->inventory?->vnCategory?->thumb) {
+            return asset('storage/' . $this->inventory->vnCategory->thumb);
+        }
+
+        return null;
+    }
+
     public function spec(): HasOne
     {
         return $this->hasOne(ScreenSpec::class);

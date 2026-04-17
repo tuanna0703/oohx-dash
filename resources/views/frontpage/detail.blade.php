@@ -71,6 +71,11 @@
     if (empty($photos) && $screen->spec?->photo_url) {
         $photos = [asset('storage/' . $screen->spec->photo_url)];
     }
+    // Fallback chain: if no spec photos, use display_photo (site/network/owner/venue category)
+    if (empty($photos)) {
+        $fallback = $screen->display_photo;
+        if ($fallback) $photos = [$fallback];
+    }
     $mainPhoto = $photos[0] ?? 'https://placehold.co/800x500/F5F5F7/6E6E73?text=No+Photo';
 @endphp
 <div class="gallery{{ count($photos) <= 1 ? ' gallery--single' : '' }}">

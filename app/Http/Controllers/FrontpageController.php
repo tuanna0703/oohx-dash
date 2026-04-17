@@ -108,7 +108,7 @@ class FrontpageController extends Controller
                 'lng'       => (float) ($p->site?->lon ?? 0),
                 'city'      => $p->site?->city ?? '',
                 'addr'      => $p->site?->address ?? '',
-                'photo'     => $p->spec?->photo ?? '',
+                'photo'     => $p->display_photo ?? '',
                 'price'     => (float) ($p->inventory?->display_price ?? 0),
                 'priceUnit' => $p->inventory?->display_price_unit ?? '',
                 'type'      => $vnCatSlugs[$catId] ?? '',

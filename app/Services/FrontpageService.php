@@ -272,9 +272,10 @@ class FrontpageService
                 ->with([
                     'spec:screen_id,photo_url,photos,width_cm,height_cm',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                    'owner:id,name,slug',
-                    'site:id,network_id,name,city,address',
-                    'site.network:id,name',
+                    'inventory.vnCategory:id,thumb',
+                    'owner:id,name,slug,cover_url',
+                    'site:id,network_id,name,city,address,banner',
+                    'site.network:id,name,banner',
                     'products:id,slug,name,total_units,listing_mode',
                 ])
                 ->inRandomOrder()
@@ -440,9 +441,9 @@ class FrontpageService
         return $query->with([
                 'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                'owner:id,name,slug',
-                'site:id,network_id,name,city,address',
-                'site.network:id,name',
+                'owner:id,name,slug,cover_url',
+                'site:id,network_id,name,city,address,banner',
+                'site.network:id,name,banner',
                 'products:id,slug,name,total_units,listing_mode',
             ])
             ->orderByDesc('created_at')
@@ -496,7 +497,7 @@ class FrontpageService
         $query = Network::withoutGlobalScope('owner_scope')
             ->where('status', 'active')
             ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
-            ->with(['owner:id,name,slug']);
+            ->with(['owner:id,name,slug,cover_url']);
 
         // Search
         if ($request->filled('q')) {
@@ -525,7 +526,7 @@ class FrontpageService
         $query = Site::withoutGlobalScope('owner_scope')
             ->where('status', 'active')
             ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
-            ->with(['owner:id,name,slug', 'network:id,name']);
+            ->with(['owner:id,name,slug,cover_url', 'network:id,name']);
 
         if ($request->filled('q')) {
             $search = $request->input('q');
@@ -568,9 +569,9 @@ class FrontpageService
             ->with([
                 'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                'owner:id,name,slug',
-                'site:id,network_id,name,city,address',
-                'site.network:id,name',
+                'owner:id,name,slug,cover_url',
+                'site:id,network_id,name,city,address,banner',
+                'site.network:id,name,banner',
                 'products:id,slug,name,total_units,listing_mode',
             ]);
 
@@ -642,9 +643,10 @@ class FrontpageService
                 ->with([
                     'spec:screen_id,photo_url,photos,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                    'owner:id,name,slug,logo_url,verified',
-                    'site:id,network_id,name,city,address,lat,lon',
-                    'site.network:id,name,code',
+                    'inventory.vnCategory:id,thumb',
+                    'owner:id,name,slug,logo_url,cover_url,verified',
+                    'site:id,network_id,name,city,address,lat,lon,banner',
+                    'site.network:id,name,code,banner',
                 ])
                 ->where(function ($q) use ($id) {
                     $q->where('slug', $id)
@@ -668,9 +670,10 @@ class FrontpageService
                 ->with([
                     'spec:screen_id,photo_url,photos,width_cm,height_cm',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                    'owner:id,name,slug',
-                    'site:id,network_id,name,city,address',
-                    'site.network:id,name',
+                    'inventory.vnCategory:id,thumb',
+                    'owner:id,name,slug,cover_url',
+                    'site:id,network_id,name,city,address,banner',
+                    'site.network:id,name,banner',
                 ])
                 ->inRandomOrder()
                 ->limit($limit)
@@ -687,9 +690,10 @@ class FrontpageService
             ->with([
                 'spec:screen_id,photo_url,photos,width_cm,height_cm',
                 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
-                'owner:id,name,slug,logo_url',
-                'site:id,network_id,name,lat,lon,city,address',
-                'site.network:id,name,code',
+                'inventory.vnCategory:id,thumb',
+                'owner:id,name,slug,logo_url,cover_url',
+                'site:id,network_id,name,lat,lon,city,address,banner',
+                'site.network:id,name,code,banner',
                 'products:id,slug,name,total_units,listing_mode',
             ])
             ->get();
@@ -713,7 +717,7 @@ class FrontpageService
         }
 
         $screens = $query
-            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day', 'owner:id,name,slug', 'site:id,network_id,name,lat,lon,city,address', 'site.network:id,name'])
+            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day', 'inventory.vnCategory:id,thumb', 'owner:id,name,slug,cover_url', 'site:id,network_id,name,lat,lon,city,address,banner', 'site.network:id,name,banner'])
             ->inRandomOrder()
             ->limit($limit)
             ->get();
