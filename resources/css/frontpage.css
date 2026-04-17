@@ -832,7 +832,8 @@ ul{list-style:none}
 @media(min-width:1024px){.oc-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
 .oc-grid--full{grid-template-columns:1fr}
 @media(min-width:640px){.oc-grid--full{grid-template-columns:1fr 1fr;gap:16px}}
-@media(min-width:1024px){.oc-grid--full{grid-template-columns:repeat(3,1fr);gap:20px}}
+@media(min-width:768px){.oc-grid--full{grid-template-columns:repeat(3,1fr);gap:16px}}
+@media(min-width:1024px){.oc-grid--full{grid-template-columns:repeat(4,1fr);gap:18px}}
 
 /* Base card */
 .oc-card{display:block;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--ln2);box-shadow:var(--sh1);transition:all 260ms var(--ease);cursor:pointer;text-decoration:none;color:inherit;position:relative}
