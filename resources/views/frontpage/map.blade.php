@@ -183,23 +183,34 @@
             <div class="mpop-close" onclick="hidePopup()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </div>
-            <div class="mpop-img"><img id="popup-img" src="" alt=""></div>
+            <div class="mpop-img"><img id="popup-img" src="" alt=""><div class="mpop-avail"><span class="mpop-avail-dot"></span>Còn trống</div></div>
             <div class="mpop-body">
+                {{-- Breadcrumb: Network › Site --}}
+                <div class="mpop-bc" id="popup-bc"></div>
+                {{-- Tên screen --}}
                 <div class="mpop-name" id="popup-name"></div>
-                <div class="mpop-meta" id="popup-meta">
+                {{-- City --}}
+                <div class="mpop-loc" id="popup-loc">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                     <span id="popup-city"></span>
                 </div>
-                <span class="badge b-grn" style="display:inline-flex;margin-bottom:8px">Còn trống</span>
-                <div id="popup-product" style="display:none;margin-bottom:8px;padding:6px 10px;background:rgba(42,79,246,.05);border:1px solid rgba(42,79,246,.12);border-radius:8px">
-                    <a href="#" id="popup-product-link" style="font-size:11px;font-weight:700;color:var(--bl);text-decoration:none;display:flex;align-items:center;gap:4px">
+                {{-- Specs: owner · venue type · size --}}
+                <div class="mpop-specs" id="popup-specs"></div>
+                {{-- Product badge --}}
+                <div id="popup-product" class="mpop-product" style="display:none">
+                    <a href="#" id="popup-product-link">
                         <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px;flex-shrink:0"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
                         <span id="popup-product-text"></span>
                     </a>
                 </div>
-                <div class="mpop-price" id="popup-price"></div>
+            </div>
+            <div class="mpop-foot">
+                <div>
+                    <div class="mpop-price" id="popup-price"></div>
+                    <div class="mpop-price-unit" id="popup-price-unit"></div>
+                </div>
                 <div class="mpop-actions">
-                    <a href="#" id="popup-link" class="btn btn-p btn-sm" style="flex:1;justify-content:center">Xem chi tiết</a>
+                    <a href="#" id="popup-link" class="btn btn-p btn-sm" style="justify-content:center;flex:1">Xem chi tiết</a>
                     <button class="btn btn-s btn-sm btn-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>
                     </button>
@@ -426,12 +437,35 @@
     var activeCard = null;
 
     function selectPin(pin) {
-        // Popup
         var popup = document.getElementById('popup');
-        document.getElementById('popup-name').textContent = pin.name;
-        document.getElementById('popup-city').textContent = pin.city || pin.addr || '';
-        document.getElementById('popup-price').innerHTML = fmtPrice(pin.price) + ' ₫<span> / tháng</span>';
+
+        // Photo
         document.getElementById('popup-img').src = pin.photo || 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
+
+        // Breadcrumb: Network › Site
+        var bcParts = [];
+        if (pin.networkName) bcParts.push(pin.networkName);
+        if (pin.siteName) bcParts.push(pin.siteName);
+        document.getElementById('popup-bc').innerHTML = bcParts.length ? bcParts.join(' <span class="mpop-bc-sep">›</span> ') : '';
+
+        // Name
+        document.getElementById('popup-name').textContent = pin.name;
+
+        // City
+        document.getElementById('popup-city').textContent = pin.city || pin.addr || '';
+
+        // Specs: owner · venue type · size
+        var specParts = [];
+        if (pin.ownerName) specParts.push(pin.ownerName);
+        if (pin.typeLabel) specParts.push(pin.typeLabel);
+        if (pin.size) specParts.push(pin.size);
+        document.getElementById('popup-specs').textContent = specParts.join(' · ');
+
+        // Price + unit
+        document.getElementById('popup-price').textContent = fmtPrice(pin.price) + ' ₫';
+        document.getElementById('popup-price-unit').textContent = '/ ' + (pin.priceUnit || 'tháng');
+
+        // Link
         document.getElementById('popup-link').href = '/explore/' + pin.id;
 
         // Product badge
@@ -441,7 +475,7 @@
             if (pin.product.can_buy_individual) txt += ' · Mua lẻ được';
             document.getElementById('popup-product-text').textContent = txt;
             document.getElementById('popup-product-link').href = '/products/' + pin.product.slug;
-            prodEl.style.display = 'block';
+            prodEl.style.display = '';
         } else {
             prodEl.style.display = 'none';
         }

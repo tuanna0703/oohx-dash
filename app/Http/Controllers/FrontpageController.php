@@ -96,6 +96,9 @@ class FrontpageController extends Controller
             $catId = $p->inventory?->vn_category_id;
             $product = $p->relationLoaded('products') ? $p->products->first() : null;
             $ownerLogo = $p->owner?->logo_url;
+            $wCm = $p->spec?->width_cm;
+            $hCm = $p->spec?->height_cm;
+            $size = ($wCm && $hCm) ? round($wCm / 100, 1) . '×' . round($hCm / 100, 1) . 'm' : '';
             return [
                 'id'        => $p->slug ?? $p->uuid ?? $p->id,
                 'name'      => $p->name,
@@ -114,6 +117,7 @@ class FrontpageController extends Controller
                 'ownerInitials' => $p->owner ? strtoupper(mb_substr($p->owner->name, 0, 2)) : '',
                 'networkName' => $p->site?->network?->name ?? '',
                 'siteName'    => $p->site?->name ?? '',
+                'size'        => $size,
                 'product'   => $product ? [
                     'slug'        => $product->slug,
                     'name'        => $product->name,
