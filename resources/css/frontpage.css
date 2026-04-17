@@ -891,20 +891,21 @@ ul{list-style:none}
 @media(min-width:768px){.oc-card-foot{gap:8px;padding:14px 18px}}
 
 /* Featured variant */
-.oc-card--feat{background:linear-gradient(135deg,#1D1D1F,#2C2C2E);color:#fff;overflow:hidden}
-.oc-card--feat::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 80% 0%,rgba(42,79,246,.18) 0%,transparent 70%);pointer-events:none}
-.oc-card-feat-badge{position:absolute;top:8px;left:8px;z-index:2;background:var(--org);color:#fff;padding:3px 8px;border-radius:980px;font-size:10px;font-weight:700}
+.oc-card--feat{background:#fff;border:1.5px solid var(--bl);overflow:hidden;box-shadow:0 0 0 3px rgba(42,79,246,.08),var(--sh1)}
+.oc-card--feat::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(42,79,246,.04) 0%,rgba(42,79,246,.01) 100%);pointer-events:none}
+@media(hover:hover){.oc-card--feat:hover{box-shadow:0 0 0 3px rgba(42,79,246,.12),var(--sh3);border-color:var(--bl)}}
+.oc-card-feat-badge{position:absolute;top:8px;left:8px;z-index:2;background:var(--bl);color:#fff;padding:3px 8px;border-radius:980px;font-size:10px;font-weight:700;letter-spacing:.3px}
 @media(min-width:768px){.oc-card-feat-badge{top:10px;left:10px;padding:4px 10px;font-size:11px}}
 .oc-card--feat .oc-card-head,.oc-card--feat .oc-card-foot{position:relative;z-index:1}
-.oc-card--feat .oc-card-name{color:rgba(255,255,255,.9)}
-.oc-card--feat .oc-card-ver{color:rgba(150,180,255,.8)}
-.oc-card--feat .oc-card-desc{color:rgba(255,255,255,.6)}
-.oc-card--feat .oc-card-tag{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
-.oc-card--feat .oc-card-stats{border-top-color:rgba(255,255,255,.12)}
-.oc-card--feat .oc-card-stat-n{color:#fff}
-.oc-card--feat .oc-card-stat-l{color:rgba(255,255,255,.4)}
-.oc-card--feat .oc-card-stat:not(:last-child){border-right-color:rgba(255,255,255,.12)}
-.oc-card--feat .oc-card-foot{border-top-color:rgba(255,255,255,.1);background:transparent}
+.oc-card--feat .oc-card-name{color:var(--t1)}
+.oc-card--feat .oc-card-ver{color:var(--bl)}
+.oc-card--feat .oc-card-desc{color:var(--t3)}
+.oc-card--feat .oc-card-tag{background:rgba(42,79,246,.08);color:var(--bl)}
+.oc-card--feat .oc-card-stats{border-top-color:var(--ln2)}
+.oc-card--feat .oc-card-stat-n{color:var(--bl)}
+.oc-card--feat .oc-card-stat-l{color:var(--t4)}
+.oc-card--feat .oc-card-stat:not(:last-child){border-right-color:var(--ln2)}
+.oc-card--feat .oc-card-foot{border-top-color:var(--ln2);background:rgba(42,79,246,.02)}
 
 /* Steps */
 .steps-grid{display:flex;flex-direction:column;gap:0}

@@ -20,7 +20,7 @@
     {{-- Cover --}}
     @if($isFeat)<div class="oc-card-feat-badge">Featured</div>@endif
     <div class="oc-card-cover">
-        <img src="{{ $owner->cover_url ? asset('storage/' . $owner->cover_url) : 'https://placehold.co/800x300/1C3A5E/fff?text=' . urlencode($owner->name) }}" loading="lazy" alt="{{ $owner->name }}">
+        <img src="{{ $owner->cover_url ? asset('storage/' . $owner->cover_url) : 'https://placehold.co/800x300/F0F2FF/2A4FF6?text=' . urlencode($owner->name) }}" loading="lazy" alt="{{ $owner->name }}">
         <div class="oc-card-cover-ov"></div>
         <div class="oc-card-cover-badges"><span class="badge b-bl">{{ $owner->screen_count }} inv</span></div>
     </div>
