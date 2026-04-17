@@ -722,17 +722,69 @@ class FrontpageService
             ->limit($limit)
             ->get();
 
-        $pins = $screens->map(fn ($s) => [
-            'id'    => $s->uuid ?? $s->id,
-            'name'  => $s->name,
-            'lat'   => (float) ($s->site?->lat ?? 0),
-            'lng'   => (float) ($s->site?->lon ?? 0),
-            'city'  => $s->site?->city ?? '',
-            'addr'  => $s->site?->address ?? '',
-            'photo' => $s->spec?->photo ?? '',
-            'price' => (float) ($s->inventory?->floor_cpm ?? 0),
-            'type'  => $s->inventory?->venue_type ?? '',
-        ])->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
+        // Build screen-level data first (full fields for rich marker + popup)
+        $vnCatLabels = $this->getVnCategoryLabels();
+        $vnCatSlugs  = $this->getVnCategorySlugs();
+        $vnCatIcons  = $this->getVnCategoryIcons();
+
+        $screenData = $screens->map(function ($s) use ($vnCatLabels, $vnCatSlugs, $vnCatIcons) {
+            $catId = $s->inventory?->vn_category_id;
+            $wCm = $s->spec?->width_cm;
+            $hCm = $s->spec?->height_cm;
+            $size = ($wCm && $hCm) ? round($wCm / 100, 1) . '×' . round($hCm / 100, 1) . 'm' : '';
+            return [
+                'siteId'     => $s->site?->id,
+                'id'         => $s->slug ?? $s->uuid ?? $s->id,
+                'name'       => $s->name,
+                'lat'        => (float) ($s->site?->lat ?? 0),
+                'lng'        => (float) ($s->site?->lon ?? 0),
+                'city'       => $s->site?->city ?? '',
+                'addr'       => $s->site?->address ?? '',
+                'photo'      => $s->display_photo ?? '',
+                'price'      => (float) ($s->inventory?->display_price ?? 0),
+                'priceUnit'  => $s->inventory?->display_price_unit ?? '',
+                'type'       => $vnCatSlugs[$catId] ?? '',
+                'typeLabel'  => $vnCatLabels[$catId] ?? '',
+                'icon'       => $vnCatIcons[$catId] ?? 'tv',
+                'ownerName'  => $s->owner?->name ?? '',
+                'ownerLogo'  => $s->owner?->logo_url ? asset('storage/' . $s->owner->logo_url) : '',
+                'ownerInitials' => $s->owner ? strtoupper(mb_substr($s->owner->name, 0, 2)) : '',
+                'networkName' => $s->site?->network?->name ?? '',
+                'siteName'   => $s->site?->name ?? '',
+                'size'       => $size,
+            ];
+        })->filter(fn ($s) => $s['lat'] != 0 && $s['lng'] != 0)->values();
+
+        // Group by site_id for site-level markers
+        $pins = $screenData->groupBy('siteId')->map(function ($group) {
+            $first = $group->first();
+            return [
+                'siteId'      => $first['siteId'],
+                'lat'         => $first['lat'],
+                'lng'         => $first['lng'],
+                'siteName'    => $first['siteName'] ?: $first['name'],
+                'city'        => $first['city'],
+                'addr'        => $first['addr'],
+                'photo'       => $first['photo'],
+                'ownerName'   => $first['ownerName'],
+                'ownerLogo'   => $first['ownerLogo'],
+                'ownerInitials' => $first['ownerInitials'],
+                'networkName' => $first['networkName'],
+                'type'        => $first['type'],
+                'typeLabel'   => $first['typeLabel'],
+                'icon'        => $first['icon'],
+                'screenCount' => $group->count(),
+                'screens'     => $group->map(fn ($s) => [
+                    'id'        => $s['id'],
+                    'name'      => $s['name'],
+                    'photo'     => $s['photo'],
+                    'price'     => $s['price'],
+                    'priceUnit' => $s['priceUnit'],
+                    'size'      => $s['size'],
+                    'typeLabel' => $s['typeLabel'],
+                ])->values(),
+            ];
+        })->values();
 
         return [
             'pins'      => $pins,

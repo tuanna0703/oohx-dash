@@ -266,25 +266,8 @@
           <button class="hm-zoom-btn" id="hp-zoom-out">−</button>
         </div>
 
-        {{-- Popup overlay --}}
-        <div class="hp-map-popup" id="hp-popup" style="display:none">
-          <div class="hmpop-close" onclick="document.getElementById('hp-popup').style.display='none'">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:12px;height:12px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-          </div>
-          <div class="hmpop-img"><img id="hp-popup-img" src="" alt=""></div>
-          <div class="hmpop-body">
-            <div class="hmpop-name" id="hp-popup-name"></div>
-            <div class="hmpop-meta" id="hp-popup-meta">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:11px;height:11px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-              <span id="hp-popup-city"></span>
-            </div>
-            <span class="badge b-grn" style="display:inline-flex;margin-bottom:6px;font-size:11px;padding:2px 8px">Còn trống</span>
-            <div class="hmpop-price" id="hp-popup-price"></div>
-          </div>
-          <div class="hmpop-action">
-            <a href="#" id="hp-popup-link" class="btn btn-p btn-xs" style="border-radius:8px">Xem chi tiết</a>
-          </div>
-        </div>
+        {{-- Popup (shared partial with hp- prefix) --}}
+        @include('frontpage.partials.map-popup', ['pfx' => 'hp-'])
       </div>
 
       <div class="map-bar">
@@ -392,6 +375,11 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<script>
+@include('frontpage.partials.map-shared-js')
+</script>
 <script>
 (function(){
   // Impression counter
@@ -437,39 +425,34 @@
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18}).addTo(hpMap);
   L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org">OSM</a>').addTo(hpMap);
 
-  // Pin color
-  function pinColor(type) {
-    if (!type) return 'bl';
-    if (type.indexOf('indoor') >= 0 || type.indexOf('mall') >= 0) return 'grn';
-    if (type.indexOf('transit') >= 0 || type.indexOf('airport') >= 0) return 'org';
-    return 'bl';
-  }
-
-  function fmtPrice(p) {
-    if (p >= 1e9) return (p/1e9).toFixed(1).replace('.0','') + 'B';
-    if (p >= 1e6) return Math.round(p/1e6) + 'M';
-    if (p > 0) return p.toLocaleString('vi-VN');
-    return '—';
-  }
-
-  // Render pins
-  var hpMarkers = L.layerGroup().addTo(hpMap);
+  // ── MarkerClusterGroup for home map ──
+  var hpClusterGroup = L.markerClusterGroup({
+    maxClusterRadius: function(zoom) {
+      if (zoom <= 7) return 120;
+      if (zoom <= 10) return 80;
+      if (zoom <= 12) return 50;
+      return 30;
+    },
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    disableClusteringAtZoom: 16,
+    chunkedLoading: true,
+    iconCreateFunction: OOHXMap.createClusterIcon,
+  });
+  hpMap.addLayer(hpClusterGroup);
 
   function renderHpPins(pins, flyToCity) {
-    hpMarkers.clearLayers();
+    hpClusterGroup.clearLayers();
+    var markerArray = [];
     pins.forEach(function(pin) {
-      var col = pinColor(pin.type);
-      var icon = L.divIcon({
-        className: 'oohx-pin oohx-pin--' + col,
-        html: '<div class="oohx-pin-box">' + fmtPrice(pin.price) + '</div><div class="oohx-pin-arrow"></div>',
-        iconSize: [70, 36], iconAnchor: [35, 36],
-      });
-      var m = L.marker([pin.lat, pin.lng], {icon: icon}).addTo(hpMarkers);
+      var icon = OOHXMap.createPinIcon(pin);
+      var m = L.marker([pin.lat, pin.lng], {icon: icon});
       m.on('click', function() { showHpPopup(pin); });
+      markerArray.push(m);
     });
+    hpClusterGroup.addLayers(markerArray);
 
-    // Always center on the selected city, not on pin locations
-    // (pin data may have incorrect coordinates)
     if (flyToCity) {
       var c = CITY_CENTERS[flyToCity] || CITY_CENTERS.hanoi;
       hpMap.setView([c.lat, c.lng], c.zoom);
@@ -478,14 +461,9 @@
 
   renderHpPins(HP_PINS, currentCity);
 
-  // Popup
+  // Popup — delegate to shared OOHXMap with 'hp-' prefix
   function showHpPopup(pin) {
-    document.getElementById('hp-popup-name').textContent = pin.name;
-    document.getElementById('hp-popup-city').textContent = pin.city || pin.addr || '';
-    document.getElementById('hp-popup-price').innerHTML = fmtPrice(pin.price) + ' ₫<span style="font-size:11px;color:var(--t4);font-weight:400"> /tháng</span>';
-    document.getElementById('hp-popup-img').src = pin.photo || 'https://placehold.co/300x160/F5F5F7/6E6E73?text=No+Photo';
-    document.getElementById('hp-popup-link').href = '/explore/' + pin.id;
-    document.getElementById('hp-popup').style.display = 'flex';
+    OOHXMap.showPopup(pin, 'hp-');
     hpMap.panTo([pin.lat, pin.lng]);
   }
 
@@ -512,6 +490,16 @@
     // Save cookie
     document.cookie = 'oohx_city=' + city + ';path=/;max-age=' + (30*86400) + ';SameSite=Lax';
     currentCity = city;
+
+    // Sync localStorage top cities with /map (swap: picked city to top)
+    if (city !== 'all') {
+      try {
+        var saved = JSON.parse(localStorage.getItem(OOHXMap.TOP_CITY_STORAGE) || '[]');
+        if (!Array.isArray(saved)) saved = [];
+        saved = [city].concat(saved.filter(function(c){ return c !== city; })).slice(0, 10);
+        localStorage.setItem(OOHXMap.TOP_CITY_STORAGE, JSON.stringify(saved));
+      } catch (e) {}
+    }
 
     // Fly to known city immediately (if available), then fetch pins
     var c = CITY_CENTERS[city];

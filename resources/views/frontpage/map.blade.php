@@ -169,48 +169,8 @@
             </button>
         </div>
 
-        {{-- Popup --}}
-        <div class="map-popup" id="popup" style="display:none">
-            <div class="mpop-close" onclick="hidePopup()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff" style="width:14px;height:14px;flex-shrink:0"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </div>
-            <div class="mpop-img"><img id="popup-img" src="" alt=""><div class="mpop-avail"><span class="mpop-avail-dot"></span>Còn trống</div></div>
-            <div class="mpop-body">
-                <div class="mpop-bc" id="popup-bc"></div>
-                <div class="mpop-name" id="popup-name"></div>
-                <div class="mpop-loc" id="popup-loc">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    <span id="popup-city"></span>
-                </div>
-                <div class="mpop-specs" id="popup-specs"></div>
-                <div id="popup-product" class="mpop-product" style="display:none">
-                    <a href="#" id="popup-product-link">
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px;flex-shrink:0"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                        <span id="popup-product-text"></span>
-                    </a>
-                </div>
-            </div>
-
-            {{-- SINGLE mode: price + actions --}}
-            <div class="mpop-foot" id="popup-foot-single">
-                <div>
-                    <div class="mpop-price" id="popup-price"></div>
-                    <div class="mpop-price-unit" id="popup-price-unit"></div>
-                </div>
-                <div class="mpop-actions">
-                    <a href="#" id="popup-link" class="btn btn-p btn-sm" style="justify-content:center;flex:1">Xem chi tiết</a>
-                    <button class="btn btn-s btn-sm btn-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>
-                    </button>
-                </div>
-            </div>
-
-            {{-- MULTI mode: screen list --}}
-            <div class="mpop-list" id="popup-list" style="display:none">
-                <div class="mpop-list-title" id="popup-list-title">Danh sách màn hình</div>
-                <div class="mpop-list-body" id="popup-list-body"></div>
-            </div>
-        </div>
+        {{-- Popup (shared partial) --}}
+        @include('frontpage.partials.map-popup', ['pfx' => ''])
 
         {{-- Mobile panel toggle --}}
         <button class="panel-toggle" onclick="togglePanel()">
@@ -224,6 +184,9 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+@include('frontpage.partials.map-shared-js')
+</script>
 <script>
 (function(){
     // ── Pin data from server ──
@@ -244,67 +207,15 @@
         .addAttribution('© <a href="https://openstreetmap.org">OSM</a>')
         .addTo(map);
 
-    // ── Pin color by type ──
-    function pinColor(type) {
-        if (!type) return 'bl';
-        if (type === 'roadside') return 'bl';
-        if (type === 'mall' || type === 'retail') return 'grn';
-        if (type === 'transit') return 'org';
-        if (type === 'healthcare' || type === 'education') return 'red';
-        if (type === 'food-beverage' || type === 'entertainment') return 'org';
-        return 'bl';
-    }
-
-    // ── SVG icons per venue type (inline, 16x16) ──
-    var PIN_ICONS = {
-        'mall':          '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
-        'retail':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
-        'transit':       '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>',
-        'roadside':      '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
-        'office':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>',
-        'residential':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>',
-        'food-beverage': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>',
-        'healthcare':    '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>',
-        'education':     '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>',
-        'hospitality':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2V10c0-2.21-1.79-4-4-4z"/></svg>',
-        'entertainment': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>',
-        'sports-fitness':'<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>',
-    };
-    var DEFAULT_ICON = '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
-
-    // Short labels for pins
-    var PIN_LABELS = {
-        'mall': 'TTTM', 'retail': 'Bán lẻ', 'transit': 'Giao thông', 'roadside': 'Outdoor',
-        'office': 'VP', 'residential': 'Khu DC', 'food-beverage': 'F&B', 'healthcare': 'Y tế',
-        'education': 'GD', 'hospitality': 'KS', 'entertainment': 'Giải trí', 'sports-fitness': 'Gym',
-    };
-
-    // ── Format price (for popup only) ──
-    function fmtPrice(p) {
-        if (p >= 1e9) return (p / 1e9).toFixed(1).replace('.0','') + 'B';
-        if (p >= 1e6) return Math.round(p / 1e6) + 'M';
-        if (p > 0) return p.toLocaleString('vi-VN');
-        return '—';
-    }
-
-    // ── Cluster size helper ──
-    function clusterSize(count) {
-        if (count >= 500) return 'xl';
-        if (count >= 100) return 'lg';
-        if (count >= 20) return 'md';
-        return 'sm';
-    }
-
-    function fmtCount(n) {
-        if (n >= 1000) return (n / 1000).toFixed(1).replace('.0','') + 'K';
-        return n.toString();
-    }
+    // ── Shared utilities via OOHXMap (from map-shared-js partial) ──
+    var pinColor = OOHXMap.pinColor;
+    var fmtPrice = OOHXMap.fmtPrice;
+    var fmtCount = OOHXMap.fmtCount;
 
     // ── Create MarkerClusterGroup ──
     var markers = [];
     var clusterGroup = L.markerClusterGroup({
         maxClusterRadius: function(zoom) {
-            // Larger radius at low zoom → more aggressive grouping
             if (zoom <= 7) return 120;
             if (zoom <= 10) return 80;
             if (zoom <= 12) return 50;
@@ -317,88 +228,20 @@
         chunkedLoading: true,
         chunkInterval: 100,
         chunkDelay: 20,
-        iconCreateFunction: function(cluster) {
-            var count = cluster.getChildCount();
-            var size = clusterSize(count);
-            return L.divIcon({
-                className: 'marker-cluster',
-                html: '<div class="oohx-cluster oohx-cluster--' + size + '">' + fmtCount(count) + '</div>',
-                iconSize: L.point(size === 'xl' ? 80 : size === 'lg' ? 68 : size === 'md' ? 56 : 44,
-                                  size === 'xl' ? 80 : size === 'lg' ? 68 : size === 'md' ? 56 : 44),
-            });
-        }
+        iconCreateFunction: OOHXMap.createClusterIcon,
     });
     map.addLayer(clusterGroup);
 
-    // ── Build pin icon based on 3-tier zoom ──
-    // < 14: dot  |  14-15: pill (icon + network)  |  >= 16: rich (logo + name + meta)
-    // Single pins not in cluster → always rich (cluster handles grouping at low zoom)
-    function pinMode(zoom) { return 'rich'; }
-
-    function createPinIcon(pin, zoom) {
-        var col = pinColor(pin.type);
-        var svg = PIN_ICONS[pin.type] || DEFAULT_ICON;
-        var mode = pinMode(zoom);
-
-        if (mode === 'rich') {
-            // Rich marker: logo/initials + site name + meta + count badge
-            var logoHtml = pin.ownerLogo
-                ? '<img src="' + pin.ownerLogo + '" class="oohx-rich-logo" alt="">'
-                : '<div class="oohx-rich-initials oohx-rich-initials--' + col + '">' + (pin.ownerInitials || '?') + '</div>';
-            var primary = pin.siteName || pin.networkName || pin.ownerName || '';
-            var meta = pin.screenCount > 1
-                ? (pin.screenCount + ' màn hình · ' + (pin.networkName || pin.typeLabel || ''))
-                : (pin.networkName || pin.typeLabel || '');
-            var badge = pin.screenCount > 1
-                ? '<div class="oohx-rich-badge">' + pin.screenCount + '</div>'
-                : '';
-            return L.divIcon({
-                className: 'oohx-pin oohx-pin--rich',
-                html: '<div class="oohx-rich oohx-rich--' + col + '">'
-                    + logoHtml
-                    + '<div class="oohx-rich-body">'
-                    + '<div class="oohx-rich-name">' + primary + '</div>'
-                    + '<div class="oohx-rich-meta">' + meta + '</div>'
-                    + '</div>'
-                    + badge
-                    + '</div>',
-                iconSize: [200, 48],
-                iconAnchor: [16, 48],
-            });
-        }
-
-        if (mode === 'pill') {
-            // Pill: icon + network name
-            var label = pin.networkName || PIN_LABELS[pin.type] || pin.typeLabel || '';
-            return L.divIcon({
-                className: 'oohx-pin oohx-pin--' + col,
-                html: '<div class="oohx-pin-box">' + svg + '<span>' + label + '</span></div><div class="oohx-pin-arrow"></div>',
-                iconSize: [120, 36],
-                iconAnchor: [16, 36],
-            });
-        }
-
-        // Dot: colored circle
-        return L.divIcon({
-            className: 'oohx-pin oohx-pin--dot',
-            html: '<div class="oohx-dot oohx-dot--' + col + '"></div>',
-            iconSize: [14, 14],
-            iconAnchor: [7, 7],
-        });
-    }
-
-    var currentZoom = map.getZoom();
-    var lastPinMode = pinMode(currentZoom);
+    // Use shared rich marker builder
+    var createPinIcon = function(pin) { return OOHXMap.createPinIcon(pin); };
 
     function renderPins(pinList) {
         clusterGroup.clearLayers();
         markers = [];
-        currentZoom = map.getZoom();
 
         var markerArray = [];
         pinList.forEach(function(pin) {
-            var icon = createPinIcon(pin, currentZoom);
-
+            var icon = createPinIcon(pin);
             var marker = L.marker([pin.lat, pin.lng], {icon: icon});
             marker._pinData = pin;
             marker.on('click', function() { selectPin(pin); });
@@ -406,32 +249,17 @@
             markerArray.push(marker);
         });
 
-        // Bulk add for performance (chunkedLoading handles the rest)
         clusterGroup.addLayers(markerArray);
 
-        // Update counts: sites for map badge, total screens for sidebar
+        // Update counts
         var siteCount = pinList.length;
         var screenCount = pinList.reduce(function(s, p){ return s + (p.screenCount || 1); }, 0);
-        var siteCntStr = siteCount.toLocaleString('vi-VN');
-        var screenCntStr = screenCount.toLocaleString('vi-VN');
-        document.getElementById('pin-count').textContent = screenCntStr;
-        document.getElementById('map-pin-count').textContent = siteCntStr;
-        document.getElementById('toggle-count').textContent = screenCntStr;
+        document.getElementById('pin-count').textContent = screenCount.toLocaleString('vi-VN');
+        document.getElementById('map-pin-count').textContent = siteCount.toLocaleString('vi-VN');
+        document.getElementById('toggle-count').textContent = screenCount.toLocaleString('vi-VN');
     }
 
     renderPins(PINS);
-
-    // Re-render pin icons when zoom crosses tier threshold
-    map.on('zoomend', function() {
-        var zoom = map.getZoom();
-        var mode = pinMode(zoom);
-        if (mode !== lastPinMode) {
-            lastPinMode = mode;
-            markers.forEach(function(m) {
-                m.marker.setIcon(createPinIcon(m.pin, zoom));
-            });
-        }
-    });
 
     // Fit bounds
     if (PINS.length > 0) {
@@ -443,76 +271,9 @@
     var activeCard = null;
 
     function selectPin(pin) {
-        var popup = document.getElementById('popup');
-        var isMulti = (pin.screenCount || 1) > 1;
+        // Delegate popup rendering to shared module
+        OOHXMap.showPopup(pin, '');
         var firstScreen = pin.screens && pin.screens.length ? pin.screens[0] : null;
-
-        // Photo: use first screen's photo, or site default
-        var photo = (firstScreen && firstScreen.photo) || pin.photo || 'https://placehold.co/600x400/F5F5F7/6E6E73?text=No+Photo';
-        document.getElementById('popup-img').src = photo;
-
-        // Breadcrumb: Network name
-        document.getElementById('popup-bc').innerHTML = pin.networkName ? pin.networkName : '';
-
-        // Name: site name (always)
-        document.getElementById('popup-name').textContent = pin.siteName || '';
-
-        // City
-        document.getElementById('popup-city').textContent = pin.city || pin.addr || '';
-
-        // Specs: owner · venue type (· size if single)
-        var specParts = [];
-        if (pin.ownerName) specParts.push(pin.ownerName);
-        if (pin.typeLabel) specParts.push(pin.typeLabel);
-        if (!isMulti && firstScreen && firstScreen.size) specParts.push(firstScreen.size);
-        if (isMulti) specParts.push(pin.screenCount + ' màn hình');
-        document.getElementById('popup-specs').textContent = specParts.join(' · ');
-
-        // Product badge — only show for single-screen site
-        var prodEl = document.getElementById('popup-product');
-        if (!isMulti && firstScreen && firstScreen.product) {
-            var p = firstScreen.product;
-            var txt = p.name + ' (' + p.total_units + ' MH)';
-            if (p.can_buy_individual) txt += ' · Mua lẻ được';
-            document.getElementById('popup-product-text').textContent = txt;
-            document.getElementById('popup-product-link').href = '/products/' + p.slug;
-            prodEl.style.display = '';
-        } else {
-            prodEl.style.display = 'none';
-        }
-
-        // Branch: single vs multi
-        var footSingle = document.getElementById('popup-foot-single');
-        var listEl = document.getElementById('popup-list');
-
-        if (isMulti) {
-            // Multi-screen: show list
-            footSingle.style.display = 'none';
-            listEl.style.display = '';
-            document.getElementById('popup-list-title').textContent = pin.screenCount + ' màn hình tại đây';
-            var bodyHtml = pin.screens.map(function(s) {
-                var unit = s.priceUnit || 'tháng';
-                return '<a href="/explore/' + s.id + '" class="mpop-list-item">'
-                    + '<div class="mpop-list-thumb">' + (s.photo ? '<img src="' + s.photo + '" alt="" loading="lazy">' : '') + '</div>'
-                    + '<div class="mpop-list-info">'
-                    + '<div class="mpop-list-name">' + s.name + '</div>'
-                    + '<div class="mpop-list-meta">' + (s.size ? s.size + ' · ' : '') + (s.typeLabel || '') + '</div>'
-                    + '</div>'
-                    + '<div class="mpop-list-price">' + fmtPrice(s.price) + '₫<span>/' + unit + '</span></div>'
-                    + '<svg viewBox="0 0 24 24" fill="var(--t4)" class="mpop-list-arr"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
-                    + '</a>';
-            }).join('');
-            document.getElementById('popup-list-body').innerHTML = bodyHtml;
-        } else if (firstScreen) {
-            // Single-screen: show price + action
-            footSingle.style.display = '';
-            listEl.style.display = 'none';
-            document.getElementById('popup-price').textContent = fmtPrice(firstScreen.price) + ' ₫';
-            document.getElementById('popup-price-unit').textContent = '/ ' + (firstScreen.priceUnit || 'tháng');
-            document.getElementById('popup-link').href = '/explore/' + firstScreen.id;
-        }
-
-        popup.style.display = 'block';
 
         // Pan map
         map.panTo([pin.lat, pin.lng]);
@@ -533,8 +294,10 @@
         }
     }
 
-    window.hidePopup = function() {
-        document.getElementById('popup').style.display = 'none';
+    // Override OOHXMap.hidePopup to also clear panel highlight
+    var _origHide = OOHXMap.hidePopup;
+    OOHXMap.hidePopup = function(pfx) {
+        _origHide(pfx);
         if (activeCard) { activeCard.classList.remove('active'); activeCard = null; }
     };
 
