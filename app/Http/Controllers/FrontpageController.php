@@ -92,7 +92,8 @@ class FrontpageController extends Controller
         $vnCatIcons  = $this->fp->getVnCategoryIcons();
         $pins = $this->fp->getMapPins($request);
 
-        $pinsJson = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs, $vnCatIcons) {
+        // Build screen-level data first
+        $screens = $pins->map(function ($p) use ($vnCatLabels, $vnCatSlugs, $vnCatIcons) {
             $catId = $p->inventory?->vn_category_id;
             $product = $p->relationLoaded('products') ? $p->products->first() : null;
             $ownerLogo = $p->owner?->logo_url;
@@ -100,6 +101,7 @@ class FrontpageController extends Controller
             $hCm = $p->spec?->height_cm;
             $size = ($wCm && $hCm) ? round($wCm / 100, 1) . '×' . round($hCm / 100, 1) . 'm' : '';
             return [
+                'siteId'    => $p->site?->id ?? null,
                 'id'        => $p->slug ?? $p->uuid ?? $p->id,
                 'name'      => $p->name,
                 'lat'       => (float) ($p->site?->lat ?? 0),
@@ -125,7 +127,39 @@ class FrontpageController extends Controller
                     'can_buy_individual' => $product->allowsIndividual(),
                 ] : null,
             ];
-        })->filter(fn ($p) => $p['lat'] != 0 && $p['lng'] != 0)->values();
+        })->filter(fn ($s) => $s['lat'] != 0 && $s['lng'] != 0)->values();
+
+        // Group by site_id into site-level markers
+        $pinsJson = $screens->groupBy('siteId')->map(function ($group) {
+            $first = $group->first();
+            return [
+                'siteId'     => $first['siteId'],
+                'lat'        => $first['lat'],
+                'lng'        => $first['lng'],
+                'siteName'   => $first['siteName'] ?: $first['name'],
+                'city'       => $first['city'],
+                'addr'       => $first['addr'],
+                'photo'      => $first['photo'],
+                'ownerName'  => $first['ownerName'],
+                'ownerLogo'  => $first['ownerLogo'],
+                'ownerInitials' => $first['ownerInitials'],
+                'networkName' => $first['networkName'],
+                'type'       => $first['type'],
+                'typeLabel'  => $first['typeLabel'],
+                'icon'       => $first['icon'],
+                'screenCount' => $group->count(),
+                'screens'    => $group->map(fn ($s) => [
+                    'id'        => $s['id'],
+                    'name'      => $s['name'],
+                    'photo'     => $s['photo'],
+                    'price'     => $s['price'],
+                    'priceUnit' => $s['priceUnit'],
+                    'size'      => $s['size'],
+                    'typeLabel' => $s['typeLabel'],
+                    'product'   => $s['product'],
+                ])->values(),
+            ];
+        })->values();
 
         return view('frontpage.map', [
             'pins'              => $pins,
