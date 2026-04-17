@@ -717,7 +717,7 @@ class FrontpageService
         }
 
         $screens = $query
-            ->with(['spec:screen_id,photo_url,photos', 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day', 'inventory.vnCategory:id,thumb', 'owner:id,name,slug,cover_url', 'site:id,network_id,name,lat,lon,city,address,banner', 'site.network:id,name,banner'])
+            ->with(['spec:screen_id,photo_url,photos,width_cm,height_cm', 'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day', 'inventory.vnCategory:id,thumb', 'owner:id,name,slug,logo_url,cover_url', 'site:id,network_id,name,lat,lon,city,address,banner', 'site.network:id,name,banner'])
             ->inRandomOrder()
             ->limit($limit)
             ->get();
