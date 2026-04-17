@@ -891,21 +891,10 @@ ul{list-style:none}
 @media(min-width:768px){.oc-card-foot{gap:8px;padding:14px 18px}}
 
 /* Featured variant */
-.oc-card--feat{background:#fff;border:1.5px solid var(--bl);overflow:hidden;box-shadow:0 0 0 3px rgba(42,79,246,.08),var(--sh1)}
-.oc-card--feat::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(42,79,246,.04) 0%,rgba(42,79,246,.01) 100%);pointer-events:none}
-@media(hover:hover){.oc-card--feat:hover{box-shadow:0 0 0 3px rgba(42,79,246,.12),var(--sh3);border-color:var(--bl)}}
-.oc-card-feat-badge{position:absolute;top:8px;left:8px;z-index:2;background:var(--bl);color:#fff;padding:3px 8px;border-radius:980px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.oc-card--feat{background:#fff;border:1px solid var(--ln2);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04)}
+@media(hover:hover){.oc-card--feat:hover{box-shadow:0 8px 32px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);border-color:var(--ln)}}
+.oc-card-feat-badge{position:absolute;top:8px;left:8px;z-index:2;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);color:var(--bl);padding:3px 8px;border-radius:980px;font-size:10px;font-weight:700;letter-spacing:.3px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 @media(min-width:768px){.oc-card-feat-badge{top:10px;left:10px;padding:4px 10px;font-size:11px}}
-.oc-card--feat .oc-card-head,.oc-card--feat .oc-card-foot{position:relative;z-index:1}
-.oc-card--feat .oc-card-name{color:var(--t1)}
-.oc-card--feat .oc-card-ver{color:var(--bl)}
-.oc-card--feat .oc-card-desc{color:var(--t3)}
-.oc-card--feat .oc-card-tag{background:rgba(42,79,246,.08);color:var(--bl)}
-.oc-card--feat .oc-card-stats{border-top-color:var(--ln2)}
-.oc-card--feat .oc-card-stat-n{color:var(--bl)}
-.oc-card--feat .oc-card-stat-l{color:var(--t4)}
-.oc-card--feat .oc-card-stat:not(:last-child){border-right-color:var(--ln2)}
-.oc-card--feat .oc-card-foot{border-top-color:var(--ln2);background:rgba(42,79,246,.02)}
 
 /* Steps */
 .steps-grid{display:flex;flex-direction:column;gap:0}
