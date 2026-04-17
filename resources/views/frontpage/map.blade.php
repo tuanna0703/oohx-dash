@@ -51,11 +51,11 @@
                     @foreach($siteScreens->take(5) as $pin)
                     <div class="mp-card mp-card-nested" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                         <div class="mp-card-img">
-                            <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
+                            <img src="{{ $pin->display_photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
                         </div>
                         <div class="mp-card-info">
                             <div class="mp-card-nm">{{ $pin->name }}</div>
-                            <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
+                            <div class="mp-card-pr">{{ number_format((float) ($pin->inventory?->display_price ?? 0), 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
                         </div>
                     </div>
                     @endforeach
@@ -68,7 +68,7 @@
                 @php $pin = $siteScreens->first(); @endphp
                 <div class="mp-card" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                     <div class="mp-card-img">
-                        <img src="{{ $pin->spec?->photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
+                        <img src="{{ $pin->display_photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
                     </div>
                     <div class="mp-card-info">
                         <div class="mp-card-nm">{{ $pin->name }}</div>
@@ -77,7 +77,7 @@
                             {{ $site->city ?? '' }}
                         </div>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <div class="mp-card-pr">{{ number_format($pin->inventory?->floor_cpm ?? 0, 0, ',', '.') }} ₫<span>/tháng</span></div>
+                            <div class="mp-card-pr">{{ number_format((float) ($pin->inventory?->display_price ?? 0), 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
                             <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Còn trống</span>
                         </div>
                     </div>
