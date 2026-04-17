@@ -329,6 +329,20 @@ class FrontpageService
         return $owners;
     }
 
+    /**
+     * Paginated list of Agencies (Organizations with type=agency).
+     */
+    public function getAgenciesPaginated(Request $request, int $perPage = 12): LengthAwarePaginator
+    {
+        return \App\Models\Organization::query()
+            ->where('type', 'agency')
+            ->where('status', 'active')
+            ->when($request->filled('q'), fn ($q) => $q->where('name', 'LIKE', '%' . $request->input('q') . '%'))
+            ->withCount(['campaigns as campaign_count'])
+            ->orderBy('name')
+            ->paginate($perPage);
+    }
+
     public function getOwnerBySlug(string $slug): ?Owner
     {
         return Cache::remember("fp:owner:{$slug}", 900, function () use ($slug) {

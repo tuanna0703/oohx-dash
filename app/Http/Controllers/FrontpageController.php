@@ -175,9 +175,11 @@ class FrontpageController extends Controller
         return view('frontpage.booking');
     }
 
-    public function agency(): View
+    public function agency(Request $request): View
     {
-        return view('frontpage.agency');
+        return view('frontpage.agency', [
+            'agencies' => $this->fp->getAgenciesPaginated($request),
+        ]);
     }
 
     public function owners(Request $request): View
