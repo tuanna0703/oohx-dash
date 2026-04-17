@@ -337,7 +337,8 @@
 
     // ── Build pin icon based on 3-tier zoom ──
     // < 14: dot  |  14-15: pill (icon + network)  |  >= 16: rich (logo + name + meta)
-    function pinMode(zoom) { return zoom >= 14 ? 'rich' : 'dot'; }
+    // Single pins not in cluster → always rich (cluster handles grouping at low zoom)
+    function pinMode(zoom) { return 'rich'; }
 
     function createPinIcon(pin, zoom) {
         var col = pinColor(pin.type);
