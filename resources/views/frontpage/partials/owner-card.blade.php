@@ -51,17 +51,15 @@
 {{-- ═══ FULL / COMPACT variant ═══ --}}
 @php $tags = array_slice($owner->venue_types_list ?? [], 0, $isCompact ? 2 : 3); @endphp
 <a href="{{ $ownerLink }}" class="oc-card{{ $isCompact ? ' oc-card--compact' : '' }}{{ $isFeat ? ' oc-card--feat' : '' }}">
-    @if($isFull)
-    {{-- Cover --}}
+    {{-- Cover (both full + compact) --}}
     @if($isFeat)<div class="oc-card-feat-badge">Featured</div>@endif
     <div class="oc-card-cover">
-        <img src="{{ $owner->cover_url ? asset('storage/' . $owner->cover_url) : 'https://placehold.co/800x300/F0F2FF/2A4FF6?text=' . urlencode($owner->name) }}" loading="lazy" alt="{{ $owner->name }}">
+        <img src="{{ $owner->cover_url ? asset('storage/' . $owner->cover_url) : 'https://placehold.co/800x300/' . ltrim($colorPair[0], '#') . '/' . ltrim($colorPair[1], '#') . '?text=' . urlencode($owner->name) }}" loading="lazy" alt="{{ $owner->name }}">
         <div class="oc-card-cover-ov"></div>
-        <div class="oc-card-cover-badges"><span class="badge b-bl">{{ $owner->screen_count }} inv</span></div>
+        <div class="oc-card-cover-badges"><span class="badge b-bl">{{ $owner->screen_count ?? 0 }} inv</span></div>
     </div>
-    @endif
 
-    {{-- Head: logo + name --}}
+    {{-- Head: logo overlapping cover + name --}}
     <div class="oc-card-head">
         @if($hasLogo)
         <img src="{{ asset('storage/' . $owner->logo_url) }}" class="oc-card-logo" loading="lazy" alt="{{ $owner->name }}">
@@ -102,7 +100,6 @@
     </div>
 
     @if($isFull)
-    {{-- Footer --}}
     <div class="oc-card-foot">
         <span class="btn btn-s btn-sm" style="flex:1;justify-content:center">Xem inventory</span>
         <span class="btn btn-p btn-sm" style="flex:1;justify-content:center">Liên hệ</span>
