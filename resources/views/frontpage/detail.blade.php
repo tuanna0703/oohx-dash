@@ -105,26 +105,14 @@
 <div>
 <h1 class="dtitle">{{ $screen->name }}</h1>
 <div class="dmeta"><div class="dloc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> {{ $screen->site?->city ?? '' }}</div><span class="msep"></span><span style="font-size:13px;color:var(--t3)">{{ $screen->owner?->name ?? '' }}</span></div>
-@php
-    $ownerSlug = $screen->owner?->slug ?? '#';
-    $networkCode = $screen->site?->network?->code ?? '';
-    $ownerLink = route('fp.owner-detail', $ownerSlug) . '?tab=inventory' . ($networkCode ? '&network[]=' . $networkCode : '');
-    $ownerLogo = $screen->owner?->logo_url;
-    $ownerInitials = $screen->owner ? strtoupper(collect(explode(' ', $screen->owner->name))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->join('')) : '—';
-    $isVerified = $screen->owner?->verified ?? false;
-@endphp
-<a href="{{ $ownerLink }}" class="owner-mini">
-@if($ownerLogo)
-<img src="{{ asset('storage/' . $ownerLogo) }}" class="om-logo om-logo--img" alt="{{ $screen->owner->name }}">
-@else
-<div class="om-logo">{{ $ownerInitials }}</div>
+@if($screen->owner)
+@include('frontpage.partials.owner-card', [
+    'owner'      => $screen->owner,
+    'variant'    => 'mini',
+    'extraLabel' => $screen->site?->network?->name ?? '',
+    'href'       => route('fp.owner-detail', $screen->owner->slug ?? '#') . '?tab=inventory' . (($screen->site?->network?->code ?? '') ? '&network[]=' . $screen->site->network->code : ''),
+])
 @endif
-<div>
-<div class="om-name">{{ $screen->owner?->name ?? '—' }}</div>
-@if($isVerified)<div class="om-ver"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:12px;height:12px;flex-shrink:0"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.2L12 21.04l3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg> Verified Partner</div>@endif
-</div>
-<div class="om-r"><div style="text-align:right"><div style="font-size:12px;color:var(--t4)">{{ $screen->site?->network?->name ?? '' }}</div></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t3)" style="width:18px;height:18px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
-</a>
 <div class="stats-row rv"><div class="stat-box"><div class="stat-n">{{ $screen->site?->name ?? '—' }}</div><div class="stat-l">Site</div></div><div class="stat-box"><div class="stat-n">{{ $screen->site?->network?->name ?? '—' }}</div><div class="stat-l">Network</div></div><div class="stat-box"><div class="stat-n">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'×'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div><div class="stat-l">Kích thước</div></div><div class="stat-box"><div class="stat-n">{{ $screen->inventory?->floor_cpm ? number_format((float)$screen->inventory->floor_cpm, 0, ',', '.') . 'đ' : '—' }}</div><div class="stat-l">Floor CPM</div></div></div>
 <div class="tabs"><div class="tab on" onclick="sw(this,'tp-info')">Thông tin</div><div class="tab" onclick="sw(this,'tp-avail')">Lịch trống</div><div class="tab" onclick="sw(this,'tp-map')">Vị trí</div><div class="tab" onclick="sw(this,'tp-review')">Đánh giá</div></div>
 <div id="tp-info" class="tp on">

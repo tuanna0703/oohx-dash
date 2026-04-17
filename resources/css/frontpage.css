@@ -851,8 +851,8 @@ ul{list-style:none}
 @media(min-width:768px){.oc-card-head{padding:16px 18px 0}}
 .oc-card:not(.oc-card--compact) .oc-card-head{padding-top:24px}
 @media(min-width:768px){.oc-card:not(.oc-card--compact) .oc-card-head{padding-top:28px}}
-.oc-card-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;object-fit:contain;background:#fff;padding:3px}
-.oc-card-logo--initials{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;padding:0;background:none}
+.oc-card-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;object-fit:contain;background:#fff;padding:3px;border:1px solid var(--ln2)}
+.oc-card-logo--txt{display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;padding:0;border:none}
 @media(min-width:768px){.oc-card-logo{width:44px;height:44px;border-radius:12px;font-size:14px}}
 .oc-card:not(.oc-card--compact) .oc-card-logo{width:48px;height:48px;border:2px solid #fff;margin-top:-32px;position:relative;z-index:1;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 @media(min-width:768px){.oc-card:not(.oc-card--compact) .oc-card-logo{width:54px;height:54px;margin-top:-36px;font-size:15px;padding:4px}}
@@ -1284,18 +1284,19 @@ input[type=range]{width:100%;accent-color:var(--bl);cursor:pointer}
 @media(min-width:768px){.dloc,.drat{font-size:14px}}
 @media(min-width:1024px){.dloc,.drat{font-size:15px}}
 .msep{width:4px;height:4px;border-radius:50%;background:var(--ln);flex-shrink:0}
-.owner-mini{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border-radius:12px;margin-bottom:18px;cursor:pointer;transition:all 200ms var(--ease);border:1px solid var(--ln2)}
-.owner-mini:hover{background:#fff;box-shadow:var(--sh2);border-color:transparent}
-@media(min-width:768px){.owner-mini{gap:12px;padding:16px 18px;border-radius:14px;margin-bottom:22px}}
-.om-logo{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#1C3A5E,#2A4FF6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
-@media(min-width:768px){.om-logo{width:44px;height:44px;border-radius:12px;font-size:14px}}
-img.om-logo--img{object-fit:contain;background:#fff;padding:2px}
-.om-name{font-size:13px;font-weight:700;color:var(--t1)}
-@media(min-width:768px){.om-name{font-size:14px}}
-.om-ver{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--bl);font-weight:600;margin-top:2px}
-@media(min-width:768px){.om-ver{font-size:12px}}
-.om-ver svg{width:12px;height:12px}
-.om-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* ── Owner Card: Mini variant (.oc-mini) ── */
+.oc-mini{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-radius:12px;margin-bottom:18px;cursor:pointer;transition:all 200ms var(--ease);border:1px solid var(--ln2);text-decoration:none;color:inherit}
+.oc-mini:hover{box-shadow:var(--sh2);border-color:var(--bl)}
+@media(min-width:768px){.oc-mini{gap:12px;padding:14px 18px;border-radius:14px;margin-bottom:22px}}
+.oc-mini-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;object-fit:contain;background:#fff;padding:3px;border:1px solid var(--ln2)}
+.oc-mini-logo--txt{display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;padding:0;border:none}
+@media(min-width:768px){.oc-mini-logo{width:44px;height:44px;border-radius:12px}}
+.oc-mini-body{flex:1;min-width:0}
+.oc-mini-name{font-size:13px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:768px){.oc-mini-name{font-size:14px}}
+.oc-mini-ver{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--bl);font-weight:600;margin-top:2px}
+.oc-mini-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.oc-mini-extra{font-size:12px;color:var(--t4);white-space:nowrap}
 .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px}
 @media(min-width:480px){.stats-row{grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}}
 .stat-box{background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid var(--ln2);box-shadow:var(--sh1);transition:all 200ms var(--ease)}
