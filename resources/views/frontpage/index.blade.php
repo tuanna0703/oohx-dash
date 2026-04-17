@@ -4,6 +4,8 @@
 
 @push('head')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+@include('frontpage.partials.map-styles')
 <style>@media(min-width:768px){#login-btn,#signup-btn{display:inline-flex!important}}</style>
 @endpush
 
