@@ -1506,21 +1506,19 @@ body.page-map{overflow:hidden}
 .sft-more{display:inline-flex;padding:5px 10px;border-radius:980px;border:1px dashed var(--ln2);background:transparent;font-family:var(--font);font-size:11px;font-weight:600;color:var(--bl);cursor:pointer;transition:all 120ms;white-space:nowrap}
 .sft-more:hover{border-color:var(--bl);background:rgba(42,79,246,.04)}
 /* Actions */
-.sft-actions{display:flex;gap:6px;margin-top:2px}
+.sft-actions{display:flex;gap:6px;margin-bottom:10px}
+/* Advanced filter toggle */
+.sft-adv-toggle{display:flex;align-items:center;gap:6px;padding:8px 0;cursor:pointer;font-size:12px;font-weight:600;color:var(--bl);user-select:none;transition:opacity 120ms}
+.sft-adv-toggle:hover{opacity:.8}
+.sft-adv-badge{background:var(--bl);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:980px;min-width:16px;text-align:center}
+.sft-adv-chevron{transition:transform 200ms}
+.sft-adv-toggle.open .sft-adv-chevron{transform:rotate(180deg)}
+.sft-adv-body{padding-top:4px;border-top:1px solid var(--ln2)}
 @media(min-width:768px){
   .sft-chip{padding:6px 12px;font-size:12px}
   .sft-chip-count{font-size:10px}
   .sft-label{font-size:11px}
 }
-/* Filter collapse toggle */
-.mp-filter-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--ln2);flex-shrink:0;user-select:none;transition:background 120ms}
-.mp-filter-toggle:hover{background:var(--bg2)}
-.mp-filter-toggle-left{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--t2)}
-.mp-filter-badge{background:var(--bl);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:980px;min-width:18px;text-align:center}
-.mp-filter-chevron{transition:transform 200ms}
-.mp-filter-toggle.open .mp-filter-chevron{transform:rotate(180deg)}
-.mp-filter-body{flex-shrink:0;border-bottom:1px solid var(--ln2);max-height:50vh;overflow-y:auto}
-.mp-filter-body .sft{border-bottom:none}
 .mp-count{font-size:13px;font-weight:600;color:var(--t2);padding:12px 18px;border-bottom:1px solid var(--ln2);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
 .mp-count strong{color:var(--bl)}
 .mp-filter-toggle{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--ln2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);transition:all 140ms;flex-shrink:0}

@@ -82,4 +82,17 @@
             if (e.key === 'Enter') { e.preventDefault(); window.location.href = buildFilterUrl(); }
         });
     }
+
+    // ── Advanced filter toggle ──
+    var advToggle = document.getElementById('sft-adv-toggle');
+    var advBody = document.getElementById('sft-adv-body');
+    if (advToggle && advBody) {
+        advToggle.addEventListener('click', function() {
+            var isOpen = advBody.style.display !== 'none';
+            advBody.style.display = isOpen ? 'none' : '';
+            advToggle.classList.toggle('open', !isOpen);
+        });
+        // Mark open if already visible
+        if (advBody.style.display !== 'none') advToggle.classList.add('open');
+    }
 })();

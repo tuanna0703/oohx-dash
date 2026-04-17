@@ -45,26 +45,12 @@
     {{-- ── LEFT PANEL ── --}}
     <div class="map-panel" id="panel">
         <div class="mp-drag" onclick="togglePanel()"><div class="mp-drag-bar"></div></div>
-        {{-- Collapsible Smart Filter --}}
-        @php
-            $activeFilterCount = count(array_filter(request()->input('region', []))) + count(array_filter(request()->input('city', []))) + count(array_filter(request()->input('network', []))) + count(array_filter(request()->input('venue_type', [])));
-            $hasQ = !empty(request()->input('q'));
-        @endphp
-        <div class="mp-filter-toggle" id="mp-filter-toggle">
-            <div class="mp-filter-toggle-left">
-                <svg viewBox="0 0 24 24" fill="var(--t3)" style="width:16px;height:16px;flex-shrink:0"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                <span>Bộ lọc</span>
-                @if($activeFilterCount > 0 || $hasQ)<span class="mp-filter-badge">{{ $activeFilterCount + ($hasQ ? 1 : 0) }}</span>@endif
-            </div>
-            <svg class="mp-filter-chevron" viewBox="0 0 24 24" fill="var(--t4)" style="width:18px;height:18px;flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
-        </div>
-        <div class="mp-filter-body" id="mp-filter-body" style="display:none">
-            @include('frontpage.partials.smart-filter', [
-                'filters'          => $filters,
-                'locationsByRegion' => $locationsByRegion,
-                'target'           => 'map',
-            ])
-        </div>
+        {{-- Smart Filter --}}
+        @include('frontpage.partials.smart-filter', [
+            'filters'          => $filters,
+            'locationsByRegion' => $locationsByRegion,
+            'target'           => 'map',
+        ])
 
         <div class="mp-count">
             <span>Hiển thị <strong id="pin-count">{{ number_format($pins->count()) }}</strong> kết quả</span>
@@ -505,21 +491,6 @@
     window.togglePanel = function() {
         document.getElementById('panel').classList.toggle('open');
     };
-
-    // ── Filter collapse/expand ──
-    (function(){
-        var toggle = document.getElementById('mp-filter-toggle');
-        var body = document.getElementById('mp-filter-body');
-        if (!toggle || !body) return;
-        // Auto-expand if filters are active
-        var hasActive = {{ ($activeFilterCount > 0 || $hasQ) ? 'true' : 'false' }};
-        if (hasActive) { body.style.display = ''; toggle.classList.add('open'); }
-        toggle.addEventListener('click', function(){
-            var isOpen = body.style.display !== 'none';
-            body.style.display = isOpen ? 'none' : '';
-            toggle.classList.toggle('open', !isOpen);
-        });
-    })();
 
     // ── Site group header click → fly to site ──
     document.querySelectorAll('.mp-site-header').forEach(function(header){
