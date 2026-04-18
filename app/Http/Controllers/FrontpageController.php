@@ -90,7 +90,7 @@ class FrontpageController extends Controller
     }
 
     /**
-     * Read OSM POIs from cache (set by PoiContextEnricher).
+     * Read OSM POIs from poi_snapshots table (populated by PoiContextEnricher).
      * Returns lightweight array [{lat, lon, name, category}] for map rendering.
      */
     private function resolveNearbyPois(\App\Models\Screen $screen): array
@@ -99,12 +99,10 @@ class FrontpageController extends Controller
         $lon = $screen->site?->lon;
         if (! $lat || ! $lon) return [];
 
-        $cacheKey = sprintf('osm_poi:%s:%s:%d',
-            number_format((float) $lat, 5, '.', ''),
-            number_format((float) $lon, 5, '.', ''),
-            500
-        );
-        $raw = \Cache::get($cacheKey);
+        $snapshot = \App\Models\PoiSnapshot::freshFor((float) $lat, (float) $lon, 500, 'osm')->first();
+        if (! $snapshot) return [];
+
+        $raw = $snapshot->pois;
         if (! is_array($raw)) return [];
 
         // Lightweight projection: chỉ lấy POI có name + lat/lon hợp lệ, max 60 markers

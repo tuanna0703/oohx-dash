@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\PoiSnapshot;
 use App\Models\Screen;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -32,8 +32,9 @@ class PoiContextEnricher
     ];
     private const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
-    /** Cache OSM POI response — POI ít thay đổi, refresh 30 ngày là đủ. */
-    private const OSM_CACHE_TTL_MINUTES = 30 * 24 * 60;
+    /** POI snapshot TTL — OSM ít thay đổi, refresh 30 ngày là đủ. */
+    private const OSM_TTL_MINUTES = 30 * 24 * 60;
+    private const SOURCE_OSM = 'osm';
 
     /**
      * Enrich 1 screen. Returns full result, KHÔNG ghi DB.
@@ -74,6 +75,10 @@ class PoiContextEnricher
         $pois     = $this->queryOverpass($lat, $lon, $radius);
         $features = $this->aggregate($pois, $lat, $lon);
 
+        // Persist precomputed features back to snapshot so future readers don't re-aggregate
+        PoiSnapshot::freshFor($lat, $lon, $radius, self::SOURCE_OSM)
+            ->update(['features' => $features]);
+
         $apiKey   = config('services.anthropic.key');
         $aiResult = null;
         $tokensIn = 0;
@@ -106,22 +111,35 @@ class PoiContextEnricher
         ];
     }
 
+    /**
+     * Fetch + persist OSM POIs cho 1 location, KHÔNG gọi Claude.
+     * Dùng cho backfill / refresh snapshot mà không cần re-run AI inference.
+     *
+     * Returns array of POI elements (raw OSM format).
+     */
+    public function fetchPoisOnly(float $lat, float $lon, int $radius = 500): array
+    {
+        $pois     = $this->queryOverpass($lat, $lon, $radius);
+        $features = $this->aggregate($pois, $lat, $lon);
+
+        PoiSnapshot::freshFor($lat, $lon, $radius, self::SOURCE_OSM)
+            ->update(['features' => $features]);
+
+        return $pois;
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // OSM Overpass
     // ─────────────────────────────────────────────────────────────────
     private function queryOverpass(float $lat, float $lon, int $radius): array
     {
-        // Cache key — round coords to ~10m precision so nearby screens reuse same result
-        $cacheKey = sprintf('osm_poi:%s:%s:%d',
-            number_format($lat, 5, '.', ''),
-            number_format($lon, 5, '.', ''),
-            $radius
-        );
-        $cached = Cache::get($cacheKey);
-        if ($cached !== null) {
-            return $cached;
+        // 1) DB hit — read fresh snapshot if exists
+        $snap = PoiSnapshot::freshFor($lat, $lon, $radius, self::SOURCE_OSM)->first();
+        if ($snap) {
+            return $snap->pois;
         }
 
+        // 2) Cold path — fetch from Overpass
         $query = <<<OQL
 [out:json][timeout:25];
 (
@@ -147,7 +165,10 @@ OQL;
 
                 if ($response->successful()) {
                     $elements = $response->json('elements') ?? [];
-                    Cache::put($cacheKey, $elements, now()->addMinutes(self::OSM_CACHE_TTL_MINUTES));
+                    PoiSnapshot::upsertSnapshot(
+                        $lat, $lon, $radius, self::SOURCE_OSM,
+                        $elements, null, self::OSM_TTL_MINUTES,
+                    );
                     return $elements;
                 }
 
