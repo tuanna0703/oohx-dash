@@ -488,108 +488,103 @@ function sw(el,id){
   updateCalc();
   @endif
 
-  // Leaflet map for location tab — screen pin + nearby POIs (from OSM cache)
-  @if($screen->site?->lat && $screen->site?->lon)
-  var mapEl = document.getElementById('detail-map');
-  if (mapEl) {
-    var mapTab = document.querySelector('[onclick*="tp-map"]');
-    var mapInited = false;
-    var DETAIL_LAT = {{ (float)$screen->site->lat }};
-    var DETAIL_LNG = {{ (float)$screen->site->lon }};
-    var DETAIL_POIS = @json($nearbyPois ?? []);
-
-    // POI category → color/emoji palette
-    var POI_STYLE = {
-      cafe:        {color:'#8B4513', emoji:'☕'},
-      restaurant:  {color:'#E67E22', emoji:'🍴'},
-      fast_food:   {color:'#E74C3C', emoji:'🍔'},
-      bar:         {color:'#9B59B6', emoji:'🍺'},
-      school:      {color:'#3498DB', emoji:'🎓'},
-      university:  {color:'#2980B9', emoji:'🏛'},
-      kindergarten:{color:'#3498DB', emoji:'🎓'},
-      hospital:    {color:'#E74C3C', emoji:'🏥'},
-      clinic:      {color:'#E91E63', emoji:'⚕'},
-      pharmacy:    {color:'#27AE60', emoji:'💊'},
-      bank:        {color:'#16A085', emoji:'🏦'},
-      atm:         {color:'#16A085', emoji:'💳'},
-      fuel:        {color:'#F39C12', emoji:'⛽'},
-      parking:     {color:'#7F8C8D', emoji:'🅿'},
-      cinema:      {color:'#9B59B6', emoji:'🎬'},
-      hotel:       {color:'#34495E', emoji:'🏨'},
-      mall:        {color:'#E67E22', emoji:'🛍'},
-      supermarket: {color:'#27AE60', emoji:'🛒'},
-      convenience: {color:'#27AE60', emoji:'🏪'},
-      clothes:     {color:'#E91E63', emoji:'👕'},
-      gym:         {color:'#16A085', emoji:'💪'},
-      fitness_centre:{color:'#16A085', emoji:'💪'},
-      bus_station: {color:'#3498DB', emoji:'🚌'},
-      station:     {color:'#3498DB', emoji:'🚏'},
-      park:        {color:'#27AE60', emoji:'🌳'},
-      office:      {color:'#34495E', emoji:'🏢'},
-      company:     {color:'#34495E', emoji:'🏢'},
-    };
-
-    function poiStyle(cat) {
-      return POI_STYLE[cat] || {color:'#7F8C8D', emoji:'📍'};
-    }
-
-    function initDetailMap(){
-      if (mapInited) return;
-      if (typeof L === 'undefined') { setTimeout(initDetailMap, 200); return; }
-      mapInited = true;
-
-      var dmap = L.map('detail-map', {
-        center:[DETAIL_LAT, DETAIL_LNG],
-        zoom: 17,
-        zoomControl: true,
-        scrollWheelZoom: false,
-      });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution:'&copy; OSM', maxZoom:19
-      }).addTo(dmap);
-
-      // POI markers (small colored dots, behind screen pin)
-      DETAIL_POIS.forEach(function(p){
-        var s = poiStyle(p.cat);
-        var ic = L.divIcon({
-          className: 'poi-dot',
-          html: '<div class="poi-dot-inner" style="background:'+s.color+'">'+s.emoji+'</div>',
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
-        });
-        L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
-          .addTo(dmap)
-          .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-                   + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
-      });
-
-      // Screen pin (prominent, on top)
-      var screenIcon = L.divIcon({
-        className: 'screen-pin',
-        html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
-      });
-      L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
-        .addTo(dmap)
-        .bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}')
-        .openPopup();
-
-      // Force reflow after tab show (Leaflet bug khi container display:none lúc init)
-      setTimeout(function(){ dmap.invalidateSize(); }, 100);
-      setTimeout(function(){ dmap.invalidateSize(); }, 400);
-    }
-
-    // Init on tab click (lazy — map tab có thể đang hidden lúc page load)
-    if (mapTab) mapTab.addEventListener('click', function(){ setTimeout(initDetailMap, 50); });
-
-    // Hoặc init ngay nếu tab Vị trí đang active sẵn
-    if (document.getElementById('tp-map')?.classList.contains('on')) {
-      setTimeout(initDetailMap, 200);
-    }
-  }
-  @endif
 })();
+@if($screen->site?->lat && $screen->site?->lon)
+// ── Leaflet map (separate IIFE — runs AFTER leaflet.js loads at bottom) ──
+window.addEventListener('load', function(){
+  var mapEl = document.getElementById('detail-map');
+  if (! mapEl || typeof L === 'undefined') {
+    console.warn('[detail-map] init skipped — element or Leaflet missing');
+    return;
+  }
+
+  var DETAIL_LAT = {{ (float)$screen->site->lat }};
+  var DETAIL_LNG = {{ (float)$screen->site->lon }};
+  var DETAIL_POIS = @json($nearbyPois ?? []);
+
+  var POI_STYLE = {
+    cafe:{color:'#8B4513',emoji:'☕'}, restaurant:{color:'#E67E22',emoji:'🍴'},
+    fast_food:{color:'#E74C3C',emoji:'🍔'}, bar:{color:'#9B59B6',emoji:'🍺'},
+    school:{color:'#3498DB',emoji:'🎓'}, university:{color:'#2980B9',emoji:'🏛'},
+    kindergarten:{color:'#3498DB',emoji:'🎓'}, hospital:{color:'#E74C3C',emoji:'🏥'},
+    clinic:{color:'#E91E63',emoji:'⚕'}, pharmacy:{color:'#27AE60',emoji:'💊'},
+    bank:{color:'#16A085',emoji:'🏦'}, atm:{color:'#16A085',emoji:'💳'},
+    fuel:{color:'#F39C12',emoji:'⛽'}, parking:{color:'#7F8C8D',emoji:'🅿'},
+    cinema:{color:'#9B59B6',emoji:'🎬'}, hotel:{color:'#34495E',emoji:'🏨'},
+    mall:{color:'#E67E22',emoji:'🛍'}, supermarket:{color:'#27AE60',emoji:'🛒'},
+    convenience:{color:'#27AE60',emoji:'🏪'}, clothes:{color:'#E91E63',emoji:'👕'},
+    gym:{color:'#16A085',emoji:'💪'}, fitness_centre:{color:'#16A085',emoji:'💪'},
+    bus_station:{color:'#3498DB',emoji:'🚌'}, station:{color:'#3498DB',emoji:'🚏'},
+    park:{color:'#27AE60',emoji:'🌳'}, office:{color:'#34495E',emoji:'🏢'},
+    company:{color:'#34495E',emoji:'🏢'},
+  };
+  function poiStyle(c){ return POI_STYLE[c] || {color:'#7F8C8D',emoji:'📍'}; }
+
+  // Init map IMMEDIATELY (kể cả khi tab Vị trí đang display:none)
+  var dmap = L.map('detail-map', {
+    center: [DETAIL_LAT, DETAIL_LNG],
+    zoom: 17,
+    zoomControl: true,
+    scrollWheelZoom: false,
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OSM', maxZoom:19
+  }).addTo(dmap);
+
+  // POI markers
+  DETAIL_POIS.forEach(function(p){
+    var s = poiStyle(p.cat);
+    var ic = L.divIcon({
+      className:'poi-dot',
+      html:'<div class="poi-dot-inner" style="background:'+s.color+'">'+s.emoji+'</div>',
+      iconSize:[22,22], iconAnchor:[11,11],
+    });
+    L.marker([p.lat, p.lon], {icon:ic, zIndexOffset:100})
+      .addTo(dmap)
+      .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+               +'<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+  });
+
+  // Screen pin
+  var screenIcon = L.divIcon({
+    className:'screen-pin',
+    html:'<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
+    iconSize:[44,44], iconAnchor:[22,22],
+  });
+  L.marker([DETAIL_LAT, DETAIL_LNG], {icon:screenIcon, zIndexOffset:1000})
+    .addTo(dmap)
+    .bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}');
+
+  console.log('[detail-map] initialized with ' + DETAIL_POIS.length + ' POIs');
+
+  // ── Watch tp-map panel for visibility — fix Leaflet gray-tile bug ──
+  function refresh(){
+    requestAnimationFrame(function(){ dmap.invalidateSize(); });
+  }
+  // Initial refresh after layout settles
+  setTimeout(refresh, 100);
+
+  // Refresh when Vị trí tab opens (sw() toggles 'on' class on tp-map div)
+  var tpMap = document.getElementById('tp-map');
+  if (tpMap) {
+    new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        if (m.attributeName === 'class' && tpMap.classList.contains('on')) {
+          refresh();
+          setTimeout(refresh, 250);
+        }
+      });
+    }).observe(tpMap, {attributes:true, attributeFilter:['class']});
+  }
+
+  // Failsafe: refresh on tab click directly
+  var mapTab = document.querySelector('[onclick*="tp-map"]');
+  if (mapTab) mapTab.addEventListener('click', function(){
+    setTimeout(refresh, 50);
+    setTimeout(refresh, 300);
+  });
+});
+@endif
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 @endpush
