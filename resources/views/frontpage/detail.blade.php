@@ -27,7 +27,7 @@
 @endsection
 
 @push('head')
-{{-- Leaflet bỏ — tab Vị trí dùng iframe OSM embed (bullet-proof, zero JS) --}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 @media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}
 .lb-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
@@ -181,13 +181,16 @@
     $osmEmbed = 'https://www.openstreetmap.org/export/embed.html?bbox=' . $bbox . '&layer=mapnik&marker=' . $lat . ',' . $lon;
     $osmLink  = 'https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lon . '#map=17/' . $lat . '/' . $lon;
 @endphp
-<iframe
-    src="{{ $osmEmbed }}"
-    style="width:100%;height:420px;border:1px solid var(--ln2);border-radius:14px;display:block"
-    loading="lazy"
-    title="Bản đồ vị trí {{ $screen->name }}"
-    referrerpolicy="no-referrer-when-downgrade"
-></iframe>
+{{-- Map container: iframe = guaranteed fallback; Leaflet = upgrade với POI markers nếu load OK --}}
+<div id="detail-map-wrap" style="position:relative;width:100%;height:420px;border:1px solid var(--ln2);border-radius:14px;overflow:hidden">
+    <iframe id="detail-map-iframe"
+        src="{{ $osmEmbed }}"
+        style="width:100%;height:100%;border:0;display:block"
+        loading="lazy"
+        title="Bản đồ vị trí {{ $screen->name }}"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div id="detail-map-leaflet" style="position:absolute;inset:0;display:none"></div>
+</div>
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 14px">
     <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t3)">
         <span style="background:var(--bl);width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
@@ -511,4 +514,93 @@ function sw(el,id){
 
 })();
 </script>
+
+@if($screen->site?->lat && $screen->site?->lon)
+{{-- Leaflet upgrade: replaces iframe với map có POI markers nếu Leaflet load OK --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+window.addEventListener('load', function(){
+  if (typeof L === 'undefined') {
+    console.warn('[detail-map] Leaflet không load — giữ iframe fallback');
+    return;
+  }
+
+  var DETAIL_LAT = {{ (float)$screen->site->lat }};
+  var DETAIL_LNG = {{ (float)$screen->site->lon }};
+  var DETAIL_POIS = @json($nearbyPois ?? []);
+
+  var POI_STYLE = {
+    cafe:{c:'#8B4513',e:'☕'}, restaurant:{c:'#E67E22',e:'🍴'}, fast_food:{c:'#E74C3C',e:'🍔'},
+    bar:{c:'#9B59B6',e:'🍺'}, school:{c:'#3498DB',e:'🎓'}, university:{c:'#2980B9',e:'🏛'},
+    kindergarten:{c:'#3498DB',e:'🎓'}, hospital:{c:'#E74C3C',e:'🏥'}, clinic:{c:'#E91E63',e:'⚕'},
+    pharmacy:{c:'#27AE60',e:'💊'}, bank:{c:'#16A085',e:'🏦'}, atm:{c:'#16A085',e:'💳'},
+    fuel:{c:'#F39C12',e:'⛽'}, parking:{c:'#7F8C8D',e:'🅿'}, cinema:{c:'#9B59B6',e:'🎬'},
+    hotel:{c:'#34495E',e:'🏨'}, mall:{c:'#E67E22',e:'🛍'}, supermarket:{c:'#27AE60',e:'🛒'},
+    convenience:{c:'#27AE60',e:'🏪'}, clothes:{c:'#E91E63',e:'👕'}, gym:{c:'#16A085',e:'💪'},
+    fitness_centre:{c:'#16A085',e:'💪'}, bus_station:{c:'#3498DB',e:'🚌'}, station:{c:'#3498DB',e:'🚏'},
+    park:{c:'#27AE60',e:'🌳'}, office:{c:'#34495E',e:'🏢'}, company:{c:'#34495E',e:'🏢'},
+  };
+
+  var iframe = document.getElementById('detail-map-iframe');
+  var leafletDiv = document.getElementById('detail-map-leaflet');
+  if (! iframe || ! leafletDiv) return;
+
+  try {
+    // Switch from iframe to Leaflet
+    leafletDiv.style.display = 'block';
+    iframe.style.display = 'none';
+
+    var dmap = L.map(leafletDiv, {
+      center: [DETAIL_LAT, DETAIL_LNG],
+      zoom: 17,
+      zoomControl: true,
+      scrollWheelZoom: false,
+      preferCanvas: true,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap', maxZoom: 19,
+    }).addTo(dmap);
+
+    // POI markers
+    DETAIL_POIS.forEach(function(p){
+      var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
+      var ic = L.divIcon({
+        className: 'poi-dot',
+        html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
+        iconSize: [22, 22], iconAnchor: [11, 11],
+      });
+      L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
+        .addTo(dmap)
+        .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+                 + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+    });
+
+    // Screen pin (prominent, on top)
+    var screenIcon = L.divIcon({
+      className: 'screen-pin',
+      html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
+      iconSize: [44, 44], iconAnchor: [22, 22],
+    });
+    L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
+      .addTo(dmap)
+      .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
+
+    // ResizeObserver: fix gray-tile khi tab Vị trí mở từ hidden
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function(){
+        dmap.invalidateSize();
+      }).observe(leafletDiv);
+    }
+    setTimeout(function(){ dmap.invalidateSize(); }, 300);
+    setTimeout(function(){ dmap.invalidateSize(); }, 800);
+
+    console.log('[detail-map] Leaflet OK — ' + DETAIL_POIS.length + ' POI markers');
+  } catch (e) {
+    console.warn('[detail-map] Leaflet init failed, rollback to iframe', e);
+    iframe.style.display = 'block';
+    leafletDiv.style.display = 'none';
+  }
+});
+</script>
+@endif
 @endpush
