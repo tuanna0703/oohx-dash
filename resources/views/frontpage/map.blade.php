@@ -385,17 +385,17 @@
         topWrap.innerHTML = visible.map(function(code){
             var c = findCity(code);
             if (!c) return '';
-            return '<button class="mt-btn" data-city="' + c.code + '">'
-                + c.name + ' <span class="mt-btn-count">' + c.count.toLocaleString('vi-VN') + '</span>'
-                + '</button>';
+            return '\x3cbutton class="mt-btn" data-city="' + c.code + '">'
+                + c.name + ' <span class="mt-btn-count">' + c.count.toLocaleString('vi-VN') + '\x3c/span>'
+                + '\x3c/button>';
         }).join('');
 
         // Render dropdown (remaining cities not in top)
         ddList.innerHTML = ALL_CITIES.filter(function(c){ return !visibleSet[c.code]; })
             .map(function(c){
-                return '<button class="mt-dd-item" data-city="' + c.code + '">'
-                    + c.name + ' <span class="mt-dd-count">' + c.count.toLocaleString('vi-VN') + '</span>'
-                    + '</button>';
+                return '\x3cbutton class="mt-dd-item" data-city="' + c.code + '">'
+                    + c.name + ' <span class="mt-dd-count">' + c.count.toLocaleString('vi-VN') + '\x3c/span>'
+                    + '\x3c/button>';
             }).join('');
 
         // Bind click handlers

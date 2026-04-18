@@ -159,11 +159,12 @@
             }).addTo(map);
 
             // Center pin (screen location)
-            // Note: escape </ to <\/ trong JS strings để DOMDocument không misparse khi Livewire scan multi-root
+            // Note: escape `<` to `\x3c` — DOMDocument (Livewire root-detector) misparse `<div>` trong script content.
+            // JS engine hiểu \x3c = '<', nhưng HTML parser không thấy tag → tránh false-positive multi-root.
             var centerIcon = L.divIcon({
                 className: 'sm-center',
-                html: '<div class="sm-center-pulse"><\/div>'
-                    + '<div class="sm-center-inner"><span class="material-symbols-outlined">my_location<\/span><\/div>',
+                html: '\x3cdiv class="sm-center-pulse">\x3c/div>'
+                    + '\x3cdiv class="sm-center-inner">\x3cspan class="material-symbols-outlined">my_location\x3c/span>\x3c/div>',
                 iconSize: [32, 32], iconAnchor: [16, 16],
             });
             L.marker([CENTER.lat, CENTER.lon], { icon: centerIcon, zIndexOffset: 1000 })
@@ -182,15 +183,15 @@
             POIS.forEach(function(p){
                 var icon = L.divIcon({
                     className: 'sm-pin',
-                    html: '<div class="sm-pin-inner" style="background:'+p.color+'">'
-                        + '<span class="material-symbols-outlined">'+p.icon+'<\/span><\/div>',
+                    html: '\x3cdiv class="sm-pin-inner" style="background:'+p.color+'">'
+                        + '\x3cspan class="material-symbols-outlined">'+p.icon+'\x3c/span>\x3c/div>',
                     iconSize: [26, 26], iconAnchor: [13, 13],
                 });
                 var m = L.marker([p.lat, p.lon], { icon: icon, zIndexOffset: 100 })
                     .addTo(map)
                     .bindPopup(
-                        '<div style="font-weight:600;font-size:12px">'+p.name+'<\/div>'
-                      + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m<\/div>'
+                        '\x3cdiv style="font-weight:600;font-size:12px">'+p.name+'\x3c/div>'
+                      + '\x3cdiv style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m\x3c/div>'
                     );
                 markers[p.id] = m;
             });

@@ -655,19 +655,23 @@ function sw(el,id){
 
   // POI markers — Material icon, store handle by id để click list
   var poiMarkers = {};
+  // Note: escape `<` to `\x3c` trong JS HTML strings — defensive.
+  // DOMDocument (libxml2) — nếu trang này tương lai wrap trong Livewire component —
+  // sẽ misparse `\x3cdiv>` trong script content thành multi-root false-positive.
+  // JS engine hiểu \x3c = '<', HTML parser không nhận ra tag → an toàn cho cả 2 ngữ cảnh.
   POIS.forEach(function(p){
     var m = L.marker([p.lat, p.lon], {
       icon: L.divIcon({
         className: 'poi-pin',
-        html: '<div class="poi-pin-inner" style="background:'+p.color+'">'
-            + '<span class="material-symbols-outlined">'+p.icon+'</span></div>',
+        html: '\x3cdiv class="poi-pin-inner" style="background:'+p.color+'">'
+            + '\x3cspan class="material-symbols-outlined">'+p.icon+'\x3c/span>\x3c/div>',
         iconSize: [30, 30], iconAnchor: [15, 15],
       }),
       zIndexOffset: 100,
     })
     .addTo(locMap)
-    .bindPopup('<div style="font-weight:600;font-size:13px">'+p.name+'</div>'
-             + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m từ màn hình</div>');
+    .bindPopup('\x3cdiv style="font-weight:600;font-size:13px">'+p.name+'\x3c/div>'
+             + '\x3cdiv style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m từ màn hình\x3c/div>');
     poiMarkers[p.id] = m;
   });
 

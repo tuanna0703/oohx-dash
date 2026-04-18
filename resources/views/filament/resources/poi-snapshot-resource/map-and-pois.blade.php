@@ -13,6 +13,9 @@
     $totalRaw    = count($rawPois);
 @endphp
 
+{{-- Single root wrapper — Livewire requires exactly 1 root element per component.
+     wire:ignore prevents Livewire diffing of map content khi page re-render. --}}
+<div wire:ignore class="poi-snap-wrap">
 {{-- Leaflet + Material Symbols (load once per page; harmless if duplicated) --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -158,16 +161,19 @@
     }).addTo(map);
 
     // Center pin (snapshot location)
+    // Note: escape `<` to `\x3c` trong tất cả HTML strings — DOMDocument (Livewire root-detector)
+    // mis-parse `<div>` trong script content → tách thành multi-root false-positive.
+    // JS engine hiểu \x3c = '<', nhưng HTML parser không thấy tag.
     var centerIcon = L.divIcon({
         className: 'psm-center',
-        html: '<div class="psm-center-pulse"></div>'
-            + '<div class="psm-center-inner"><span class="material-symbols-outlined">my_location</span></div>',
+        html: '\x3cdiv class="psm-center-pulse">\x3c/div>'
+            + '\x3cdiv class="psm-center-inner">\x3cspan class="material-symbols-outlined">my_location\x3c/span>\x3c/div>',
         iconSize: [36, 36], iconAnchor: [18, 18],
     });
     L.marker([CENTER.lat, CENTER.lon], { icon: centerIcon, zIndexOffset: 1000 })
         .addTo(map)
-        .bindPopup('<div style="font-weight:700;font-size:13px">Tâm snapshot</div>'
-                 + '<div style="font-size:11px;color:#888">Bán kính ' + CENTER.radius + 'm</div>');
+        .bindPopup('\x3cdiv style="font-weight:700;font-size:13px">Tâm snapshot\x3c/div>'
+                 + '\x3cdiv style="font-size:11px;color:#888">Bán kính ' + CENTER.radius + 'm\x3c/div>');
 
     // Radius circle for visual context
     L.circle([CENTER.lat, CENTER.lon], {
@@ -183,15 +189,15 @@
     POIS.forEach(function(p){
         var icon = L.divIcon({
             className: 'psm-pin',
-            html: '<div class="psm-pin-inner" style="background:'+p.color+'">'
-                + '<span class="material-symbols-outlined">'+p.icon+'</span></div>',
+            html: '\x3cdiv class="psm-pin-inner" style="background:'+p.color+'">'
+                + '\x3cspan class="material-symbols-outlined">'+p.icon+'\x3c/span>\x3c/div>',
             iconSize: [28, 28], iconAnchor: [14, 14],
         });
         var m = L.marker([p.lat, p.lon], { icon: icon, zIndexOffset: 100 })
             .addTo(map)
             .bindPopup(
-                '<div style="font-weight:600;font-size:13px">'+p.name+'</div>'
-              + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m từ tâm</div>'
+                '\x3cdiv style="font-weight:600;font-size:13px">'+p.name+'\x3c/div>'
+              + '\x3cdiv style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m từ tâm\x3c/div>'
             );
         markers[p.id] = m;
     });
@@ -260,3 +266,4 @@
     setTimeout(function(){ map.invalidateSize(); }, 100);
 })();
 </script>
+</div>{{-- /poi-snap-wrap --}}

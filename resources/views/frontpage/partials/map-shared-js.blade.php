@@ -11,20 +11,20 @@
 
     // ── Constants ──────────────────────────────────────────────────────────────
     M.PIN_ICONS = {
-        'mall':          '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
-        'retail':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
-        'transit':       '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>',
-        'roadside':      '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
-        'office':        '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>',
-        'residential':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>',
-        'food-beverage': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>',
-        'healthcare':    '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>',
-        'education':     '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>',
-        'hospitality':   '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2V10c0-2.21-1.79-4-4-4z"/></svg>',
-        'entertainment': '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>',
-        'sports-fitness':'<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>',
+        'mall':          '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
+        'retail':        '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>',
+        'transit':       '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>',
+        'roadside':      '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
+        'office':        '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>',
+        'residential':   '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>',
+        'food-beverage': '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>',
+        'healthcare':    '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>',
+        'education':     '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>',
+        'hospitality':   '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2V10c0-2.21-1.79-4-4-4z"/></svg>',
+        'entertainment': '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>',
+        'sports-fitness':'\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>',
     };
-    M.DEFAULT_ICON = '<svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
+    M.DEFAULT_ICON = '\x3csvg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
 
     M.CITY_COORDS = {
         'hanoi': [21.0285, 105.8542, 12], 'hcm': [10.7769, 106.7009, 12],
@@ -69,25 +69,25 @@
     M.createPinIcon = function(pin) {
         var col = M.pinColor(pin.type);
         var logoHtml = pin.ownerLogo
-            ? '<img src="' + pin.ownerLogo + '" class="oohx-rich-logo" alt="">'
-            : '<div class="oohx-rich-initials oohx-rich-initials--' + col + '">' + (pin.ownerInitials || '?') + '</div>';
+            ? '\x3cimg src="' + pin.ownerLogo + '" class="oohx-rich-logo" alt="">'
+            : '\x3cdiv class="oohx-rich-initials oohx-rich-initials--' + col + '">' + (pin.ownerInitials || '?') + '\x3c/div>';
         var primary = pin.siteName || pin.networkName || pin.ownerName || pin.name || '';
         var meta = (pin.screenCount && pin.screenCount > 1)
             ? (pin.screenCount + ' màn hình · ' + (pin.networkName || pin.typeLabel || ''))
             : (pin.networkName || pin.typeLabel || '');
         var badge = (pin.screenCount && pin.screenCount > 1)
-            ? '<div class="oohx-rich-badge">' + pin.screenCount + '</div>'
+            ? '\x3cdiv class="oohx-rich-badge">' + pin.screenCount + '\x3c/div>'
             : '';
         return L.divIcon({
             className: 'oohx-pin oohx-pin--rich',
-            html: '<div class="oohx-rich oohx-rich--' + col + '">'
+            html: '\x3cdiv class="oohx-rich oohx-rich--' + col + '">'
                 + logoHtml
-                + '<div class="oohx-rich-body">'
-                + '<div class="oohx-rich-name">' + primary + '</div>'
-                + '<div class="oohx-rich-meta">' + meta + '</div>'
-                + '</div>'
+                + '\x3cdiv class="oohx-rich-body">'
+                + '\x3cdiv class="oohx-rich-name">' + primary + '\x3c/div>'
+                + '\x3cdiv class="oohx-rich-meta">' + meta + '\x3c/div>'
+                + '\x3c/div>'
                 + badge
-                + '</div>',
+                + '\x3c/div>',
             iconSize: [200, 48],
             iconAnchor: [16, 48],
         });
@@ -100,7 +100,7 @@
         var px = size === 'xl' ? 80 : size === 'lg' ? 68 : size === 'md' ? 56 : 44;
         return L.divIcon({
             className: 'marker-cluster',
-            html: '<div class="oohx-cluster oohx-cluster--' + size + '">' + M.fmtCount(count) + '</div>',
+            html: '\x3cdiv class="oohx-cluster oohx-cluster--' + size + '">' + M.fmtCount(count) + '\x3c/div>',
             iconSize: L.point(px, px),
         });
     };
@@ -170,17 +170,17 @@
                 var bodyHtml = pin.screens.map(function(s) {
                     var unit = s.priceUnit || 'tháng';
                     var priceHtml = (s.price && s.price > 0)
-                        ? '<div class="mpop-list-price">' + M.fmtPrice(s.price) + '₫<span>/' + unit + '</span></div>'
-                        : '<div class="mpop-list-price mpop-list-price-quote">Liên hệ</div>';
-                    return '<a href="/explore/' + s.id + '" class="mpop-list-item">'
-                        + '<div class="mpop-list-thumb">' + (s.photo ? '<img src="' + s.photo + '" alt="" loading="lazy">' : '') + '</div>'
-                        + '<div class="mpop-list-info">'
-                        + '<div class="mpop-list-name">' + s.name + '</div>'
-                        + '<div class="mpop-list-meta">' + (s.size ? s.size + ' · ' : '') + (s.typeLabel || '') + '</div>'
-                        + '</div>'
+                        ? '\x3cdiv class="mpop-list-price">' + M.fmtPrice(s.price) + '₫<span>/' + unit + '\x3c/span></div>'
+                        : '\x3cdiv class="mpop-list-price mpop-list-price-quote">Liên hệ</div>';
+                    return '\x3ca href="/explore/' + s.id + '" class="mpop-list-item">'
+                        + '\x3cdiv class="mpop-list-thumb">' + (s.photo ? '\x3cimg src="' + s.photo + '" alt="" loading="lazy">' : '') + '\x3c/div>'
+                        + '\x3cdiv class="mpop-list-info">'
+                        + '\x3cdiv class="mpop-list-name">' + s.name + '\x3c/div>'
+                        + '\x3cdiv class="mpop-list-meta">' + (s.size ? s.size + ' · ' : '') + (s.typeLabel || '') + '\x3c/div>'
+                        + '\x3c/div>'
                         + priceHtml
-                        + '<svg viewBox="0 0 24 24" fill="var(--t4)" class="mpop-list-arr"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
-                        + '</a>';
+                        + '\x3csvg viewBox="0 0 24 24" fill="var(--t4)" class="mpop-list-arr"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
+                        + '\x3c/a>';
                 }).join('');
                 var listBody = document.getElementById(pfx + 'popup-list-body');
                 if (listBody) listBody.innerHTML = bodyHtml;
