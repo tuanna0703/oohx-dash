@@ -159,10 +159,11 @@
             }).addTo(map);
 
             // Center pin (screen location)
+            // Note: escape </ to <\/ trong JS strings để DOMDocument không misparse khi Livewire scan multi-root
             var centerIcon = L.divIcon({
                 className: 'sm-center',
-                html: '<div class="sm-center-pulse"></div>'
-                    + '<div class="sm-center-inner"><span class="material-symbols-outlined">my_location</span></div>',
+                html: '<div class="sm-center-pulse"><\/div>'
+                    + '<div class="sm-center-inner"><span class="material-symbols-outlined">my_location<\/span><\/div>',
                 iconSize: [32, 32], iconAnchor: [16, 16],
             });
             L.marker([CENTER.lat, CENTER.lon], { icon: centerIcon, zIndexOffset: 1000 })
@@ -182,14 +183,14 @@
                 var icon = L.divIcon({
                     className: 'sm-pin',
                     html: '<div class="sm-pin-inner" style="background:'+p.color+'">'
-                        + '<span class="material-symbols-outlined">'+p.icon+'</span></div>',
+                        + '<span class="material-symbols-outlined">'+p.icon+'<\/span><\/div>',
                     iconSize: [26, 26], iconAnchor: [13, 13],
                 });
                 var m = L.marker([p.lat, p.lon], { icon: icon, zIndexOffset: 100 })
                     .addTo(map)
                     .bindPopup(
-                        '<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-                      + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m</div>'
+                        '<div style="font-weight:600;font-size:12px">'+p.name+'<\/div>'
+                      + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m<\/div>'
                     );
                 markers[p.id] = m;
             });
