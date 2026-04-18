@@ -31,7 +31,6 @@ class PoiContextEnricher
         'https://overpass.openstreetmap.fr/api/interpreter',
     ];
     private const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-    private const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 
     /** Cache OSM POI response — POI ít thay đổi, refresh 30 ngày là đủ. */
     private const OSM_CACHE_TTL_MINUTES = 30 * 24 * 60;
@@ -75,7 +74,7 @@ class PoiContextEnricher
         $pois     = $this->queryOverpass($lat, $lon, $radius);
         $features = $this->aggregate($pois, $lat, $lon);
 
-        $apiKey = env('ANTHROPIC_API_KEY');
+        $apiKey   = config('services.anthropic.key');
         $aiResult = null;
         $tokensIn = 0;
         $tokensOut = 0;
@@ -84,6 +83,8 @@ class PoiContextEnricher
             $prompt = $this->buildPrompt($features, $name, $address, $province);
             [$rawText, $tokensIn, $tokensOut] = $this->callClaude($apiKey, $prompt);
             $aiResult = $rawText ? $this->extractJson($rawText) : null;
+        } else {
+            throw new \RuntimeException('ANTHROPIC_API_KEY chưa set trong .env (hoặc config cache cũ — chạy `php artisan config:clear`).');
         }
 
         $cost = ($tokensIn / 1_000_000) * self::COST_IN_PER_M
@@ -375,7 +376,7 @@ PROMPT;
                 'content-type'      => 'application/json',
             ])
             ->post(self::ANTHROPIC_ENDPOINT, [
-                'model'      => self::ANTHROPIC_MODEL,
+                'model'      => config('services.anthropic.model', 'claude-haiku-4-5-20251001'),
                 'max_tokens' => 2048,
                 'messages'   => [
                     ['role' => 'user', 'content' => $prompt],
