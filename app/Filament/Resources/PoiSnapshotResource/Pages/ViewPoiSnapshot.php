@@ -45,16 +45,6 @@ class ViewPoiSnapshot extends ViewRecord
                     }
                 }),
 
-            Actions\Action::make('open_osm')
-                ->label('Mở trên OpenStreetMap')
-                ->icon('heroicon-o-arrow-top-right-on-square')
-                ->url(fn () => sprintf(
-                    'https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=17/%s/%s',
-                    $this->record->lat_key, $this->record->lon_key,
-                    $this->record->lat_key, $this->record->lon_key,
-                ))
-                ->openUrlInNewTab(),
-
             Actions\DeleteAction::make(),
         ];
     }

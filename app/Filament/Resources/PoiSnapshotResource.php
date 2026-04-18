@@ -167,15 +167,6 @@ class PoiSnapshotResource extends Resource
                             }
                         }),
 
-                    Tables\Actions\Action::make('open_osm')
-                        ->label('Mở trên OSM')
-                        ->icon('heroicon-o-arrow-top-right-on-square')
-                        ->url(fn (PoiSnapshot $r) => sprintf(
-                            'https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=17/%s/%s',
-                            $r->lat_key, $r->lon_key, $r->lat_key, $r->lon_key
-                        ))
-                        ->openUrlInNewTab(),
-
                     Tables\Actions\DeleteAction::make(),
                 ]),
             ])
@@ -243,12 +234,10 @@ class PoiSnapshotResource extends Resource
                         ->color(fn ($state) => $state && $state->isPast() ? 'danger' : 'gray'),
                 ]),
 
-            Infolists\Components\Section::make('Aggregated Features')
-                ->collapsible()
-                ->visible(fn ($record) => ! empty($record->features))
+            Infolists\Components\Section::make('Map & POIs')
                 ->schema([
-                    Infolists\Components\ViewEntry::make('features')
-                        ->view('filament.resources.poi-snapshot-resource.features'),
+                    Infolists\Components\ViewEntry::make('map_and_pois')
+                        ->view('filament.resources.poi-snapshot-resource.map-and-pois'),
                 ]),
 
             Infolists\Components\Section::make('Scoring (microservice)')
@@ -257,14 +246,6 @@ class PoiSnapshotResource extends Resource
                 ->schema([
                     Infolists\Components\KeyValueEntry::make('scoring')
                         ->label(false),
-                ]),
-
-            Infolists\Components\Section::make('Raw POIs')
-                ->collapsible()
-                ->collapsed()
-                ->schema([
-                    Infolists\Components\ViewEntry::make('pois')
-                        ->view('filament.resources.poi-snapshot-resource.pois'),
                 ]),
         ]);
     }
