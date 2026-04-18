@@ -27,7 +27,9 @@
 @endsection
 
 @push('head')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+@include('frontpage.partials.map-styles')
 <style>
 @media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}
 .lb-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
@@ -527,19 +529,38 @@ function sw(el,id){
 </script>
 
 @if($screen->site?->lat && $screen->site?->lon)
-{{-- Leaflet — pattern giống /map page (init NGAY, container always visible, không tab logic) --}}
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+{{-- Leaflet stack giống Live Map View ở homepage (đã proven work) --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+@include('frontpage.partials.map-shared-js')
+</script>
 <script>
 (function(){
-  if (typeof L === 'undefined') {
-    console.warn('[loc-map] Leaflet không load — kiểm tra CDN');
+  if (typeof L === 'undefined' || typeof OOHXMap === 'undefined') {
+    console.warn('[loc-map] Leaflet hoặc OOHXMap chưa load');
     return;
   }
 
-  var LAT  = {{ (float)$screen->site->lat }};
-  var LNG  = {{ (float)$screen->site->lon }};
+  @php
+    $screenPinData = [
+        'lat'           => (float) $screen->site->lat,
+        'lng'           => (float) $screen->site->lon,
+        'type'          => $screen->inventory?->vnCategory?->slug ?? 'roadside',
+        'name'          => $screen->name,
+        'siteName'      => $screen->site?->name ?? $screen->name,
+        'networkName'   => $screen->site?->network?->name ?? '',
+        'ownerName'     => $screen->owner?->name ?? '',
+        'ownerLogo'     => $screen->owner?->logo_url ? asset('storage/' . $screen->owner->logo_url) : '',
+        'ownerInitials' => $screen->owner?->name ? mb_strtoupper(mb_substr($screen->owner->name, 0, 2)) : '?',
+        'typeLabel'     => $screen->inventory?->vnCategory?->name_vi ?? '',
+        'address'       => $screen->site?->address ?? '',
+    ];
+  @endphp
+  var SCREEN_PIN = @json($screenPinData);
   var POIS = @json($nearbyPois ?? []);
 
+  // POI category → color/emoji palette (cho dot marker đơn giản)
   var POI_STYLE = {
     cafe:{c:'#8B4513',e:'☕'}, restaurant:{c:'#E67E22',e:'🍴'}, fast_food:{c:'#E74C3C',e:'🍔'},
     bar:{c:'#9B59B6',e:'🍺'}, school:{c:'#3498DB',e:'🎓'}, university:{c:'#2980B9',e:'🏛'},
@@ -552,38 +573,44 @@ function sw(el,id){
     park:{c:'#27AE60',e:'🌳'}, office:{c:'#34495E',e:'🏢'}, company:{c:'#34495E',e:'🏢'},
   };
 
-  var map = L.map('loc-map', {
-    center: [LAT, LNG], zoom: 17,
-    zoomControl: true, scrollWheelZoom: false,
+  // ── Init map (pattern giống hp-leaflet-map ở homepage) ──
+  var locMap = L.map('loc-map', {
+    center: [SCREEN_PIN.lat, SCREEN_PIN.lng],
+    zoom: 17,
+    zoomControl: true,
+    scrollWheelZoom: false,
     preferCanvas: true,
   });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:'&copy; OpenStreetMap', maxZoom:19,
-  }).addTo(map);
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(locMap);
 
+  // POI markers — colored dots
   POIS.forEach(function(p){
     var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
-    var ic = L.divIcon({
-      className:'poi-dot',
-      html:'<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
-      iconSize:[22,22], iconAnchor:[11,11],
-    });
-    L.marker([p.lat, p.lon], {icon:ic, zIndexOffset:100})
-      .addTo(map)
-      .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-               + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+    L.marker([p.lat, p.lon], {
+      icon: L.divIcon({
+        className: 'poi-dot',
+        html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
+        iconSize: [22, 22], iconAnchor: [11, 11],
+      }),
+      zIndexOffset: 100,
+    })
+    .addTo(locMap)
+    .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+             + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
   });
 
-  var screenIcon = L.divIcon({
-    className:'screen-pin',
-    html:'<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
-    iconSize:[44,44], iconAnchor:[22,22],
-  });
-  L.marker([LAT, LNG], {icon:screenIcon, zIndexOffset:1000})
-    .addTo(map)
-    .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
+  // Screen pin — dùng OOHXMap.createPinIcon (rich marker giống homepage live map)
+  var screenIcon = OOHXMap.createPinIcon(SCREEN_PIN);
+  L.marker([SCREEN_PIN.lat, SCREEN_PIN.lng], {icon: screenIcon, zIndexOffset: 1000})
+    .addTo(locMap)
+    .bindPopup('<div style="font-weight:700;font-size:13px">'+SCREEN_PIN.name+'</div>'
+             + (SCREEN_PIN.address ? '<div style="font-size:11px;color:#888;margin-top:4px">'+SCREEN_PIN.address+'</div>' : ''))
+    .openPopup();
 
-  console.log('[loc-map] OK — ' + POIS.length + ' POI markers');
+  console.log('[loc-map] OK — 1 screen pin + ' + POIS.length + ' POI markers');
 })();
 </script>
 @endif
