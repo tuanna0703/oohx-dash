@@ -1437,7 +1437,7 @@ input[type=range]{width:100%;accent-color:var(--bl);cursor:pointer}
 .pd-screen-item.selected{background:rgba(42,79,246,.04);border-color:rgba(42,79,246,.15)}
 .pd-screen-check{width:16px;height:16px;accent-color:var(--bl);cursor:pointer;flex-shrink:0}
 .pd-screen-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--bg2);flex-shrink:0}
-.similar-section{background:var(--bg2);padding:28px 0;border-top:1px solid var(--ln2)}
+.similar-section{background:var(--bg);padding:28px 0;border-top:1px solid var(--ln2)}
 @media(min-width:768px){.similar-section{padding:44px 0}}
 @media(min-width:1024px){.similar-section{padding:56px 0}}
 .sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
