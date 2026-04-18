@@ -410,6 +410,9 @@ function sw(el,id){
   });
 
   // ── Booking calculator with mode switching ──
+  // CHỈ chạy khi panel booking thực sự render (price > 0). Khi price=0, panel quote
+  // hiện thay → các DOM id (bp-calc-*) không tồn tại → tránh TypeError halt JS.
+  @if($hasPrice)
   var ioRate = {{ $ioRate }};
   var cpmRate = {{ $cpmRate }};
   var rateUnit = '{{ $ioRateUnit }}';
@@ -483,6 +486,7 @@ function sw(el,id){
 
   // Initial calculation
   updateCalc();
+  @endif
 
   // Leaflet map for location tab — screen pin + nearby POIs (from OSM cache)
   @if($screen->site?->lat && $screen->site?->lon)
