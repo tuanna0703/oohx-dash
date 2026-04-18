@@ -27,7 +27,7 @@
 @endsection
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <style>
 @media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}
 .lb-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
@@ -528,7 +528,7 @@ function sw(el,id){
 
 @if($screen->site?->lat && $screen->site?->lon)
 {{-- Leaflet — pattern giống /map page (init NGAY, container always visible, không tab logic) --}}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
   if (typeof L === 'undefined') {
