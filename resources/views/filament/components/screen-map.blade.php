@@ -24,7 +24,7 @@
 @endphp
 
 @if(! $hasLocation)
-    <p class="text-sm italic text-gray-400">Không có tọa độ GPS.</p>
+    <div><p class="text-sm italic text-gray-400">Không có tọa độ GPS.</p></div>
 @else
     @pushOnce('styles')
         <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
@@ -85,11 +85,13 @@
         @keyframes sm-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.4);opacity:.1}}
         </style>
     @endPushOnce
+    {{-- Single root wrapper — Livewire requires exactly 1 root element per component --}}
+    <div wire:ignore class="sm-wrap">
     @once
         <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
     @endonce
 
-    <div class="sm-browser{{ $hasPois ? '' : ' sm-browser--simple' }}" wire:ignore>
+    <div class="sm-browser{{ $hasPois ? '' : ' sm-browser--simple' }}">
         @if($hasPois)
             <div class="sm-list" id="{{ $poiBrowserId }}-list">
                 <div class="sm-summary">
@@ -254,4 +256,5 @@
         initFn();
     })();
     </script>
+    </div>{{-- /sm-wrap (single root) --}}
 @endif
