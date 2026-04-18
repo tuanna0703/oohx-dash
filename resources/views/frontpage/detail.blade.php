@@ -60,6 +60,15 @@
 .loc-list{overflow-y:auto;border:1px solid var(--ln2);border-radius:16px;background:#fff;box-shadow:var(--sh1)}
 .loc-list::-webkit-scrollbar{width:8px}
 .loc-list::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+
+/* Filter pills (group toggle) */
+.loc-filter{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid var(--ln2);background:#fff;position:sticky;top:0;z-index:5}
+.loc-filter-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--t2);background:#fff;border:1px solid var(--ln2);border-radius:980px;cursor:pointer;transition:all 140ms;line-height:1;font-family:inherit}
+.loc-filter-pill .material-symbols-outlined{font-size:14px;color:inherit;font-variation-settings:'FILL' 1,'wght' 500}
+.loc-filter-pill .loc-filter-ct{margin-left:2px;font-size:10px;background:var(--bg2);color:var(--t3);padding:1px 6px;border-radius:980px;font-weight:700;letter-spacing:0;border:1px solid var(--ln2)}
+.loc-filter-pill:hover{border-color:var(--bl);color:var(--bl)}
+.loc-filter-pill.is-active{background:var(--bl);color:#fff;border-color:var(--bl)}
+.loc-filter-pill.is-active .loc-filter-ct{background:rgba(255,255,255,.25);color:#fff;border-color:transparent}
 .loc-grp-h{padding:10px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.4px;background:var(--bg2);color:var(--t2);border-top:1px solid var(--ln2);position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:6px}
 .loc-grp-h:first-child{border-top:0}
 .loc-grp-h .material-symbols-outlined{font-size:18px;color:var(--bl)}
@@ -380,14 +389,31 @@
                         <div class="loc-empty-sub">Liên hệ admin để chạy AI enrichment cho vị trí này.</div>
                     </div>
                 @else
+                    {{-- Filter pills: bấm để ẩn/hiện nhóm --}}
+                    <div class="loc-filter" data-poi-filters>
+                        <button type="button" class="loc-filter-pill is-active" data-poi-filter-all>
+                            <span class="material-symbols-outlined">apps</span>
+                            Tất cả
+                            <span class="loc-filter-ct">{{ count($nearbyPois) }}</span>
+                        </button>
+                        @foreach($poiGrouped as $groupKey => $items)
+                            @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
+                            <button type="button" class="loc-filter-pill is-active" data-poi-filter="{{ $groupKey }}">
+                                <span class="material-symbols-outlined">{{ $grpIcon }}</span>
+                                {{ $grpLabel }}
+                                <span class="loc-filter-ct">{{ count($items) }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+
                     @foreach($poiGrouped as $groupKey => $items)
                         @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
-                        <div class="loc-grp-h">
+                        <div class="loc-grp-h" data-poi-group="{{ $groupKey }}">
                             <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
                             <span class="loc-grp-ct">{{ count($items) }}</span>
                         </div>
                         @foreach($items as $p)
-                            <div class="loc-item" data-poi-id="{{ $p['id'] }}">
+                            <div class="loc-item" data-poi-id="{{ $p['id'] }}" data-poi-group="{{ $groupKey }}">
                                 <div class="loc-dot" style="background:{{ $p['color'] }}">
                                     <span class="material-symbols-outlined">{{ $p['icon'] }}</span>
                                 </div>
@@ -669,6 +695,56 @@ function sw(el,id){
 
       locMap.flyTo(marker.getLatLng(), 18, { duration: 0.6 });
       setTimeout(function(){ marker.openPopup(); }, 650);
+    });
+  }
+
+  // ── Filter pills: ẩn/hiện nhóm POI ──
+  var filterEl = locList ? locList.querySelector('[data-poi-filters]') : null;
+  if (filterEl) {
+    var allGroups = Array.from(filterEl.querySelectorAll('[data-poi-filter]'))
+                         .map(function(b){ return b.getAttribute('data-poi-filter'); });
+    var activeGroups = new Set(allGroups);
+
+    function applyFilter(){
+      // List items + group headers
+      locList.querySelectorAll('[data-poi-group]').forEach(function(el){
+        el.style.display = activeGroups.has(el.getAttribute('data-poi-group')) ? '' : 'none';
+      });
+      // Map markers
+      POIS.forEach(function(p){
+        var m = poiMarkers[p.id];
+        if (!m) return;
+        if (activeGroups.has(p.group)) {
+          if (!locMap.hasLayer(m)) locMap.addLayer(m);
+        } else {
+          if (locMap.hasLayer(m)) locMap.removeLayer(m);
+        }
+      });
+      // Update "All" pill state
+      var allBtn = filterEl.querySelector('[data-poi-filter-all]');
+      if (allBtn) allBtn.classList.toggle('is-active', activeGroups.size === allGroups.length);
+    }
+
+    filterEl.addEventListener('click', function(e){
+      var allBtn = e.target.closest('[data-poi-filter-all]');
+      if (allBtn) {
+        // Reset = bật lại tất cả
+        activeGroups = new Set(allGroups);
+        filterEl.querySelectorAll('[data-poi-filter]').forEach(function(p){ p.classList.add('is-active'); });
+        applyFilter();
+        return;
+      }
+      var pill = e.target.closest('[data-poi-filter]');
+      if (!pill) return;
+      var grp = pill.getAttribute('data-poi-filter');
+      if (activeGroups.has(grp)) {
+        activeGroups.delete(grp);
+        pill.classList.remove('is-active');
+      } else {
+        activeGroups.add(grp);
+        pill.classList.add('is-active');
+      }
+      applyFilter();
     });
   }
 

@@ -48,6 +48,16 @@
 .poi-browser-sub b{color:rgb(37 99 235);font-weight:600}
 .dark .poi-browser-sub b{color:rgb(96 165 250)}
 .poi-browser-empty{padding:40px 20px;text-align:center;color:rgb(107 114 128);font-size:13px}
+.poi-browser-filter{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid rgb(229 231 235);background:#fff;position:sticky;top:36px;z-index:5}
+.dark .poi-browser-filter{background:rgb(17 24 39);border-color:rgb(55 65 81)}
+.poi-browser-filter-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;font-weight:600;color:rgb(75 85 99);background:#fff;border:1px solid rgb(229 231 235);border-radius:980px;cursor:pointer;transition:all 140ms;line-height:1;font-family:inherit}
+.dark .poi-browser-filter-pill{background:rgb(17 24 39);border-color:rgb(55 65 81);color:rgb(156 163 175)}
+.poi-browser-filter-pill .material-symbols-outlined{font-size:14px;color:inherit;vertical-align:0;margin-right:0}
+.poi-browser-filter-pill .poi-browser-filter-ct{margin-left:2px;font-size:10px;background:rgb(243 244 246);color:rgb(75 85 99);padding:1px 6px;border-radius:980px;font-weight:700;letter-spacing:0;border:1px solid rgb(229 231 235)}
+.dark .poi-browser-filter-pill .poi-browser-filter-ct{background:rgb(31 41 55);color:rgb(156 163 175);border-color:rgb(55 65 81)}
+.poi-browser-filter-pill:hover{border-color:rgb(37 99 235);color:rgb(37 99 235)}
+.poi-browser-filter-pill.is-active{background:rgb(37 99 235);color:#fff;border-color:rgb(37 99 235)}
+.poi-browser-filter-pill.is-active .poi-browser-filter-ct{background:rgba(255,255,255,.25);color:#fff;border-color:transparent}
 .poi-browser-map{width:100%;height:100%;border-radius:8px;border:1px solid rgb(229 231 235);background:#f3f4f6;overflow:hidden}
 .dark .poi-browser-map{border-color:rgb(55 65 81)}
 .psm-pin{background:none;border:none}
@@ -75,16 +85,32 @@
             </div>
         @endif
 
+        @if($totalNamed > 0)
+            <div class="poi-browser-filter" data-poi-filters>
+                <button type="button" class="poi-browser-filter-pill is-active" data-poi-filter-all>
+                    <span class="material-symbols-outlined">apps</span>Tất cả
+                    <span class="poi-browser-filter-ct">{{ $totalNamed }}</span>
+                </button>
+                @foreach($grouped as $groupKey => $items)
+                    @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
+                    <button type="button" class="poi-browser-filter-pill is-active" data-poi-filter="{{ $groupKey }}">
+                        <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
+                        <span class="poi-browser-filter-ct">{{ count($items) }}</span>
+                    </button>
+                @endforeach
+            </div>
+        @endif
+
         @foreach($grouped as $groupKey => $items)
             @php
                 [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey];
             @endphp
-            <div class="poi-browser-grp-h">
+            <div class="poi-browser-grp-h" data-poi-group="{{ $groupKey }}">
                 <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
                 <span class="ct">{{ count($items) }}</span>
             </div>
             @foreach($items as $p)
-                <div class="poi-browser-item" data-poi-id="{{ $p['id'] }}">
+                <div class="poi-browser-item" data-poi-id="{{ $p['id'] }}" data-poi-group="{{ $groupKey }}">
                     <div class="poi-browser-dot" style="background:{{ $p['color'] }}">
                         <span class="material-symbols-outlined">{{ $p['icon'] }}</span>
                     </div>
@@ -186,6 +212,47 @@
 
             map.flyTo(m.getLatLng(), 18, { duration: 0.6 });
             setTimeout(function(){ m.openPopup(); }, 650);
+        });
+    }
+
+    // Filter pills: ẩn/hiện nhóm
+    var filterEl = list ? list.querySelector('[data-poi-filters]') : null;
+    if (filterEl) {
+        var allGroups = Array.from(filterEl.querySelectorAll('[data-poi-filter]'))
+                             .map(function(b){ return b.getAttribute('data-poi-filter'); });
+        var activeGroups = new Set(allGroups);
+
+        function applyFilter(){
+            list.querySelectorAll('[data-poi-group]').forEach(function(el){
+                el.style.display = activeGroups.has(el.getAttribute('data-poi-group')) ? '' : 'none';
+            });
+            POIS.forEach(function(p){
+                var m = markers[p.id];
+                if (!m) return;
+                if (activeGroups.has(p.group)) {
+                    if (!map.hasLayer(m)) map.addLayer(m);
+                } else {
+                    if (map.hasLayer(m)) map.removeLayer(m);
+                }
+            });
+            var allBtn = filterEl.querySelector('[data-poi-filter-all]');
+            if (allBtn) allBtn.classList.toggle('is-active', activeGroups.size === allGroups.length);
+        }
+
+        filterEl.addEventListener('click', function(e){
+            var allBtn = e.target.closest('[data-poi-filter-all]');
+            if (allBtn) {
+                activeGroups = new Set(allGroups);
+                filterEl.querySelectorAll('[data-poi-filter]').forEach(function(p){ p.classList.add('is-active'); });
+                applyFilter();
+                return;
+            }
+            var pill = e.target.closest('[data-poi-filter]');
+            if (!pill) return;
+            var grp = pill.getAttribute('data-poi-filter');
+            if (activeGroups.has(grp)) { activeGroups.delete(grp); pill.classList.remove('is-active'); }
+            else { activeGroups.add(grp); pill.classList.add('is-active'); }
+            applyFilter();
         });
     }
 

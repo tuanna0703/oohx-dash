@@ -40,6 +40,16 @@
         .dark .sm-list{border-color:rgb(55 65 81);background:rgb(17 24 39)}
         .sm-summary{padding:9px 12px;border-bottom:1px solid rgb(229 231 235);font-size:11px;color:rgb(75 85 99);background:rgb(249 250 251);position:sticky;top:0;z-index:5}
         .dark .sm-summary{background:rgb(31 41 55);border-color:rgb(55 65 81);color:rgb(156 163 175)}
+        .sm-filter{display:flex;flex-wrap:wrap;gap:5px;padding:9px 10px;border-bottom:1px solid rgb(229 231 235);background:#fff;position:sticky;top:32px;z-index:5}
+        .dark .sm-filter{background:rgb(17 24 39);border-color:rgb(55 65 81)}
+        .sm-filter-pill{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;font-size:10px;font-weight:600;color:rgb(75 85 99);background:#fff;border:1px solid rgb(229 231 235);border-radius:980px;cursor:pointer;transition:all 140ms;line-height:1;font-family:inherit}
+        .dark .sm-filter-pill{background:rgb(17 24 39);border-color:rgb(55 65 81);color:rgb(156 163 175)}
+        .sm-filter-pill .material-symbols-outlined{font-size:13px;color:inherit}
+        .sm-filter-pill .sm-filter-ct{margin-left:2px;font-size:9px;background:rgb(243 244 246);color:rgb(75 85 99);padding:1px 5px;border-radius:980px;font-weight:700;letter-spacing:0;border:1px solid rgb(229 231 235)}
+        .dark .sm-filter-pill .sm-filter-ct{background:rgb(31 41 55);color:rgb(156 163 175);border-color:rgb(55 65 81)}
+        .sm-filter-pill:hover{border-color:rgb(37 99 235);color:rgb(37 99 235)}
+        .sm-filter-pill.is-active{background:rgb(37 99 235);color:#fff;border-color:rgb(37 99 235)}
+        .sm-filter-pill.is-active .sm-filter-ct{background:rgba(255,255,255,.25);color:#fff;border-color:transparent}
         .sm-grp-h{padding:7px 12px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;background:rgb(243 244 246);color:rgb(55 65 81);border-top:1px solid rgb(229 231 235);position:sticky;top:32px;z-index:4;display:flex;align-items:center;gap:6px}
         .dark .sm-grp-h{background:rgb(31 41 55);color:rgb(209 213 219);border-color:rgb(55 65 81)}
         .sm-grp-h .material-symbols-outlined{font-size:15px;color:rgb(37 99 235)}
@@ -85,14 +95,27 @@
                 <div class="sm-summary">
                     <strong>{{ count($projected) }}</strong> POIs lân cận · <strong>{{ count($grouped) }}</strong> nhóm
                 </div>
+                <div class="sm-filter" data-poi-filters>
+                    <button type="button" class="sm-filter-pill is-active" data-poi-filter-all>
+                        <span class="material-symbols-outlined">apps</span>Tất cả
+                        <span class="sm-filter-ct">{{ count($projected) }}</span>
+                    </button>
+                    @foreach($grouped as $groupKey => $items)
+                        @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
+                        <button type="button" class="sm-filter-pill is-active" data-poi-filter="{{ $groupKey }}">
+                            <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
+                            <span class="sm-filter-ct">{{ count($items) }}</span>
+                        </button>
+                    @endforeach
+                </div>
                 @foreach($grouped as $groupKey => $items)
                     @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
-                    <div class="sm-grp-h">
+                    <div class="sm-grp-h" data-poi-group="{{ $groupKey }}">
                         <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
                         <span class="sm-grp-ct">{{ count($items) }}</span>
                     </div>
                     @foreach($items as $p)
-                        <div class="sm-item" data-poi-id="{{ $p['id'] }}">
+                        <div class="sm-item" data-poi-id="{{ $p['id'] }}" data-poi-group="{{ $groupKey }}">
                             <div class="sm-dot" style="background:{{ $p['color'] }}">
                                 <span class="material-symbols-outlined">{{ $p['icon'] }}</span>
                             </div>
@@ -184,6 +207,47 @@
                     item.classList.add('is-active');
                     map.flyTo(marker.getLatLng(), 18, { duration: 0.6 });
                     setTimeout(function(){ marker.openPopup(); }, 650);
+                });
+            }
+
+            // Filter pills: ẩn/hiện nhóm
+            var filterEl = list ? list.querySelector('[data-poi-filters]') : null;
+            if (filterEl) {
+                var allGroups = Array.from(filterEl.querySelectorAll('[data-poi-filter]'))
+                                     .map(function(b){ return b.getAttribute('data-poi-filter'); });
+                var activeGroups = new Set(allGroups);
+
+                function applyFilter(){
+                    list.querySelectorAll('[data-poi-group]').forEach(function(el){
+                        el.style.display = activeGroups.has(el.getAttribute('data-poi-group')) ? '' : 'none';
+                    });
+                    POIS.forEach(function(p){
+                        var m = markers[p.id];
+                        if (!m) return;
+                        if (activeGroups.has(p.group)) {
+                            if (!map.hasLayer(m)) map.addLayer(m);
+                        } else {
+                            if (map.hasLayer(m)) map.removeLayer(m);
+                        }
+                    });
+                    var allBtn = filterEl.querySelector('[data-poi-filter-all]');
+                    if (allBtn) allBtn.classList.toggle('is-active', activeGroups.size === allGroups.length);
+                }
+
+                filterEl.addEventListener('click', function(e){
+                    var allBtn = e.target.closest('[data-poi-filter-all]');
+                    if (allBtn) {
+                        activeGroups = new Set(allGroups);
+                        filterEl.querySelectorAll('[data-poi-filter]').forEach(function(p){ p.classList.add('is-active'); });
+                        applyFilter();
+                        return;
+                    }
+                    var pill = e.target.closest('[data-poi-filter]');
+                    if (!pill) return;
+                    var grp = pill.getAttribute('data-poi-filter');
+                    if (activeGroups.has(grp)) { activeGroups.delete(grp); pill.classList.remove('is-active'); }
+                    else { activeGroups.add(grp); pill.classList.add('is-active'); }
+                    applyFilter();
                 });
             }
 
