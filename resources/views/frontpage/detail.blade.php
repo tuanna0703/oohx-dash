@@ -39,6 +39,25 @@
 .lb-counter{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px;font-weight:600}
 .gal-thumb-on{outline:2px solid var(--bl);outline-offset:1px;border-radius:8px}
 
+/* ── Standalone Location section ────────────────────────────── */
+.loc-section{padding:48px 0;background:var(--bg2);border-top:1px solid var(--ln2);border-bottom:1px solid var(--ln2)}
+.loc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.loc-eyebrow{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px;letter-spacing:.5px}
+.loc-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--t1);letter-spacing:-.5px;margin-bottom:8px;line-height:1.2}
+.loc-addr{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--t3);line-height:1.4}
+.loc-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.loc-poi-count{font-size:13px;color:var(--t3);padding:6px 12px;background:#fff;border-radius:980px;border:1px solid var(--ln2)}
+.loc-poi-count strong{color:var(--bl);font-weight:800}
+.loc-osm-link{font-size:13px;color:var(--bl);text-decoration:none;font-weight:600}
+.loc-osm-link:hover{text-decoration:underline}
+#loc-map{width:100%;height:480px;border-radius:16px;border:1px solid var(--ln2);box-shadow:var(--sh1);background:#fff;overflow:hidden}
+@media(max-width:768px){#loc-map{height:380px}}
+.loc-legend{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--t3)}
+.loc-leg-i{display:inline-flex;align-items:center;gap:8px}
+.loc-leg-dot{display:inline-block;border-radius:50%}
+.loc-leg-dot--screen{width:14px;height:14px;background:var(--bl);box-shadow:0 0 0 2px rgba(42,79,246,.2)}
+.loc-leg-dot--poi{width:10px;height:10px;background:#7F8C8D}
+
 /* ── Map markers (detail page Vị trí tab) ── */
 .poi-dot{background:none;border:none}
 .poi-dot-inner{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
@@ -129,7 +148,7 @@
 ])
 @endif
 <div class="stats-row rv"><div class="stat-box"><div class="stat-n">{{ $screen->site?->name ?? '—' }}</div><div class="stat-l">Site</div></div><div class="stat-box"><div class="stat-n">{{ $screen->site?->network?->name ?? '—' }}</div><div class="stat-l">Network</div></div><div class="stat-box"><div class="stat-n">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).'×'.round($screen->spec->height_cm/100,1).'m' : '—' }}</div><div class="stat-l">Kích thước</div></div><div class="stat-box"><div class="stat-n">{{ $screen->inventory?->floor_cpm ? number_format((float)$screen->inventory->floor_cpm, 0, ',', '.') . 'đ' : '—' }}</div><div class="stat-l">Floor CPM</div></div></div>
-<div class="tabs"><div class="tab on" onclick="sw(this,'tp-info')">Thông tin</div>@if($screen->has_insights)<div class="tab" onclick="sw(this,'tp-insights')">Insights</div>@endif<div class="tab" onclick="sw(this,'tp-avail')">Lịch trống</div><div class="tab" onclick="sw(this,'tp-map')">Vị trí</div><div class="tab" onclick="sw(this,'tp-review')">Đánh giá</div></div>
+<div class="tabs"><div class="tab on" onclick="sw(this,'tp-info')">Thông tin</div>@if($screen->has_insights)<div class="tab" onclick="sw(this,'tp-insights')">Insights</div>@endif<div class="tab" onclick="sw(this,'tp-avail')">Lịch trống</div><div class="tab" onclick="sw(this,'tp-review')">Đánh giá</div></div>
 <div id="tp-info" class="tp on">
 <div class="specs-grid rv"><div class="sc"><div class="sc-l">Chủ sở hữu</div><div class="sc-v">{{ $screen->owner?->name ?? '—' }}</div></div><div class="sc"><div class="sc-l">Network</div><div class="sc-v">{{ $screen->site?->network?->name ?? '—' }}</div></div><div class="sc"><div class="sc-l">Site</div><div class="sc-v">{{ $screen->site?->name ?? '—' }}</div></div><div class="sc"><div class="sc-l">Địa điểm</div><div class="sc-v">{{ ($vnCatLabels ?? [])[$screen->inventory?->vn_category_id] ?? '—' }}</div></div><div class="sc"><div class="sc-l">Kích thước</div><div class="sc-v">{{ $screen->spec?->width_cm ? round($screen->spec->width_cm/100,1).' × '.round($screen->spec->height_cm/100,1).' m' : '—' }}</div></div><div class="sc"><div class="sc-l">Độ phân giải</div><div class="sc-v">{{ $screen->spec?->width_px && $screen->spec?->height_px ? $screen->spec->width_px.' × '.$screen->spec->height_px.' px' : '—' }}</div></div><div class="sc"><div class="sc-l">Loại nội dung</div><div class="sc-v">{{ implode(', ', array_filter([$screen->spec?->allow_image ? 'Ảnh' : null, $screen->spec?->allow_video ? 'Video' : null])) ?: 'Video / Ảnh tĩnh' }}</div></div><div class="sc"><div class="sc-l">Floor CPM</div><div class="sc-v">{{ $screen->inventory?->floor_cpm ? number_format((float)$screen->inventory->floor_cpm, 0, ',', '.') . ' ' . ($screen->inventory->floor_cpm_currency ?? 'VND') : '—' }}</div></div><div class="sc"><div class="sc-l">Vị trí</div><div class="sc-v">{{ $screen->site?->address ?? '—' }}</div></div><div class="sc"><div class="sc-l">Tỉnh/Thành</div><div class="sc-v">{{ $screen->site?->city ?? '—' }}</div></div><div class="sc"><div class="sc-l">Thời lượng QC</div><div class="sc-v">{{ ($screen->inventory?->spot_length ?? 15) }}s</div></div></div>
 @if($screen->description)
@@ -170,50 +189,6 @@
 @php endfor; @endphp
 </div>
 <div class="cal-legend"><div class="cl-i"><div class="cl-d" style="background:rgba(52,199,89,.4)"></div>Còn trống</div><div class="cl-i"><div class="cl-d" style="background:rgba(255,159,10,.4)"></div>Đã đặt một phần</div><div class="cl-i"><div class="cl-d" style="background:rgba(255,59,48,.3)"></div>Đã đặt hết</div></div>
-</div>
-<div id="tp-map" class="tp">
-@if($screen->site?->lat && $screen->site?->lon)
-@php
-    $lat = (float) $screen->site->lat;
-    $lon = (float) $screen->site->lon;
-    $delta = 0.004; // ~400m bbox
-    $bbox  = ($lon - $delta) . ',' . ($lat - $delta) . ',' . ($lon + $delta) . ',' . ($lat + $delta);
-    $osmEmbed = 'https://www.openstreetmap.org/export/embed.html?bbox=' . $bbox . '&layer=mapnik&marker=' . $lat . ',' . $lon;
-    $osmLink  = 'https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lon . '#map=17/' . $lat . '/' . $lon;
-@endphp
-{{-- Map container: iframe = guaranteed fallback; Leaflet = upgrade với POI markers nếu load OK --}}
-<div id="detail-map-wrap" style="position:relative;width:100%;height:420px;border:1px solid var(--ln2);border-radius:14px;overflow:hidden">
-    <iframe id="detail-map-iframe"
-        src="{{ $osmEmbed }}"
-        style="width:100%;height:100%;border:0;display:block"
-        loading="lazy"
-        title="Bản đồ vị trí {{ $screen->name }}"
-        referrerpolicy="no-referrer-when-downgrade"></iframe>
-    <div id="detail-map-leaflet" style="position:absolute;inset:0;display:none"></div>
-</div>
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 14px">
-    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t3)">
-        <span style="background:var(--bl);width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-        Vị trí màn hình
-        @if(! empty($nearbyPois))
-            <span style="margin-left:8px;color:var(--t4)">·</span>
-            <span style="color:var(--t4)">{{ count($nearbyPois) }} POI lân cận đã phân tích</span>
-        @endif
-    </div>
-    <a href="{{ $osmLink }}" target="_blank" rel="noopener" style="font-size:13px;color:var(--bl);text-decoration:none;font-weight:600">
-        Mở trên OpenStreetMap →
-    </a>
-</div>
-<div style="font-size:13px;color:var(--t3)">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;vertical-align:-2px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-    {{ $screen->site->address ?? '' }}{{ $screen->site->address && $screen->site->city ? ', ' : '' }}{{ $screen->site->city ?? '' }}
-</div>
-@else
-<div style="text-align:center;padding:48px 20px;color:var(--t4)">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--ln2)" style="width:48px;height:48px;margin:0 auto 16px;display:block"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-    <div style="font-size:14px;font-weight:600">Chưa có tọa độ GPS</div>
-</div>
-@endif
 </div>
 <div id="tp-review" class="tp">
 <div style="text-align:center;padding:48px 20px;color:var(--t4)">
@@ -344,6 +319,42 @@
 </div>{{-- /detail-sidebar --}}
 </div>{{-- /detail-layout --}}
 </div>{{-- /w --}}
+
+{{-- ── LOCATION SECTION (standalone, always visible — Leaflet pattern same as /map page) ── --}}
+@if($screen->site?->lat && $screen->site?->lon)
+<section class="loc-section">
+    <div class="w">
+        <div class="loc-head">
+            <div>
+                <div class="loc-eyebrow">VỊ TRÍ TRÊN BẢN ĐỒ</div>
+                <h2 class="loc-title">{{ $screen->site->name ?? $screen->name }}</h2>
+                <div class="loc-addr">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;color:var(--bl)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    {{ $screen->site->address ?? '' }}{{ $screen->site->address && $screen->site->city ? ', ' : '' }}{{ $screen->site->city ?? '' }}
+                </div>
+            </div>
+            <div class="loc-meta">
+                @if(! empty($nearbyPois))
+                    <span class="loc-poi-count"><strong>{{ count($nearbyPois) }}</strong> POI lân cận đã phân tích</span>
+                @endif
+                <a href="https://www.openstreetmap.org/?mlat={{ $screen->site->lat }}&mlon={{ $screen->site->lon }}#map=17/{{ $screen->site->lat }}/{{ $screen->site->lon }}" target="_blank" rel="noopener" class="loc-osm-link">
+                    Mở trên OpenStreetMap →
+                </a>
+            </div>
+        </div>
+
+        <div id="loc-map"></div>
+
+        <div class="loc-legend">
+            <span class="loc-leg-i"><span class="loc-leg-dot loc-leg-dot--screen"></span> Vị trí màn hình quảng cáo</span>
+            @if(! empty($nearbyPois))
+                <span class="loc-leg-i"><span class="loc-leg-dot loc-leg-dot--poi"></span> Điểm POI lân cận (cafe, trường, ngân hàng, mall, …)</span>
+            @endif
+        </div>
+    </div>
+</section>
+@endif
+
 <div class="similar-section"><div class="w"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px"><div><div style="font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px">GỢI Ý THÊM</div><h2 style="font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--t1);letter-spacing:-.5px">Inventory tương tự</h2></div><a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a></div><div class="inv-grid">@foreach($similarScreens as $screen)@include('frontpage.partials.screen-card', ['screen' => $screen, 'compact' => true])@endforeach</div></div></div>
 @endsection
 
@@ -516,13 +527,18 @@ function sw(el,id){
 </script>
 
 @if($screen->site?->lat && $screen->site?->lon)
-{{-- Leaflet upgrade: defer init đến khi tab Vị trí thực sự visible (IntersectionObserver) --}}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{{-- Leaflet — pattern giống /map page (init NGAY, container always visible, không tab logic) --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 (function(){
-  var DETAIL_LAT = {{ (float)$screen->site->lat }};
-  var DETAIL_LNG = {{ (float)$screen->site->lon }};
-  var DETAIL_POIS = @json($nearbyPois ?? []);
+  if (typeof L === 'undefined') {
+    console.warn('[loc-map] Leaflet không load — kiểm tra CDN');
+    return;
+  }
+
+  var LAT  = {{ (float)$screen->site->lat }};
+  var LNG  = {{ (float)$screen->site->lon }};
+  var POIS = @json($nearbyPois ?? []);
 
   var POI_STYLE = {
     cafe:{c:'#8B4513',e:'☕'}, restaurant:{c:'#E67E22',e:'🍴'}, fast_food:{c:'#E74C3C',e:'🍔'},
@@ -536,99 +552,38 @@ function sw(el,id){
     park:{c:'#27AE60',e:'🌳'}, office:{c:'#34495E',e:'🏢'}, company:{c:'#34495E',e:'🏢'},
   };
 
-  var initDone = false;
+  var map = L.map('loc-map', {
+    center: [LAT, LNG], zoom: 17,
+    zoomControl: true, scrollWheelZoom: false,
+    preferCanvas: true,
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OpenStreetMap', maxZoom:19,
+  }).addTo(map);
 
-  function initLeaflet(){
-    if (initDone) return;
-    if (typeof L === 'undefined') {
-      console.warn('[detail-map] Leaflet chưa load — retry sau 200ms');
-      return setTimeout(initLeaflet, 200);
-    }
-
-    var iframe = document.getElementById('detail-map-iframe');
-    var leafletDiv = document.getElementById('detail-map-leaflet');
-    if (! iframe || ! leafletDiv) return;
-
-    // Verify container có size thực — nếu vẫn 0×0 thì bail
-    var rect = document.getElementById('detail-map-wrap').getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      console.log('[detail-map] container 0×0, đợi tab open...');
-      return;
-    }
-
-    initDone = true;
-
-    try {
-      leafletDiv.style.display = 'block';
-      iframe.style.display = 'none';
-
-      var dmap = L.map(leafletDiv, {
-        center: [DETAIL_LAT, DETAIL_LNG],
-        zoom: 17,
-        zoomControl: true,
-        scrollWheelZoom: false,
-        preferCanvas: true,
-      });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap', maxZoom: 19,
-      }).addTo(dmap);
-
-      DETAIL_POIS.forEach(function(p){
-        var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
-        var ic = L.divIcon({
-          className: 'poi-dot',
-          html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
-          iconSize: [22, 22], iconAnchor: [11, 11],
-        });
-        L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
-          .addTo(dmap)
-          .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-                   + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
-      });
-
-      var screenIcon = L.divIcon({
-        className: 'screen-pin',
-        html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
-        iconSize: [44, 44], iconAnchor: [22, 22],
-      });
-      L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
-        .addTo(dmap)
-        .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
-
-      setTimeout(function(){ dmap.invalidateSize(); }, 100);
-      setTimeout(function(){ dmap.invalidateSize(); }, 500);
-
-      console.log('[detail-map] Leaflet OK — ' + DETAIL_POIS.length + ' POI markers');
-    } catch (e) {
-      initDone = false;
-      console.warn('[detail-map] Leaflet init failed, rollback to iframe', e);
-      iframe.style.display = 'block';
-      leafletDiv.style.display = 'none';
-    }
-  }
-
-  // Strategy 1: try ngay nếu tab Vị trí đang active sẵn
-  if (document.getElementById('tp-map')?.classList.contains('on')) {
-    window.addEventListener('load', function(){ setTimeout(initLeaflet, 100); });
-  }
-
-  // Strategy 2: click trên tab Vị trí
-  var mapTab = document.querySelector('[onclick*="tp-map"]');
-  if (mapTab) {
-    mapTab.addEventListener('click', function(){
-      setTimeout(initLeaflet, 200); // đợi sw() switch + CSS transition
+  POIS.forEach(function(p){
+    var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
+    var ic = L.divIcon({
+      className:'poi-dot',
+      html:'<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
+      iconSize:[22,22], iconAnchor:[11,11],
     });
-  }
+    L.marker([p.lat, p.lon], {icon:ic, zIndexOffset:100})
+      .addTo(map)
+      .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+               + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+  });
 
-  // Strategy 3 (failsafe): MutationObserver theo dõi class trên tp-map
-  var tpMap = document.getElementById('tp-map');
-  if (tpMap && typeof MutationObserver !== 'undefined') {
-    new MutationObserver(function(){
-      if (tpMap.classList.contains('on') && ! initDone) {
-        setTimeout(initLeaflet, 200);
-      }
-    }).observe(tpMap, {attributes: true, attributeFilter: ['class']});
-  }
+  var screenIcon = L.divIcon({
+    className:'screen-pin',
+    html:'<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
+    iconSize:[44,44], iconAnchor:[22,22],
+  });
+  L.marker([LAT, LNG], {icon:screenIcon, zIndexOffset:1000})
+    .addTo(map)
+    .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
+
+  console.log('[loc-map] OK — ' + POIS.length + ' POI markers');
 })();
 </script>
 @endif
