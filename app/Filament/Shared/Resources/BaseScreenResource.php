@@ -750,18 +750,14 @@ abstract class BaseScreenResource extends Resource
                         ->modalCancelActionLabel('Huỷ')
                         ->visible(fn (Screen $r) => (bool) ($r->site?->lat && $r->site?->lon))
                         ->mountUsing(function (\Filament\Forms\Form $form, Screen $record) {
+                            $cacheKey = 'enrich:' . (auth()->id() ?? 'anon') . ':' . $record->id . ':' . now()->timestamp;
                             try {
                                 $result = app(PoiContextEnricher::class)->enrichScreen($record, 500);
+                                \Cache::put($cacheKey, $result, now()->addMinutes(15));
                             } catch (\Throwable $e) {
-                                Notification::make()
-                                    ->title('Enrichment lỗi')
-                                    ->body($e->getMessage())
-                                    ->danger()
-                                    ->send();
-                                throw $e;
+                                // Cache the error so preview view can render it cleanly
+                                \Cache::put($cacheKey, ['_error' => $e->getMessage()], now()->addMinutes(5));
                             }
-                            $cacheKey = 'enrich:' . (auth()->id() ?? 'anon') . ':' . $record->id . ':' . now()->timestamp;
-                            \Cache::put($cacheKey, $result, now()->addMinutes(15));
                             $form->fill(['cache_key' => $cacheKey]);
                         })
                         ->form([
@@ -781,10 +777,26 @@ abstract class BaseScreenResource extends Resource
                         ])
                         ->action(function (array $data, Screen $record) {
                             $result = \Cache::get($data['cache_key'] ?? '');
-                            if (! $result || empty($result['ai'])) {
+                            if (! $result) {
                                 Notification::make()
-                                    ->title('Không có AI output để apply')
-                                    ->body('Chạy lại enrichment hoặc kiểm tra ANTHROPIC_API_KEY.')
+                                    ->title('Cache hết hạn')
+                                    ->body('Đóng modal và mở lại để chạy enrichment.')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+                            if (! empty($result['_error'])) {
+                                Notification::make()
+                                    ->title('Enrichment lỗi — không thể apply')
+                                    ->body($result['_error'])
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            if (empty($result['ai'])) {
+                                Notification::make()
+                                    ->title('AI output rỗng')
+                                    ->body('Có thể ANTHROPIC_API_KEY chưa set hoặc Anthropic trả về invalid JSON.')
                                     ->danger()
                                     ->send();
                                 return;

@@ -1,5 +1,18 @@
 @php
     /** @var array $result */
+    if (! empty($result['_error'])):
+@endphp
+<div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300">
+    <div class="font-bold mb-2">Enrichment failed</div>
+    <div class="text-sm font-mono whitespace-pre-wrap break-words">{{ $result['_error'] }}</div>
+    <div class="text-xs mt-3 text-red-600 dark:text-red-400">
+        Đóng modal, fix lỗi (top up Anthropic credit / set ANTHROPIC_API_KEY / check network), rồi click "Enrich AI Context" lại.
+    </div>
+</div>
+@php
+        return;
+    endif;
+
     $loc      = $result['location'] ?? [];
     $features = $result['features'] ?? [];
     $ai       = $result['ai'] ?? null;

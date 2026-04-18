@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Screen;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Enrich Inventory Intelligence cho 1 screen từ OSM POI + Claude Haiku inference.
@@ -21,9 +23,18 @@ class PoiContextEnricher
     private const COST_IN_PER_M  = 1.0;
     private const COST_OUT_PER_M = 5.0;
 
-    private const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+    /** Multiple Overpass mirrors — rotate khi 1 cái timeout/overload. */
+    private const OVERPASS_ENDPOINTS = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter',
+        'https://overpass.openstreetmap.fr/api/interpreter',
+    ];
     private const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
     private const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
+
+    /** Cache OSM POI response — POI ít thay đổi, refresh 30 ngày là đủ. */
+    private const OSM_CACHE_TTL_MINUTES = 30 * 24 * 60;
 
     /**
      * Enrich 1 screen. Returns full result, KHÔNG ghi DB.
@@ -99,8 +110,19 @@ class PoiContextEnricher
     // ─────────────────────────────────────────────────────────────────
     private function queryOverpass(float $lat, float $lon, int $radius): array
     {
+        // Cache key — round coords to ~10m precision so nearby screens reuse same result
+        $cacheKey = sprintf('osm_poi:%s:%s:%d',
+            number_format($lat, 5, '.', ''),
+            number_format($lon, 5, '.', ''),
+            $radius
+        );
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $query = <<<OQL
-[out:json][timeout:30];
+[out:json][timeout:25];
 (
   node["amenity"](around:{$radius},{$lat},{$lon});
   node["shop"](around:{$radius},{$lat},{$lon});
@@ -114,15 +136,31 @@ class PoiContextEnricher
 out tags center 200;
 OQL;
 
-        $response = Http::timeout(40)
-            ->asForm()
-            ->post(self::OVERPASS_ENDPOINT, ['data' => $query]);
+        $lastError = null;
+        foreach (self::OVERPASS_ENDPOINTS as $endpoint) {
+            try {
+                $response = Http::timeout(45)
+                    ->retry(2, 1500, throw: false)
+                    ->asForm()
+                    ->post($endpoint, ['data' => $query]);
 
-        if (! $response->successful()) {
-            throw new \RuntimeException('OSM Overpass error: HTTP ' . $response->status());
+                if ($response->successful()) {
+                    $elements = $response->json('elements') ?? [];
+                    Cache::put($cacheKey, $elements, now()->addMinutes(self::OSM_CACHE_TTL_MINUTES));
+                    return $elements;
+                }
+
+                $lastError = "{$endpoint} → HTTP {$response->status()}";
+                Log::info("Overpass fallback: {$lastError}");
+            } catch (\Throwable $e) {
+                $lastError = "{$endpoint} → {$e->getMessage()}";
+                Log::info("Overpass fallback: {$lastError}");
+            }
         }
 
-        return $response->json('elements') ?? [];
+        throw new \RuntimeException(
+            'OSM Overpass: tất cả ' . count(self::OVERPASS_ENDPOINTS) . ' mirrors đều fail. Last: ' . $lastError
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────
