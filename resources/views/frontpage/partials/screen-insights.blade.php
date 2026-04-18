@@ -23,6 +23,18 @@
         'other'      => 'Khác',
     ];
 
+    $orientationLabels = [
+        'landscape' => 'Ngang',
+        'portrait'  => 'Dọc',
+        'square'    => 'Vuông',
+    ];
+
+    $incomeLabels = [
+        'low'  => 'Thu nhập thấp',
+        'mid'  => 'Thu nhập trung',
+        'high' => 'Thu nhập cao',
+    ];
+
     $dayLabels = ['mon'=>'T2','tue'=>'T3','wed'=>'T4','thu'=>'T5','fri'=>'T6','sat'=>'T7','sun'=>'CN'];
 @endphp
 
@@ -65,6 +77,13 @@
         <div class="ins-stat">
             <div class="ins-stat-l">Vị trí trong venue</div>
             <div class="ins-stat-v ins-stat-v-text">{{ $placementLabels[$screen->placement_zone] ?? $screen->placement_zone }}</div>
+        </div>
+        @endif
+
+        @if($screen->orientation)
+        <div class="ins-stat">
+            <div class="ins-stat-l">Hướng màn hình</div>
+            <div class="ins-stat-v ins-stat-v-text">{{ $orientationLabels[$screen->orientation] ?? $screen->orientation }}</div>
         </div>
         @endif
     </div>
@@ -117,6 +136,24 @@
         </div>
         @endif
 
+        @php
+            $hasIncome    = !empty($audience['income_tier']);
+            $lifestyle    = (array) ($audience['lifestyle_tags'] ?? []);
+            $hasLifestyle = !empty($lifestyle);
+        @endphp
+        @if($hasIncome || $hasLifestyle)
+        <div class="ins-pills" style="margin-top:14px">
+            @if($hasIncome)
+                <span class="ins-pill ins-pill--{{ $audience['income_tier'] }}">
+                    {{ $incomeLabels[$audience['income_tier']] ?? $audience['income_tier'] }}
+                </span>
+            @endif
+            @foreach($lifestyle as $tag)
+                <span class="ins-pill ins-pill--neutral">{{ $tag }}</span>
+            @endforeach
+        </div>
+        @endif
+
         @if(!empty($audience['source_note']))
         <div class="ins-source">Nguồn: {{ $audience['source_note'] }}</div>
         @endif
@@ -160,6 +197,10 @@
                 </div>
             @endforeach
         </div>
+        @endif
+
+        @if(!empty($time['rationale']))
+        <div class="ins-source">↳ {{ $time['rationale'] }}</div>
         @endif
     </div>
     @endif
