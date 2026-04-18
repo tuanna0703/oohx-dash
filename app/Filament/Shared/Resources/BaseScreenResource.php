@@ -1039,79 +1039,11 @@ abstract class BaseScreenResource extends Resource
                     // ── Tab 5: Insights (Phase 1) ───────────────────────────
                     Infolists\Components\Tabs\Tab::make('Insights')
                         ->icon('heroicon-o-chart-bar')
-                        ->columns(3)
                         ->schema([
-                            Infolists\Components\TextEntry::make('placement_zone')
-                                ->label('Vị trí trong venue')
-                                ->placeholder('—')
-                                ->formatStateUsing(fn ($state) => match ($state) {
-                                    'entrance'   => 'Lối vào',
-                                    'checkout'   => 'Quầy thanh toán',
-                                    'escalator'  => 'Cạnh thang cuốn',
-                                    'food_court' => 'Khu food court',
-                                    'facade'     => 'Mặt tiền tòa nhà',
-                                    'lobby'      => 'Sảnh',
-                                    'parking'    => 'Bãi đậu xe',
-                                    'other'      => 'Khác',
-                                    default      => $state ?? '—',
-                                }),
-
-                            Infolists\Components\TextEntry::make('orientation')
-                                ->label('Hướng màn hình')
-                                ->placeholder('—')
-                                ->formatStateUsing(fn ($state) => match ($state) {
-                                    'landscape' => 'Ngang',
-                                    'portrait'  => 'Dọc',
-                                    'square'    => 'Vuông',
-                                    default     => $state ?? '—',
-                                }),
-
-                            Infolists\Components\TextEntry::make('daily_impressions')
-                                ->label('Impressions/ngày (ước tính)')
-                                ->placeholder('—')
-                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
-
-                            Infolists\Components\TextEntry::make('daily_footfall')
-                                ->label('Lượt khách/ngày')
-                                ->placeholder('—')
-                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
-
-                            Infolists\Components\TextEntry::make('monthly_reach')
-                                ->label('Reach/tháng')
-                                ->placeholder('—')
-                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
-
-                            Infolists\Components\TextEntry::make('time_performance.peak_hour_start')
-                                ->label('Giờ peak')
-                                ->placeholder('—')
-                                ->getStateUsing(function (Screen $r) {
-                                    $tp = $r->time_performance ?? [];
-                                    if (empty($tp['peak_hour_start']) && empty($tp['peak_hour_end'])) return null;
-                                    return ($tp['peak_hour_start'] ?? '?') . ' – ' . ($tp['peak_hour_end'] ?? '?');
-                                }),
-
-                            Infolists\Components\KeyValueEntry::make('audience_profile')
-                                ->label('Audience profile')
-                                ->columnSpan(3)
-                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->audience_profile))
-                                ->visible(fn (Screen $r) => ! empty($r->audience_profile)),
-
-                            Infolists\Components\KeyValueEntry::make('time_performance')
-                                ->label('Time performance')
-                                ->columnSpan(3)
-                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->time_performance))
-                                ->visible(fn (Screen $r) => ! empty($r->time_performance)),
-
-                            Infolists\Components\KeyValueEntry::make('nearby_context')
-                                ->label('Bối cảnh xung quanh')
-                                ->columnSpan(3)
-                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->nearby_context))
-                                ->visible(fn (Screen $r) => ! empty($r->nearby_context)),
-
-                            Infolists\Components\TextEntry::make('traffic_methodology_note')
-                                ->label('Nguồn / phương pháp')
-                                ->placeholder('—')
-                                ->columnSpan(3),
+                            Infolists\Components\ViewEntry::make('insights_view')
+                                ->label('')
+                                ->view('filament.shared.components.screen-insights-infolist')
+                                ->columnSpanFull(),
                         ]),
 
                     // ── Tab 6: AdOps (admin only) ───────────────────────────
