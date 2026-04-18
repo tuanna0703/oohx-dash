@@ -91,7 +91,8 @@ class FrontpageController extends Controller
 
     /**
      * Read OSM POIs from poi_snapshots table (populated by PoiContextEnricher).
-     * Returns lightweight array [{lat, lon, name, category}] for map rendering.
+     * Returns enriched array via PoiProjection: {id, lat, lon, name, group, gLabel, icon, color, dist}
+     * Capped at 60 markers for map perf.
      */
     private function resolveNearbyPois(\App\Models\Screen $screen): array
     {
@@ -100,39 +101,14 @@ class FrontpageController extends Controller
         if (! $lat || ! $lon) return [];
 
         $snapshot = \App\Models\PoiSnapshot::freshFor((float) $lat, (float) $lon, 500, 'osm')->first();
-        if (! $snapshot) return [];
+        if (! $snapshot || ! is_array($snapshot->pois)) return [];
 
-        $raw = $snapshot->pois;
-        if (! is_array($raw)) return [];
-
-        // Lightweight projection: chỉ lấy POI có name + lat/lon hợp lệ, max 60 markers
-        return collect($raw)
-            ->map(function ($p) {
-                $tags = $p['tags'] ?? [];
-                $name = $tags['name'] ?? $tags['name:vi'] ?? null;
-                if (! $name) return null;
-                $pLat = $p['lat'] ?? ($p['center']['lat'] ?? null);
-                $pLon = $p['lon'] ?? ($p['center']['lon'] ?? null);
-                if (! $pLat || ! $pLon) return null;
-                $cat = $tags['amenity']
-                    ?? $tags['shop']
-                    ?? $tags['leisure']
-                    ?? $tags['tourism']
-                    ?? $tags['office']
-                    ?? $tags['public_transport']
-                    ?? $tags['building']
-                    ?? 'other';
-                return [
-                    'lat'  => (float) $pLat,
-                    'lon'  => (float) $pLon,
-                    'name' => $name,
-                    'cat'  => $cat,
-                ];
-            })
-            ->filter()
-            ->take(60)
-            ->values()
-            ->all();
+        return \App\Support\PoiProjection::project(
+            $snapshot->pois,
+            (float) $lat,
+            (float) $lon,
+            60,
+        );
     }
 
     public function map(FrontpageListingRequest $request): View

@@ -41,7 +41,7 @@
 .lb-counter{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px;font-weight:600}
 .gal-thumb-on{outline:2px solid var(--bl);outline-offset:1px;border-radius:8px}
 
-/* ── Standalone Location section ────────────────────────────── */
+/* ── Location section: 2-col POI browser ─────────────────────── */
 .loc-section{padding:48px 0;background:var(--bg2);border-top:1px solid var(--ln2);border-bottom:1px solid var(--ln2)}
 .loc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px;flex-wrap:wrap}
 .loc-eyebrow{font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px;letter-spacing:.5px}
@@ -50,23 +50,47 @@
 .loc-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .loc-poi-count{font-size:13px;color:var(--t3);padding:6px 12px;background:#fff;border-radius:980px;border:1px solid var(--ln2)}
 .loc-poi-count strong{color:var(--bl);font-weight:800}
-.loc-osm-link{font-size:13px;color:var(--bl);text-decoration:none;font-weight:600}
-.loc-osm-link:hover{text-decoration:underline}
-#loc-map{width:100%;height:480px;border-radius:16px;border:1px solid var(--ln2);box-shadow:var(--sh1);background:#fff;overflow:hidden}
-@media(max-width:768px){#loc-map{height:380px}}
-.loc-legend{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--t3)}
-.loc-leg-i{display:inline-flex;align-items:center;gap:8px}
-.loc-leg-dot{display:inline-block;border-radius:50%}
-.loc-leg-dot--screen{width:14px;height:14px;background:var(--bl);box-shadow:0 0 0 2px rgba(42,79,246,.2)}
-.loc-leg-dot--poi{width:10px;height:10px;background:#7F8C8D}
 
-/* ── Map markers (detail page Vị trí tab) ── */
-.poi-dot{background:none;border:none}
-.poi-dot-inner{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
-.poi-dot-inner:hover{transform:scale(1.4);z-index:1000}
+/* 2-col grid */
+.loc-browser{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;height:600px}
+@media(max-width:1024px){.loc-browser{grid-template-columns:1fr;height:auto}.loc-list{max-height:360px}.loc-map-wrap{height:480px}}
+@media(max-width:768px){.loc-map-wrap{height:380px}}
+
+/* LEFT: list */
+.loc-list{overflow-y:auto;border:1px solid var(--ln2);border-radius:16px;background:#fff;box-shadow:var(--sh1)}
+.loc-list::-webkit-scrollbar{width:8px}
+.loc-list::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+.loc-grp-h{padding:10px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.4px;background:var(--bg2);color:var(--t2);border-top:1px solid var(--ln2);position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:6px}
+.loc-grp-h:first-child{border-top:0}
+.loc-grp-h .material-symbols-outlined{font-size:18px;color:var(--bl)}
+.loc-grp-ct{margin-left:auto;font-size:11px;background:#fff;color:var(--t2);padding:2px 8px;border-radius:980px;font-weight:700;letter-spacing:0;border:1px solid var(--ln2)}
+.loc-item{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;border-top:1px solid var(--ln2);transition:background 140ms}
+.loc-item:first-child{border-top:0}
+.loc-item:hover{background:rgba(42,79,246,.04)}
+.loc-item.is-active{background:rgba(42,79,246,.08);box-shadow:inset 3px 0 0 var(--bl)}
+.loc-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.loc-dot .material-symbols-outlined{font-size:18px;font-variation-settings:'FILL' 1,'wght' 500}
+.loc-meta-c{min-width:0;flex:1}
+.loc-name{font-weight:600;font-size:13px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.loc-sub b{color:var(--bl);font-weight:700}
+.loc-empty{padding:60px 20px;text-align:center;color:var(--t3);font-size:13px}
+.loc-empty .material-symbols-outlined{font-size:36px;color:var(--ln1);display:block;margin:0 auto 12px;font-variation-settings:'FILL' 0,'wght' 300}
+.loc-empty-sub{margin-top:6px;font-size:12px;color:var(--t4)}
+
+/* RIGHT: map */
+.loc-map-wrap{height:600px;border-radius:16px;overflow:hidden;border:1px solid var(--ln2);box-shadow:var(--sh1);background:#fff}
+#loc-map{width:100%;height:100%}
+
+/* Map markers — Material icons */
+.poi-pin{background:none;border:none}
+.poi-pin-inner{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
+.poi-pin-inner .material-symbols-outlined{font-size:16px;font-variation-settings:'FILL' 1,'wght' 500}
+.poi-pin-inner:hover{transform:scale(1.25);z-index:1000}
 
 .screen-pin{background:none;border:none;position:relative}
-.screen-pin-inner{position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:var(--bl);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid #fff;box-shadow:0 4px 16px rgba(42,79,246,.4);cursor:pointer;z-index:2}
+.screen-pin-inner{position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:var(--bl);color:#fff;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 16px rgba(42,79,246,.4);cursor:pointer;z-index:2}
+.screen-pin-inner .material-symbols-outlined{font-size:24px;font-variation-settings:'FILL' 1,'wght' 600}
 .screen-pin-pulse{position:absolute;top:-4px;left:-4px;width:52px;height:52px;border-radius:50%;background:rgba(42,79,246,.25);animation:screen-pulse 2s ease-in-out infinite;z-index:1}
 @keyframes screen-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.3);opacity:.1}}
 </style>
@@ -322,8 +346,12 @@
 </div>{{-- /detail-layout --}}
 </div>{{-- /w --}}
 
-{{-- ── LOCATION SECTION (standalone, always visible — Leaflet pattern same as /map page) ── --}}
+{{-- ── LOCATION SECTION (2-col: POI list + map) ──────────────────────── --}}
 @if($screen->site?->lat && $screen->site?->lon)
+@php
+    $poiGrouped  = ! empty($nearbyPois) ? \App\Support\PoiProjection::groupByCategory($nearbyPois) : [];
+    $groupLabels = \App\Support\PoiProjection::GROUP_LABELS;
+@endphp
 <section class="loc-section">
     <div class="w">
         <div class="loc-head">
@@ -331,27 +359,52 @@
                 <div class="loc-eyebrow">VỊ TRÍ TRÊN BẢN ĐỒ</div>
                 <h2 class="loc-title">{{ $screen->site->name ?? $screen->name }}</h2>
                 <div class="loc-addr">
-                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;color:var(--bl)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    <span class="material-symbols-outlined" style="font-size:16px;color:var(--bl);vertical-align:-3px">location_on</span>
                     {{ $screen->site->address ?? '' }}{{ $screen->site->address && $screen->site->city ? ', ' : '' }}{{ $screen->site->city ?? '' }}
                 </div>
             </div>
             <div class="loc-meta">
                 @if(! empty($nearbyPois))
-                    <span class="loc-poi-count"><strong>{{ count($nearbyPois) }}</strong> POI lân cận đã phân tích</span>
+                    <span class="loc-poi-count"><strong>{{ count($nearbyPois) }}</strong> POI lân cận · <strong>{{ count($poiGrouped) }}</strong> nhóm</span>
                 @endif
-                <a href="https://www.openstreetmap.org/?mlat={{ $screen->site->lat }}&mlon={{ $screen->site->lon }}#map=17/{{ $screen->site->lat }}/{{ $screen->site->lon }}" target="_blank" rel="noopener" class="loc-osm-link">
-                    Mở trên OpenStreetMap →
-                </a>
             </div>
         </div>
 
-        <div id="loc-map"></div>
+        <div class="loc-browser">
+            {{-- LEFT: grouped POI list --}}
+            <div class="loc-list" id="loc-list">
+                @if(empty($nearbyPois))
+                    <div class="loc-empty">
+                        <span class="material-symbols-outlined">explore_off</span>
+                        <div>Chưa có dữ liệu POI lân cận</div>
+                        <div class="loc-empty-sub">Liên hệ admin để chạy AI enrichment cho vị trí này.</div>
+                    </div>
+                @else
+                    @foreach($poiGrouped as $groupKey => $items)
+                        @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
+                        <div class="loc-grp-h">
+                            <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
+                            <span class="loc-grp-ct">{{ count($items) }}</span>
+                        </div>
+                        @foreach($items as $p)
+                            <div class="loc-item" data-poi-id="{{ $p['id'] }}">
+                                <div class="loc-dot" style="background:{{ $p['color'] }}">
+                                    <span class="material-symbols-outlined">{{ $p['icon'] }}</span>
+                                </div>
+                                <div class="loc-meta-c">
+                                    <div class="loc-name">{{ $p['name'] }}</div>
+                                    <div class="loc-sub">{{ $p['gLabel'] }} · <b>{{ $p['dist'] }}m</b></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endforeach
+                @endif
+            </div>
 
-        <div class="loc-legend">
-            <span class="loc-leg-i"><span class="loc-leg-dot loc-leg-dot--screen"></span> Vị trí màn hình quảng cáo</span>
-            @if(! empty($nearbyPois))
-                <span class="loc-leg-i"><span class="loc-leg-dot loc-leg-dot--poi"></span> Điểm POI lân cận (cafe, trường, ngân hàng, mall, …)</span>
-            @endif
+            {{-- RIGHT: map --}}
+            <div class="loc-map-wrap">
+                <div id="loc-map"></div>
+            </div>
         </div>
     </div>
 </section>
@@ -558,48 +611,38 @@ function sw(el,id){
     ];
   @endphp
   var SCREEN_PIN = @json($screenPinData);
+  // POIs đã được PoiProjection enrich: {id, name, lat, lon, group, gLabel, icon, color, dist}
   var POIS = @json($nearbyPois ?? []);
 
-  // POI category → color/emoji palette (cho dot marker đơn giản)
-  var POI_STYLE = {
-    cafe:{c:'#8B4513',e:'☕'}, restaurant:{c:'#E67E22',e:'🍴'}, fast_food:{c:'#E74C3C',e:'🍔'},
-    bar:{c:'#9B59B6',e:'🍺'}, school:{c:'#3498DB',e:'🎓'}, university:{c:'#2980B9',e:'🏛'},
-    kindergarten:{c:'#3498DB',e:'🎓'}, hospital:{c:'#E74C3C',e:'🏥'}, clinic:{c:'#E91E63',e:'⚕'},
-    pharmacy:{c:'#27AE60',e:'💊'}, bank:{c:'#16A085',e:'🏦'}, atm:{c:'#16A085',e:'💳'},
-    fuel:{c:'#F39C12',e:'⛽'}, parking:{c:'#7F8C8D',e:'🅿'}, cinema:{c:'#9B59B6',e:'🎬'},
-    hotel:{c:'#34495E',e:'🏨'}, mall:{c:'#E67E22',e:'🛍'}, supermarket:{c:'#27AE60',e:'🛒'},
-    convenience:{c:'#27AE60',e:'🏪'}, clothes:{c:'#E91E63',e:'👕'}, gym:{c:'#16A085',e:'💪'},
-    fitness_centre:{c:'#16A085',e:'💪'}, bus_station:{c:'#3498DB',e:'🚌'}, station:{c:'#3498DB',e:'🚏'},
-    park:{c:'#27AE60',e:'🌳'}, office:{c:'#34495E',e:'🏢'}, company:{c:'#34495E',e:'🏢'},
-  };
-
-  // ── Init map (pattern giống hp-leaflet-map ở homepage) ──
+  // ── Init map ──
   var locMap = L.map('loc-map', {
     center: [SCREEN_PIN.lat, SCREEN_PIN.lng],
     zoom: 17,
     zoomControl: true,
     scrollWheelZoom: false,
-    preferCanvas: true,
+    preferCanvas: false, // false để Material icon HTML render đúng
   });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(locMap);
 
-  // POI markers — colored dots
+  // POI markers — Material icon, store handle by id để click list
+  var poiMarkers = {};
   POIS.forEach(function(p){
-    var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
-    L.marker([p.lat, p.lon], {
+    var m = L.marker([p.lat, p.lon], {
       icon: L.divIcon({
-        className: 'poi-dot',
-        html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
-        iconSize: [22, 22], iconAnchor: [11, 11],
+        className: 'poi-pin',
+        html: '<div class="poi-pin-inner" style="background:'+p.color+'">'
+            + '<span class="material-symbols-outlined">'+p.icon+'</span></div>',
+        iconSize: [30, 30], iconAnchor: [15, 15],
       }),
       zIndexOffset: 100,
     })
     .addTo(locMap)
-    .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-             + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+    .bindPopup('<div style="font-weight:600;font-size:13px">'+p.name+'</div>'
+             + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m từ màn hình</div>');
+    poiMarkers[p.id] = m;
   });
 
   // Screen pin — dùng OOHXMap.createPinIcon (rich marker giống homepage live map)
@@ -609,6 +652,28 @@ function sw(el,id){
     .bindPopup('<div style="font-weight:700;font-size:13px">'+SCREEN_PIN.name+'</div>'
              + (SCREEN_PIN.address ? '<div style="font-size:11px;color:#888;margin-top:4px">'+SCREEN_PIN.address+'</div>' : ''))
     .openPopup();
+
+  // ── Wire click POI list → flyTo + popup ──
+  var locList = document.getElementById('loc-list');
+  if (locList) {
+    locList.addEventListener('click', function(e){
+      var item = e.target.closest('.loc-item');
+      if (!item) return;
+      var id = item.getAttribute('data-poi-id');
+      var marker = poiMarkers[id];
+      if (!marker) return;
+
+      // Active highlight
+      locList.querySelectorAll('.loc-item.is-active').forEach(function(el){ el.classList.remove('is-active'); });
+      item.classList.add('is-active');
+
+      locMap.flyTo(marker.getLatLng(), 18, { duration: 0.6 });
+      setTimeout(function(){ marker.openPopup(); }, 650);
+    });
+  }
+
+  // Fix tile load nếu container ban đầu hidden
+  setTimeout(function(){ locMap.invalidateSize(); }, 100);
 
   console.log('[loc-map] OK — 1 screen pin + ' + POIS.length + ' POI markers');
 })();
