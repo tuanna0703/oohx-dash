@@ -357,7 +357,7 @@
 </section>
 @endif
 
-<div class="similar-section"><div class="w"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px"><div><div style="font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px">GỢI Ý THÊM</div><h2 style="font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--t1);letter-spacing:-.5px">Inventory tương tự</h2></div><a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a></div><div class="inv-grid">@foreach($similarScreens as $screen)@include('frontpage.partials.screen-card', ['screen' => $screen, 'compact' => true])@endforeach</div></div></div>
+<div class="similar-section"><div class="w"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px"><div><div style="font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px">GỢI Ý THÊM</div><h2 style="font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--t1);letter-spacing:-.5px">Inventory tương tự</h2></div><a href="{{ route('fp.listing') }}" class="btn btn-s btn-sm" style="margin-top:6px;flex-shrink:0">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--t2)" style="width:14px;height:14px;flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></a></div><div class="inv-grid">@foreach($similarScreens as $sim)@include('frontpage.partials.screen-card', ['screen' => $sim, 'compact' => true])@endforeach</div></div></div>
 @endsection
 
 @push('scripts')
