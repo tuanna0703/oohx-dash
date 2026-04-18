@@ -27,7 +27,7 @@
 @endsection
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{{-- Leaflet bỏ — tab Vị trí dùng iframe OSM embed (bullet-proof, zero JS) --}}
 <style>
 @media(min-width:768px){#lbtn,#sbtn{display:inline-flex}}
 .lb-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
@@ -173,12 +173,33 @@
 </div>
 <div id="tp-map" class="tp">
 @if($screen->site?->lat && $screen->site?->lon)
-<div id="detail-map" style="width:100%;height:420px;border-radius:14px;border:1px solid var(--ln2);overflow:hidden;margin-bottom:12px"></div>
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--t3);margin-bottom:14px">
-    <span style="display:inline-flex;align-items:center;gap:6px"><span class="map-legend-dot" style="background:var(--bl);width:14px;height:14px;border-radius:50%;display:inline-block"></span> Vị trí màn hình</span>
-    @if(! empty($nearbyPois))
-        <span style="display:inline-flex;align-items:center;gap:6px"><span class="map-legend-dot" style="background:#7F8C8D;width:10px;height:10px;border-radius:50%;display:inline-block"></span> {{ count($nearbyPois) }} POI lân cận (OSM)</span>
-    @endif
+@php
+    $lat = (float) $screen->site->lat;
+    $lon = (float) $screen->site->lon;
+    $delta = 0.004; // ~400m bbox
+    $bbox  = ($lon - $delta) . ',' . ($lat - $delta) . ',' . ($lon + $delta) . ',' . ($lat + $delta);
+    $osmEmbed = 'https://www.openstreetmap.org/export/embed.html?bbox=' . $bbox . '&layer=mapnik&marker=' . $lat . ',' . $lon;
+    $osmLink  = 'https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lon . '#map=17/' . $lat . '/' . $lon;
+@endphp
+<iframe
+    src="{{ $osmEmbed }}"
+    style="width:100%;height:420px;border:1px solid var(--ln2);border-radius:14px;display:block"
+    loading="lazy"
+    title="Bản đồ vị trí {{ $screen->name }}"
+    referrerpolicy="no-referrer-when-downgrade"
+></iframe>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 14px">
+    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t3)">
+        <span style="background:var(--bl);width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
+        Vị trí màn hình
+        @if(! empty($nearbyPois))
+            <span style="margin-left:8px;color:var(--t4)">·</span>
+            <span style="color:var(--t4)">{{ count($nearbyPois) }} POI lân cận đã phân tích</span>
+        @endif
+    </div>
+    <a href="{{ $osmLink }}" target="_blank" rel="noopener" style="font-size:13px;color:var(--bl);text-decoration:none;font-weight:600">
+        Mở trên OpenStreetMap →
+    </a>
 </div>
 <div style="font-size:13px;color:var(--t3)">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;vertical-align:-2px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -489,102 +510,5 @@ function sw(el,id){
   @endif
 
 })();
-@if($screen->site?->lat && $screen->site?->lon)
-// ── Leaflet map (separate IIFE — runs AFTER leaflet.js loads at bottom) ──
-window.addEventListener('load', function(){
-  var mapEl = document.getElementById('detail-map');
-  if (! mapEl || typeof L === 'undefined') {
-    console.warn('[detail-map] init skipped — element or Leaflet missing');
-    return;
-  }
-
-  var DETAIL_LAT = {{ (float)$screen->site->lat }};
-  var DETAIL_LNG = {{ (float)$screen->site->lon }};
-  var DETAIL_POIS = @json($nearbyPois ?? []);
-
-  var POI_STYLE = {
-    cafe:{color:'#8B4513',emoji:'☕'}, restaurant:{color:'#E67E22',emoji:'🍴'},
-    fast_food:{color:'#E74C3C',emoji:'🍔'}, bar:{color:'#9B59B6',emoji:'🍺'},
-    school:{color:'#3498DB',emoji:'🎓'}, university:{color:'#2980B9',emoji:'🏛'},
-    kindergarten:{color:'#3498DB',emoji:'🎓'}, hospital:{color:'#E74C3C',emoji:'🏥'},
-    clinic:{color:'#E91E63',emoji:'⚕'}, pharmacy:{color:'#27AE60',emoji:'💊'},
-    bank:{color:'#16A085',emoji:'🏦'}, atm:{color:'#16A085',emoji:'💳'},
-    fuel:{color:'#F39C12',emoji:'⛽'}, parking:{color:'#7F8C8D',emoji:'🅿'},
-    cinema:{color:'#9B59B6',emoji:'🎬'}, hotel:{color:'#34495E',emoji:'🏨'},
-    mall:{color:'#E67E22',emoji:'🛍'}, supermarket:{color:'#27AE60',emoji:'🛒'},
-    convenience:{color:'#27AE60',emoji:'🏪'}, clothes:{color:'#E91E63',emoji:'👕'},
-    gym:{color:'#16A085',emoji:'💪'}, fitness_centre:{color:'#16A085',emoji:'💪'},
-    bus_station:{color:'#3498DB',emoji:'🚌'}, station:{color:'#3498DB',emoji:'🚏'},
-    park:{color:'#27AE60',emoji:'🌳'}, office:{color:'#34495E',emoji:'🏢'},
-    company:{color:'#34495E',emoji:'🏢'},
-  };
-  function poiStyle(c){ return POI_STYLE[c] || {color:'#7F8C8D',emoji:'📍'}; }
-
-  // Init map IMMEDIATELY (kể cả khi tab Vị trí đang display:none)
-  var dmap = L.map('detail-map', {
-    center: [DETAIL_LAT, DETAIL_LNG],
-    zoom: 17,
-    zoomControl: true,
-    scrollWheelZoom: false,
-  });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:'&copy; OSM', maxZoom:19
-  }).addTo(dmap);
-
-  // POI markers
-  DETAIL_POIS.forEach(function(p){
-    var s = poiStyle(p.cat);
-    var ic = L.divIcon({
-      className:'poi-dot',
-      html:'<div class="poi-dot-inner" style="background:'+s.color+'">'+s.emoji+'</div>',
-      iconSize:[22,22], iconAnchor:[11,11],
-    });
-    L.marker([p.lat, p.lon], {icon:ic, zIndexOffset:100})
-      .addTo(dmap)
-      .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-               +'<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
-  });
-
-  // Screen pin
-  var screenIcon = L.divIcon({
-    className:'screen-pin',
-    html:'<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
-    iconSize:[44,44], iconAnchor:[22,22],
-  });
-  L.marker([DETAIL_LAT, DETAIL_LNG], {icon:screenIcon, zIndexOffset:1000})
-    .addTo(dmap)
-    .bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}');
-
-  console.log('[detail-map] initialized with ' + DETAIL_POIS.length + ' POIs');
-
-  // ── Watch tp-map panel for visibility — fix Leaflet gray-tile bug ──
-  function refresh(){
-    requestAnimationFrame(function(){ dmap.invalidateSize(); });
-  }
-  // Initial refresh after layout settles
-  setTimeout(refresh, 100);
-
-  // Refresh when Vị trí tab opens (sw() toggles 'on' class on tp-map div)
-  var tpMap = document.getElementById('tp-map');
-  if (tpMap) {
-    new MutationObserver(function(mutations){
-      mutations.forEach(function(m){
-        if (m.attributeName === 'class' && tpMap.classList.contains('on')) {
-          refresh();
-          setTimeout(refresh, 250);
-        }
-      });
-    }).observe(tpMap, {attributes:true, attributeFilter:['class']});
-  }
-
-  // Failsafe: refresh on tab click directly
-  var mapTab = document.querySelector('[onclick*="tp-map"]');
-  if (mapTab) mapTab.addEventListener('click', function(){
-    setTimeout(refresh, 50);
-    setTimeout(refresh, 300);
-  });
-});
-@endif
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 @endpush
