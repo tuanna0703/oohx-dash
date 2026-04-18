@@ -1,0 +1,284 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\PoiSnapshotResource\Pages;
+use App\Models\PoiSnapshot;
+use App\Services\PoiContextEnricher;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+/**
+ * Read-only browser cho poi_snapshots.
+ *
+ * Auto-populated bởi PoiContextEnricher; admin chỉ view + delete + refresh.
+ * Form không có (canCreate=false). Refresh action gọi enricher.fetchPoisOnly()
+ * để re-fetch từ Overpass.
+ */
+class PoiSnapshotResource extends Resource
+{
+    protected static ?string $model = PoiSnapshot::class;
+
+    protected static ?string $navigationIcon  = 'heroicon-o-map-pin';
+    protected static ?string $navigationGroup = 'System Settings';
+    protected static ?string $navigationLabel = 'POI Snapshots';
+    protected static ?string $modelLabel      = 'POI Snapshot';
+    protected static ?int    $navigationSort  = 50;
+
+    public static function canCreate(): bool { return false; }
+    public static function canEdit($r): bool { return false; }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([]); // no form — read-only
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('#')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('source')
+                    ->label('Source')
+                    ->badge()
+                    ->color(fn (string $state) => match ($state) {
+                        'osm'           => 'info',
+                        'google_places' => 'success',
+                        'foursquare'    => 'warning',
+                        default         => 'gray',
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('lat_key')
+                    ->label('Lat / Lon')
+                    ->formatStateUsing(fn ($record) => "{$record->lat_key}, {$record->lon_key}")
+                    ->copyable()
+                    ->copyMessage('Đã copy toạ độ')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('radius')
+                    ->label('Radius')
+                    ->formatStateUsing(fn ($state) => "{$state}m")
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('poi_count')
+                    ->label('POIs')
+                    ->numeric()
+                    ->sortable()
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+
+                Tables\Columns\IconColumn::make('has_features')
+                    ->label('Features')
+                    ->state(fn ($record) => ! empty($record->features))
+                    ->boolean()
+                    ->toggleable(),
+
+                Tables\Columns\IconColumn::make('has_scoring')
+                    ->label('Scoring')
+                    ->state(fn ($record) => ! empty($record->scoring))
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('fetched_at')
+                    ->label('Fetched')
+                    ->dateTime()
+                    ->since()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('expires_at')
+                    ->label('Expires')
+                    ->dateTime()
+                    ->since()
+                    ->placeholder('never')
+                    ->color(fn ($state) => $state && $state->isPast() ? 'danger' : 'gray')
+                    ->sortable()
+                    ->toggleable(),
+            ])
+            ->defaultSort('fetched_at', 'desc')
+            ->filters([
+                SelectFilter::make('source')
+                    ->options([
+                        'osm'           => 'OSM',
+                        'google_places' => 'Google Places',
+                        'foursquare'    => 'Foursquare',
+                    ]),
+                SelectFilter::make('radius')
+                    ->options([
+                        '500'  => '500m',
+                        '1000' => '1km',
+                        '2000' => '2km',
+                    ]),
+                TernaryFilter::make('expired')
+                    ->label('Expired?')
+                    ->placeholder('All')
+                    ->trueLabel('Expired only')
+                    ->falseLabel('Fresh only')
+                    ->queries(
+                        true:  fn (Builder $q) => $q->whereNotNull('expires_at')->where('expires_at', '<=', now()),
+                        false: fn (Builder $q) => $q->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now())),
+                    ),
+                TernaryFilter::make('has_pois')
+                    ->label('Has POIs?')
+                    ->queries(
+                        true:  fn (Builder $q) => $q->where('poi_count', '>', 0),
+                        false: fn (Builder $q) => $q->where('poi_count', '=', 0),
+                    ),
+            ])
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+
+                    Tables\Actions\Action::make('refresh')
+                        ->label('Refresh từ OSM')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalDescription('Re-fetch POI từ Overpass cho location này. Mất ~10-30 giây.')
+                        ->action(function (PoiSnapshot $record, PoiContextEnricher $enricher) {
+                            try {
+                                $pois = $enricher->fetchPoisOnly(
+                                    (float) $record->lat_key,
+                                    (float) $record->lon_key,
+                                    $record->radius,
+                                );
+                                Notification::make()
+                                    ->title('Refreshed')
+                                    ->body(count($pois) . ' POIs cập nhật')
+                                    ->success()
+                                    ->send();
+                            } catch (\Throwable $e) {
+                                Notification::make()
+                                    ->title('Refresh failed')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+
+                    Tables\Actions\Action::make('open_osm')
+                        ->label('Mở trên OSM')
+                        ->icon('heroicon-o-arrow-top-right-on-square')
+                        ->url(fn (PoiSnapshot $r) => sprintf(
+                            'https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=17/%s/%s',
+                            $r->lat_key, $r->lon_key, $r->lat_key, $r->lon_key
+                        ))
+                        ->openUrlInNewTab(),
+
+                    Tables\Actions\DeleteAction::make(),
+                ]),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('refresh_bulk')
+                        ->label('Refresh selected')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalDescription('Re-fetch POI cho tất cả snapshots đã chọn. Có thể mất vài phút.')
+                        ->action(function ($records) {
+                            $enricher = app(PoiContextEnricher::class);
+                            $ok = 0; $fail = 0;
+                            foreach ($records as $r) {
+                                try {
+                                    $enricher->fetchPoisOnly((float) $r->lat_key, (float) $r->lon_key, $r->radius);
+                                    $ok++;
+                                } catch (\Throwable $e) { $fail++; }
+                                sleep(2); // rate-limit safe for Overpass
+                            }
+                            Notification::make()
+                                ->title("Refresh xong: {$ok} OK, {$fail} fail")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Location')
+                ->columns(4)
+                ->schema([
+                    Infolists\Components\TextEntry::make('source')
+                        ->badge()
+                        ->color(fn (string $state) => match ($state) {
+                            'osm'           => 'info',
+                            'google_places' => 'success',
+                            'foursquare'    => 'warning',
+                            default         => 'gray',
+                        }),
+                    Infolists\Components\TextEntry::make('lat_key')->label('Latitude'),
+                    Infolists\Components\TextEntry::make('lon_key')->label('Longitude'),
+                    Infolists\Components\TextEntry::make('radius')
+                        ->formatStateUsing(fn ($state) => "{$state}m"),
+                ]),
+
+            Infolists\Components\Section::make('Stats')
+                ->columns(3)
+                ->schema([
+                    Infolists\Components\TextEntry::make('poi_count')
+                        ->label('POIs')
+                        ->numeric(),
+                    Infolists\Components\TextEntry::make('fetched_at')
+                        ->label('Fetched')
+                        ->dateTime(),
+                    Infolists\Components\TextEntry::make('expires_at')
+                        ->label('Expires')
+                        ->dateTime()
+                        ->placeholder('never')
+                        ->color(fn ($state) => $state && $state->isPast() ? 'danger' : 'gray'),
+                ]),
+
+            Infolists\Components\Section::make('Aggregated Features')
+                ->collapsible()
+                ->visible(fn ($record) => ! empty($record->features))
+                ->schema([
+                    Infolists\Components\ViewEntry::make('features')
+                        ->view('filament.resources.poi-snapshot-resource.features'),
+                ]),
+
+            Infolists\Components\Section::make('Scoring (microservice)')
+                ->collapsible()
+                ->visible(fn ($record) => ! empty($record->scoring))
+                ->schema([
+                    Infolists\Components\KeyValueEntry::make('scoring')
+                        ->label(false),
+                ]),
+
+            Infolists\Components\Section::make('Raw POIs')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Infolists\Components\ViewEntry::make('pois')
+                        ->view('filament.resources.poi-snapshot-resource.pois'),
+                ]),
+        ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListPoiSnapshots::route('/'),
+            'view'  => Pages\ViewPoiSnapshot::route('/{record}'),
+        ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    }
+}
