@@ -26,6 +26,16 @@ use Illuminate\Support\Str;
  * @property string      $status         online|offline|maintenance
  * @property string      $description
  *
+ * Inventory Intelligence (Phase 1):
+ * @property string|null $placement_zone           entrance|checkout|escalator|food_court|facade|lobby|parking|other
+ * @property string|null $orientation              landscape|portrait|square (auto-derived if null)
+ * @property int|null    $daily_footfall
+ * @property int|null    $monthly_reach
+ * @property array|null  $audience_profile         {male_pct, female_pct, age_18_24_pct, ...}
+ * @property array|null  $time_performance         {peak_hour_start, peak_hour_end, best_day, morning_pct, ...}
+ * @property array|null  $nearby_context           {brands:[], landmarks:[], highlights:""}
+ * @property string|null $traffic_methodology_note
+ *
  * @internal AdOps / device fields (Phase 2 — hidden from UI by default):
  * @property string|null $unit_id
  * @property string|null $internal_notes
@@ -47,6 +57,12 @@ class Screen extends Model
         'site_id', 'owner_id', 'external_id', 'uuid',
         'name', 'slug', 'description', 'active', 'status',
 
+        // Inventory Intelligence (Phase 1)
+        'placement_zone', 'orientation',
+        'daily_footfall', 'monthly_reach',
+        'audience_profile', 'time_performance', 'nearby_context',
+        'traffic_methodology_note',
+
         // AdOps / device (Phase 2)
         'unit_id', 'internal_notes',
         'site_external_id', 'network_code', 'location_district', 'location_district_code',
@@ -57,6 +73,9 @@ class Screen extends Model
     protected $casts = [
         'active'            => 'boolean',
         'last_heartbeat_at' => 'datetime',
+        'audience_profile'  => 'array',
+        'time_performance'  => 'array',
+        'nearby_context'    => 'array',
     ];
 
     protected static function booted(): void
@@ -249,5 +268,53 @@ class Screen extends Model
     {
         if (! $this->last_heartbeat_at) return false;
         return $this->last_heartbeat_at->diffInMinutes(now()) < 5;
+    }
+
+    // ── Phase 1 Intelligence accessors ─────────────────────
+
+    /**
+     * Orientation — returns DB value if set, otherwise derives from spec dimensions.
+     * Tolerance of 10% width/height difference treated as 'square'.
+     */
+    public function getOrientationAttribute($value): ?string
+    {
+        if ($value) return $value;
+
+        $w = (float) ($this->spec?->width_cm ?? 0);
+        $h = (float) ($this->spec?->height_cm ?? 0);
+        if ($w <= 0 || $h <= 0) return null;
+
+        $delta = abs($w - $h) / max($w, $h);
+        if ($delta < 0.10) return 'square';
+        return $w > $h ? 'landscape' : 'portrait';
+    }
+
+    /**
+     * Estimated daily impressions:
+     *   - daily_footfall × 0.6 (heuristic: 60% of footfall actually sees the screen)
+     *   - or fallback to inventory.weekly_impressions / 7
+     */
+    public function getDailyImpressionsAttribute(): ?int
+    {
+        if ($this->daily_footfall) {
+            return (int) round($this->daily_footfall * 0.6);
+        }
+        $weekly = (int) ($this->inventory?->weekly_impressions ?? 0);
+        return $weekly > 0 ? (int) round($weekly / 7) : null;
+    }
+
+    /**
+     * Has any Phase 1 intelligence data — used by detail page to hide tab when empty.
+     */
+    public function getHasInsightsAttribute(): bool
+    {
+        return (bool) (
+            $this->daily_footfall
+            || $this->monthly_reach
+            || $this->placement_zone
+            || ! empty($this->audience_profile)
+            || ! empty($this->time_performance)
+            || ! empty($this->nearby_context)
+        );
     }
 }

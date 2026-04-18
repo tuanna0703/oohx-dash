@@ -1991,3 +1991,69 @@ body.page-map{overflow:hidden}
     .inv-grid.list-view .sc-foot{border-left:0;border-top:1px solid var(--ln2);flex-direction:row}
 }
 @media(min-width:768px){.sc-photo{height:190px}}
+
+/* ── Phase 1 — Inventory Intelligence (detail page tab) ──────────────── */
+.ins{display:flex;flex-direction:column;gap:24px}
+
+/* Stat row */
+.ins-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:640px){.ins-stats{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1024px){.ins-stats{grid-template-columns:repeat(5,1fr)}}
+.ins-stat{padding:14px 16px;background:var(--bg2);border:1px solid var(--ln2);border-radius:14px}
+.ins-stat-l{font-size:11px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;line-height:1.3}
+.ins-stat-l small{font-weight:400;text-transform:none;letter-spacing:0;color:var(--t4)}
+.ins-stat-v{font-size:20px;font-weight:800;color:var(--t1);letter-spacing:-.4px;line-height:1.1}
+.ins-stat-v-text{font-size:15px;font-weight:700}
+.ins-stat-sep{margin:0 4px;color:var(--t4);font-weight:400}
+
+/* Block (audience / time / nearby) */
+.ins-block{padding:18px 20px;background:#fff;border:1px solid var(--ln2);border-radius:16px;box-shadow:var(--sh1)}
+@media(min-width:1024px){.ins-block{padding:22px 24px}}
+.ins-block-h{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--t1);margin-bottom:16px;letter-spacing:-.2px}
+.ins-ic{width:18px;height:18px;color:var(--bl);flex-shrink:0}
+.ins-row{display:flex;flex-direction:column;gap:8px}
+.ins-row-h{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+
+/* Bar chart */
+.ins-bar-row{display:grid;grid-template-columns:80px 1fr 48px;align-items:center;gap:10px}
+.ins-bar-l{font-size:13px;font-weight:600;color:var(--t2)}
+.ins-bar-l small{display:block;font-size:11px;font-weight:400;color:var(--t4);margin-top:1px}
+.ins-bar{height:8px;background:var(--bg2);border-radius:980px;overflow:hidden;position:relative}
+.ins-bar-fill{height:100%;border-radius:980px;transition:width 400ms cubic-bezier(.4,0,.2,1)}
+.ins-bar-fill--bl{background:linear-gradient(90deg,var(--bl),#5b7bff)}
+.ins-bar-fill--grn{background:linear-gradient(90deg,var(--grn),#5dd87b)}
+.ins-bar-fill--org{background:linear-gradient(90deg,var(--org),#ffb84d)}
+.ins-bar-fill--pur{background:linear-gradient(90deg,var(--pur),#c58aff)}
+.ins-bar-fill--red{background:linear-gradient(90deg,var(--red),#ff7166)}
+.ins-bar-v{font-size:13px;font-weight:700;color:var(--t1);text-align:right;font-variant-numeric:tabular-nums}
+
+/* Day-of-week badges */
+.ins-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+.ins-day{padding:10px 4px;text-align:center;font-size:12px;font-weight:700;color:var(--t3);background:var(--bg2);border:1px solid var(--ln2);border-radius:10px;transition:all 160ms}
+.ins-day.is-best{background:var(--bl);color:#fff;border-color:var(--bl);box-shadow:0 4px 12px rgba(42,79,246,.25);transform:scale(1.05)}
+.ins-day-note{font-size:12px;color:var(--t3);margin-bottom:4px}
+.ins-day-note strong{color:var(--bl)}
+
+/* Nearby context */
+.ins-highlight{padding:12px 14px;background:var(--bl-lt);border-left:3px solid var(--bl);border-radius:8px;font-size:14px;color:var(--t2);line-height:1.5;margin-bottom:14px}
+.ins-tags-group{margin-bottom:12px}
+.ins-tags-group:last-child{margin-bottom:0}
+.ins-tags-l{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.ins-tags{display:flex;flex-wrap:wrap;gap:6px}
+.ins-tag{display:inline-flex;align-items:center;padding:5px 12px;border-radius:980px;font-size:12px;font-weight:600;line-height:1.3}
+.ins-tag--bl{background:var(--bl-lt);color:var(--bl)}
+.ins-tag--grn{background:rgba(52,199,89,.12);color:#1a7d37}
+
+/* Source / methodology footnote */
+.ins-source{font-size:12px;color:var(--t4);font-style:italic;margin-top:14px;padding-top:12px;border-top:1px dashed var(--ln2)}
+.ins-source-foot{padding:14px 16px;background:var(--bg3);border:1px dashed var(--ln2);border-radius:10px;font-style:normal;margin-top:0}
+.ins-source-foot strong{color:var(--t2);font-weight:700;font-style:normal}
+
+/* Mobile tightening */
+@media(max-width:640px){
+    .ins-bar-row{grid-template-columns:64px 1fr 40px;gap:8px}
+    .ins-bar-l{font-size:12px}
+    .ins-bar-v{font-size:12px}
+    .ins-day{padding:8px 2px;font-size:11px}
+    .ins-stat-v{font-size:17px}
+}

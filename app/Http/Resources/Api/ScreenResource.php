@@ -44,6 +44,23 @@ class ScreenResource extends JsonResource
             'updated_at'         => $this->updated_at?->toIso8601String(),
         ];
 
+        // ── Intelligence fields (only with ?include=intelligence) ────
+        // Phase 1 — Inventory Intelligence (placement, traffic, audience, time, nearby).
+        if ($this->shouldInclude($request, 'intelligence')) {
+            $data['intelligence'] = [
+                'placement_zone'        => $this->placement_zone,
+                'orientation'           => $this->orientation, // accessor: derives from spec if null
+                'daily_footfall'        => $this->daily_footfall ? (int) $this->daily_footfall : null,
+                'monthly_reach'         => $this->monthly_reach ? (int) $this->monthly_reach : null,
+                'daily_impressions'     => $this->daily_impressions, // accessor: footfall × 0.6 or weekly/7
+                'audience_profile'      => $this->audience_profile,
+                'time_performance'      => $this->time_performance,
+                'nearby_context'        => $this->nearby_context,
+                'methodology_note'      => $this->traffic_methodology_note,
+                'has_data'              => $this->has_insights,
+            ];
+        }
+
         // ── AdOps fields (only with ?include=adops) ──────────────────
         if ($this->shouldIncludeAdops($request)) {
             $data['adops'] = [
@@ -69,11 +86,17 @@ class ScreenResource extends JsonResource
 
     // ── Helpers ─────────────────────────────────────────────
 
+    private function shouldInclude(Request $request, string $key): bool
+    {
+        $include = (string) $request->input('include', '');
+        if ($include === '') return false;
+        $tokens = array_map('trim', explode(',', $include));
+        return in_array($key, $tokens, true) || $include === 'all';
+    }
+
     private function shouldIncludeAdops(Request $request): bool
     {
-        $include = $request->input('include', '');
-
-        return str_contains($include, 'adops');
+        return $this->shouldInclude($request, 'adops');
     }
 
     private function resolveScreenType($spec, $inventory): string

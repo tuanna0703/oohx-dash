@@ -336,7 +336,167 @@ abstract class BaseScreenResource extends Resource
                                 ]),
                         ]),
 
-                    // ── TAB 4: Vị trí ────────────────────────────────────────
+                    // ── TAB 4: Insights (Phase 1 — Inventory Intelligence) ───
+                    Forms\Components\Tabs\Tab::make('Insights')
+                        ->icon('heroicon-o-chart-bar')
+                        ->columns(3)
+                        ->schema([
+                            Forms\Components\Select::make('placement_zone')
+                                ->label('Vị trí trong venue')
+                                ->options([
+                                    'entrance'   => 'Lối vào',
+                                    'checkout'   => 'Quầy thanh toán',
+                                    'escalator'  => 'Cạnh thang cuốn',
+                                    'food_court' => 'Khu food court',
+                                    'facade'     => 'Mặt tiền tòa nhà',
+                                    'lobby'      => 'Sảnh',
+                                    'parking'    => 'Bãi đậu xe',
+                                    'other'      => 'Khác',
+                                ])
+                                ->placeholder('—')
+                                ->columnSpan(1),
+
+                            Forms\Components\Select::make('orientation')
+                                ->label('Hướng màn hình')
+                                ->options([
+                                    'landscape' => 'Ngang (landscape)',
+                                    'portrait'  => 'Dọc (portrait)',
+                                    'square'    => 'Vuông (square)',
+                                ])
+                                ->placeholder('Tự động từ kích thước')
+                                ->helperText('Để trống → tự suy ra từ width × height')
+                                ->columnSpan(1),
+
+                            Forms\Components\Placeholder::make('_orient_hint')
+                                ->label('')
+                                ->content('')
+                                ->columnSpan(1),
+
+                            // ── Lưu lượng ────────────────────────────────────
+                            Forms\Components\Section::make('Lưu lượng (Footfall & Reach)')
+                                ->description('Ước lượng lưu lượng khách qua vị trí. Minh bạch nguồn để agency tin cậy.')
+                                ->columns(2)
+                                ->columnSpan(3)
+                                ->schema([
+                                    Forms\Components\TextInput::make('daily_footfall')
+                                        ->label('Lượt khách/ngày (ước lượng)')
+                                        ->mask(RawJs::make("\$money(\$input, '.', ',', 0)"))
+                                        ->stripCharacters(',')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('người/ngày'),
+
+                                    Forms\Components\TextInput::make('monthly_reach')
+                                        ->label('Reach/tháng (số người riêng biệt)')
+                                        ->mask(RawJs::make("\$money(\$input, '.', ',', 0)"))
+                                        ->stripCharacters(',')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('người/tháng'),
+
+                                    Forms\Components\Textarea::make('traffic_methodology_note')
+                                        ->label('Nguồn / phương pháp ước lượng')
+                                        ->rows(2)
+                                        ->columnSpanFull()
+                                        ->placeholder('VD: Số liệu Vincom Retail Q4 2025 · Manual count tháng 3 · Industry benchmark'),
+                                ]),
+
+                            // ── Audience profile ─────────────────────────────
+                            Forms\Components\Section::make('Audience profile')
+                                ->description('Phân bố giới tính & độ tuổi (% — tổng từng nhóm nên ≈ 100).')
+                                ->columns(3)
+                                ->columnSpan(3)
+                                ->schema([
+                                    Forms\Components\TextInput::make('audience_profile.male_pct')
+                                        ->label('Nam %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\TextInput::make('audience_profile.female_pct')
+                                        ->label('Nữ %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\Placeholder::make('_aud_spacer')->label('')->content(''),
+
+                                    Forms\Components\TextInput::make('audience_profile.age_18_24_pct')
+                                        ->label('18-24 %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\TextInput::make('audience_profile.age_25_34_pct')
+                                        ->label('25-34 %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\TextInput::make('audience_profile.age_35_44_pct')
+                                        ->label('35-44 %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+
+                                    Forms\Components\TextInput::make('audience_profile.age_45_plus_pct')
+                                        ->label('45+ %')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\Placeholder::make('_aud_spacer2')->label('')->content('')->columnSpan(2),
+
+                                    Forms\Components\TextInput::make('audience_profile.source_note')
+                                        ->label('Nguồn audience')
+                                        ->columnSpanFull()
+                                        ->placeholder('VD: Survey Q1 2025 · Estimate theo industry benchmark'),
+                                ]),
+
+                            // ── Time performance ─────────────────────────────
+                            Forms\Components\Section::make('Hiệu suất theo thời gian')
+                                ->description('Khung giờ peak + ngày đẹp nhất + phân bổ traffic theo buổi.')
+                                ->columns(3)
+                                ->columnSpan(3)
+                                ->schema([
+                                    Forms\Components\TimePicker::make('time_performance.peak_hour_start')
+                                        ->label('Peak bắt đầu')
+                                        ->seconds(false)
+                                        ->displayFormat('H:i'),
+                                    Forms\Components\TimePicker::make('time_performance.peak_hour_end')
+                                        ->label('Peak kết thúc')
+                                        ->seconds(false)
+                                        ->displayFormat('H:i'),
+                                    Forms\Components\Select::make('time_performance.best_day')
+                                        ->label('Ngày đẹp nhất')
+                                        ->options([
+                                            'mon' => 'Thứ 2',
+                                            'tue' => 'Thứ 3',
+                                            'wed' => 'Thứ 4',
+                                            'thu' => 'Thứ 5',
+                                            'fri' => 'Thứ 6',
+                                            'sat' => 'Thứ 7',
+                                            'sun' => 'Chủ nhật',
+                                        ])
+                                        ->placeholder('—'),
+
+                                    Forms\Components\TextInput::make('time_performance.morning_pct')
+                                        ->label('Sáng % (6-12h)')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\TextInput::make('time_performance.afternoon_pct')
+                                        ->label('Chiều % (12-18h)')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                    Forms\Components\TextInput::make('time_performance.evening_pct')
+                                        ->label('Tối % (18-24h)')
+                                        ->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                                ]),
+
+                            // ── Nearby context ───────────────────────────────
+                            Forms\Components\Section::make('Bối cảnh xung quanh')
+                                ->description('Brands & landmarks lân cận giúp agency hình dung context.')
+                                ->columns(2)
+                                ->columnSpan(3)
+                                ->schema([
+                                    Forms\Components\TagsInput::make('nearby_context.brands')
+                                        ->label('Brand lân cận')
+                                        ->placeholder('Starbucks, Highlands, KFC')
+                                        ->helperText('Nhấn Enter sau mỗi tên'),
+                                    Forms\Components\TagsInput::make('nearby_context.landmarks')
+                                        ->label('Landmark / địa danh')
+                                        ->placeholder('Vincom Center, Hồ Hoàn Kiếm 200m')
+                                        ->helperText('Nhấn Enter sau mỗi tên'),
+                                    Forms\Components\Textarea::make('nearby_context.highlights')
+                                        ->label('Điểm nổi bật vị trí')
+                                        ->placeholder('VD: Mặt tiền tầng trệt đối diện thang cuốn — view rõ từ lối vào chính')
+                                        ->rows(3)
+                                        ->columnSpanFull(),
+                                ]),
+                        ]),
+
+                    // ── TAB 5: Vị trí ────────────────────────────────────────
                     Forms\Components\Tabs\Tab::make('Vị trí')
                         ->icon('heroicon-o-map-pin')
                         ->columns(3)
@@ -745,6 +905,81 @@ abstract class BaseScreenResource extends Resource
                                 ->label('')
                                 ->view('filament.publisher.components.operating-hours-view')
                                 ->getStateUsing(fn (Screen $r) => $r->inventory?->operating_hours ?? []),
+                        ]),
+
+                    // ── Tab 5: Insights (Phase 1) ───────────────────────────
+                    Infolists\Components\Tabs\Tab::make('Insights')
+                        ->icon('heroicon-o-chart-bar')
+                        ->columns(3)
+                        ->schema([
+                            Infolists\Components\TextEntry::make('placement_zone')
+                                ->label('Vị trí trong venue')
+                                ->placeholder('—')
+                                ->formatStateUsing(fn ($state) => match ($state) {
+                                    'entrance'   => 'Lối vào',
+                                    'checkout'   => 'Quầy thanh toán',
+                                    'escalator'  => 'Cạnh thang cuốn',
+                                    'food_court' => 'Khu food court',
+                                    'facade'     => 'Mặt tiền tòa nhà',
+                                    'lobby'      => 'Sảnh',
+                                    'parking'    => 'Bãi đậu xe',
+                                    'other'      => 'Khác',
+                                    default      => $state ?? '—',
+                                }),
+
+                            Infolists\Components\TextEntry::make('orientation')
+                                ->label('Hướng màn hình')
+                                ->placeholder('—')
+                                ->formatStateUsing(fn ($state) => match ($state) {
+                                    'landscape' => 'Ngang',
+                                    'portrait'  => 'Dọc',
+                                    'square'    => 'Vuông',
+                                    default     => $state ?? '—',
+                                }),
+
+                            Infolists\Components\TextEntry::make('daily_impressions')
+                                ->label('Impressions/ngày (ước tính)')
+                                ->placeholder('—')
+                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
+
+                            Infolists\Components\TextEntry::make('daily_footfall')
+                                ->label('Lượt khách/ngày')
+                                ->placeholder('—')
+                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
+
+                            Infolists\Components\TextEntry::make('monthly_reach')
+                                ->label('Reach/tháng')
+                                ->placeholder('—')
+                                ->formatStateUsing(fn ($state) => $state ? number_format((int) $state) : '—'),
+
+                            Infolists\Components\TextEntry::make('time_performance.peak_hour_start')
+                                ->label('Giờ peak')
+                                ->placeholder('—')
+                                ->getStateUsing(function (Screen $r) {
+                                    $tp = $r->time_performance ?? [];
+                                    if (empty($tp['peak_hour_start']) && empty($tp['peak_hour_end'])) return null;
+                                    return ($tp['peak_hour_start'] ?? '?') . ' – ' . ($tp['peak_hour_end'] ?? '?');
+                                }),
+
+                            Infolists\Components\KeyValueEntry::make('audience_profile')
+                                ->label('Audience profile')
+                                ->columnSpan(3)
+                                ->visible(fn (Screen $r) => ! empty($r->audience_profile)),
+
+                            Infolists\Components\KeyValueEntry::make('time_performance')
+                                ->label('Time performance')
+                                ->columnSpan(3)
+                                ->visible(fn (Screen $r) => ! empty($r->time_performance)),
+
+                            Infolists\Components\KeyValueEntry::make('nearby_context')
+                                ->label('Bối cảnh xung quanh')
+                                ->columnSpan(3)
+                                ->visible(fn (Screen $r) => ! empty($r->nearby_context)),
+
+                            Infolists\Components\TextEntry::make('traffic_methodology_note')
+                                ->label('Nguồn / phương pháp')
+                                ->placeholder('—')
+                                ->columnSpan(3),
                         ]),
 
                     // ── Tab 6: AdOps (admin only) ───────────────────────────
