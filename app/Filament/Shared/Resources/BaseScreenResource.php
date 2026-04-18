@@ -87,6 +87,28 @@ abstract class BaseScreenResource extends Resource
         return [];
     }
 
+    /**
+     * Flatten nested arrays cho KeyValueEntry — Filament chỉ render scalar values.
+     * VD: ['brands' => ['Starbucks','KFC']] → ['brands' => 'Starbucks, KFC']
+     */
+    protected static function flattenForKeyValue(?array $data): array
+    {
+        if (empty($data)) return [];
+        $out = [];
+        foreach ($data as $k => $v) {
+            if (is_array($v)) {
+                // List of strings → comma-joined; assoc → JSON
+                $isList = array_keys($v) === range(0, count($v) - 1);
+                $out[$k] = $isList ? implode(', ', array_map('strval', $v)) : json_encode($v, JSON_UNESCAPED_UNICODE);
+            } elseif (is_bool($v)) {
+                $out[$k] = $v ? 'true' : 'false';
+            } else {
+                $out[$k] = (string) ($v ?? '');
+            }
+        }
+        return $out;
+    }
+
     // ── Form ─────────────────────────────────────────────────────────────────
 
     public static function form(Form $form): Form
@@ -1071,16 +1093,19 @@ abstract class BaseScreenResource extends Resource
                             Infolists\Components\KeyValueEntry::make('audience_profile')
                                 ->label('Audience profile')
                                 ->columnSpan(3)
+                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->audience_profile))
                                 ->visible(fn (Screen $r) => ! empty($r->audience_profile)),
 
                             Infolists\Components\KeyValueEntry::make('time_performance')
                                 ->label('Time performance')
                                 ->columnSpan(3)
+                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->time_performance))
                                 ->visible(fn (Screen $r) => ! empty($r->time_performance)),
 
                             Infolists\Components\KeyValueEntry::make('nearby_context')
                                 ->label('Bối cảnh xung quanh')
                                 ->columnSpan(3)
+                                ->getStateUsing(fn (Screen $r) => static::flattenForKeyValue($r->nearby_context))
                                 ->visible(fn (Screen $r) => ! empty($r->nearby_context)),
 
                             Infolists\Components\TextEntry::make('traffic_methodology_note')
