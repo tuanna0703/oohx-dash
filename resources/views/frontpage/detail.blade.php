@@ -671,13 +671,11 @@ function sw(el,id){
     poiMarkers[p.id] = m;
   });
 
-  // Screen pin — dùng OOHXMap.createPinIcon (rich marker giống homepage live map)
+  // Screen pin — dùng OOHXMap.createPinIcon (rich marker đã có sẵn name/address bên trong)
+  // Không bindPopup vì rich marker đã hiển thị info, popup sẽ trùng lặp với detail layout
   var screenIcon = OOHXMap.createPinIcon(SCREEN_PIN);
   L.marker([SCREEN_PIN.lat, SCREEN_PIN.lng], {icon: screenIcon, zIndexOffset: 1000})
-    .addTo(locMap)
-    .bindPopup('<div style="font-weight:700;font-size:13px">'+SCREEN_PIN.name+'</div>'
-             + (SCREEN_PIN.address ? '<div style="font-size:11px;color:#888;margin-top:4px">'+SCREEN_PIN.address+'</div>' : ''))
-    .openPopup();
+    .addTo(locMap);
 
   // ── Wire click POI list → flyTo + popup ──
   var locList = document.getElementById('loc-list');

@@ -164,9 +164,7 @@
                 iconSize: [32, 32], iconAnchor: [16, 16],
             });
             L.marker([CENTER.lat, CENTER.lon], { icon: centerIcon, zIndexOffset: 1000 })
-                .addTo(map)
-                .bindPopup('<div style="font-weight:700;font-size:13px">' + CENTER.name + '</div>')
-                .openPopup();
+                .addTo(map);
 
             L.circle([CENTER.lat, CENTER.lon], {
                 radius: 100,
