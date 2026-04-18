@@ -516,15 +516,10 @@ function sw(el,id){
 </script>
 
 @if($screen->site?->lat && $screen->site?->lon)
-{{-- Leaflet upgrade: replaces iframe với map có POI markers nếu Leaflet load OK --}}
+{{-- Leaflet upgrade: defer init đến khi tab Vị trí thực sự visible (IntersectionObserver) --}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-window.addEventListener('load', function(){
-  if (typeof L === 'undefined') {
-    console.warn('[detail-map] Leaflet không load — giữ iframe fallback');
-    return;
-  }
-
+(function(){
   var DETAIL_LAT = {{ (float)$screen->site->lat }};
   var DETAIL_LNG = {{ (float)$screen->site->lon }};
   var DETAIL_POIS = @json($nearbyPois ?? []);
@@ -541,66 +536,100 @@ window.addEventListener('load', function(){
     park:{c:'#27AE60',e:'🌳'}, office:{c:'#34495E',e:'🏢'}, company:{c:'#34495E',e:'🏢'},
   };
 
-  var iframe = document.getElementById('detail-map-iframe');
-  var leafletDiv = document.getElementById('detail-map-leaflet');
-  if (! iframe || ! leafletDiv) return;
+  var initDone = false;
 
-  try {
-    // Switch from iframe to Leaflet
-    leafletDiv.style.display = 'block';
-    iframe.style.display = 'none';
-
-    var dmap = L.map(leafletDiv, {
-      center: [DETAIL_LAT, DETAIL_LNG],
-      zoom: 17,
-      zoomControl: true,
-      scrollWheelZoom: false,
-      preferCanvas: true,
-    });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap', maxZoom: 19,
-    }).addTo(dmap);
-
-    // POI markers
-    DETAIL_POIS.forEach(function(p){
-      var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
-      var ic = L.divIcon({
-        className: 'poi-dot',
-        html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
-        iconSize: [22, 22], iconAnchor: [11, 11],
-      });
-      L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
-        .addTo(dmap)
-        .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
-                 + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
-    });
-
-    // Screen pin (prominent, on top)
-    var screenIcon = L.divIcon({
-      className: 'screen-pin',
-      html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
-      iconSize: [44, 44], iconAnchor: [22, 22],
-    });
-    L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
-      .addTo(dmap)
-      .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
-
-    // ResizeObserver: fix gray-tile khi tab Vị trí mở từ hidden
-    if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(function(){
-        dmap.invalidateSize();
-      }).observe(leafletDiv);
+  function initLeaflet(){
+    if (initDone) return;
+    if (typeof L === 'undefined') {
+      console.warn('[detail-map] Leaflet chưa load — retry sau 200ms');
+      return setTimeout(initLeaflet, 200);
     }
-    setTimeout(function(){ dmap.invalidateSize(); }, 300);
-    setTimeout(function(){ dmap.invalidateSize(); }, 800);
 
-    console.log('[detail-map] Leaflet OK — ' + DETAIL_POIS.length + ' POI markers');
-  } catch (e) {
-    console.warn('[detail-map] Leaflet init failed, rollback to iframe', e);
-    iframe.style.display = 'block';
-    leafletDiv.style.display = 'none';
+    var iframe = document.getElementById('detail-map-iframe');
+    var leafletDiv = document.getElementById('detail-map-leaflet');
+    if (! iframe || ! leafletDiv) return;
+
+    // Verify container có size thực — nếu vẫn 0×0 thì bail
+    var rect = document.getElementById('detail-map-wrap').getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      console.log('[detail-map] container 0×0, đợi tab open...');
+      return;
+    }
+
+    initDone = true;
+
+    try {
+      leafletDiv.style.display = 'block';
+      iframe.style.display = 'none';
+
+      var dmap = L.map(leafletDiv, {
+        center: [DETAIL_LAT, DETAIL_LNG],
+        zoom: 17,
+        zoomControl: true,
+        scrollWheelZoom: false,
+        preferCanvas: true,
+      });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 19,
+      }).addTo(dmap);
+
+      DETAIL_POIS.forEach(function(p){
+        var s = POI_STYLE[p.cat] || {c:'#7F8C8D', e:'📍'};
+        var ic = L.divIcon({
+          className: 'poi-dot',
+          html: '<div class="poi-dot-inner" style="background:'+s.c+'">'+s.e+'</div>',
+          iconSize: [22, 22], iconAnchor: [11, 11],
+        });
+        L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
+          .addTo(dmap)
+          .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+                   + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+      });
+
+      var screenIcon = L.divIcon({
+        className: 'screen-pin',
+        html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
+        iconSize: [44, 44], iconAnchor: [22, 22],
+      });
+      L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
+        .addTo(dmap)
+        .bindPopup('<b>{!! addslashes($screen->name) !!}</b><br>{!! addslashes($screen->site->address ?? "") !!}');
+
+      setTimeout(function(){ dmap.invalidateSize(); }, 100);
+      setTimeout(function(){ dmap.invalidateSize(); }, 500);
+
+      console.log('[detail-map] Leaflet OK — ' + DETAIL_POIS.length + ' POI markers');
+    } catch (e) {
+      initDone = false;
+      console.warn('[detail-map] Leaflet init failed, rollback to iframe', e);
+      iframe.style.display = 'block';
+      leafletDiv.style.display = 'none';
+    }
   }
-});
+
+  // Strategy 1: try ngay nếu tab Vị trí đang active sẵn
+  if (document.getElementById('tp-map')?.classList.contains('on')) {
+    window.addEventListener('load', function(){ setTimeout(initLeaflet, 100); });
+  }
+
+  // Strategy 2: click trên tab Vị trí
+  var mapTab = document.querySelector('[onclick*="tp-map"]');
+  if (mapTab) {
+    mapTab.addEventListener('click', function(){
+      setTimeout(initLeaflet, 200); // đợi sw() switch + CSS transition
+    });
+  }
+
+  // Strategy 3 (failsafe): MutationObserver theo dõi class trên tp-map
+  var tpMap = document.getElementById('tp-map');
+  if (tpMap && typeof MutationObserver !== 'undefined') {
+    new MutationObserver(function(){
+      if (tpMap.classList.contains('on') && ! initDone) {
+        setTimeout(initLeaflet, 200);
+      }
+    }).observe(tpMap, {attributes: true, attributeFilter: ['class']});
+  }
+})();
 </script>
 @endif
 @endpush
