@@ -5,51 +5,191 @@
     $site = $isSite ? $record : ($record->relationLoaded('site') ? $record->site : $record->site()->first());
     $lat = $site?->lat ?? $record->lat ?? null;
     $lon = $site?->lon ?? $record->lon ?? null;
-    $screenName = e($record->name ?? 'Location');
+    $screenName = $record->name ?? 'Location';
     $hasLocation = $lat && $lon;
+
+    // Resolve POIs từ poi_snapshots (nếu đã enrich)
+    $poiBrowserId = 'sm' . substr(md5(($lat ?? '') . ',' . ($lon ?? '') . ',' . $screenName), 0, 8);
+    $projected = [];
+    $grouped   = [];
+    if ($hasLocation) {
+        $snapshot = \App\Models\PoiSnapshot::freshFor((float) $lat, (float) $lon, 500, 'osm')->first();
+        if ($snapshot && is_array($snapshot->pois)) {
+            $projected = \App\Support\PoiProjection::project($snapshot->pois, (float) $lat, (float) $lon, 60);
+            $grouped   = \App\Support\PoiProjection::groupByCategory($projected);
+        }
+    }
+    $hasPois     = ! empty($projected);
+    $groupLabels = \App\Support\PoiProjection::GROUP_LABELS;
 @endphp
 
-@if($hasLocation)
+@if(! $hasLocation)
+    <p class="text-sm italic text-gray-400">Không có tọa độ GPS.</p>
+@else
     @pushOnce('styles')
         <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+        <style>
+        .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24}
+        .sm-browser{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px;height:520px}
+        .sm-browser--simple{grid-template-columns:1fr;height:340px}
+        @media(max-width:1024px){.sm-browser{grid-template-columns:1fr;height:auto}.sm-browser .sm-list{max-height:280px}.sm-browser .sm-map-wrap{height:380px}}
+        .sm-list{overflow-y:auto;border:1px solid rgb(229 231 235);border-radius:8px;background:#fff}
+        .dark .sm-list{border-color:rgb(55 65 81);background:rgb(17 24 39)}
+        .sm-summary{padding:9px 12px;border-bottom:1px solid rgb(229 231 235);font-size:11px;color:rgb(75 85 99);background:rgb(249 250 251);position:sticky;top:0;z-index:5}
+        .dark .sm-summary{background:rgb(31 41 55);border-color:rgb(55 65 81);color:rgb(156 163 175)}
+        .sm-grp-h{padding:7px 12px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;background:rgb(243 244 246);color:rgb(55 65 81);border-top:1px solid rgb(229 231 235);position:sticky;top:32px;z-index:4;display:flex;align-items:center;gap:6px}
+        .dark .sm-grp-h{background:rgb(31 41 55);color:rgb(209 213 219);border-color:rgb(55 65 81)}
+        .sm-grp-h .material-symbols-outlined{font-size:15px;color:rgb(37 99 235)}
+        .sm-grp-ct{margin-left:auto;font-size:10px;background:rgb(229 231 235);color:rgb(55 65 81);padding:1px 6px;border-radius:980px;font-weight:700;letter-spacing:0}
+        .dark .sm-grp-ct{background:rgb(55 65 81);color:rgb(229 231 235)}
+        .sm-item{display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-top:1px solid rgb(243 244 246);transition:background 120ms}
+        .dark .sm-item{border-color:rgb(55 65 81)}
+        .sm-item:hover{background:rgb(239 246 255)}
+        .dark .sm-item:hover{background:rgb(30 58 138 / .25)}
+        .sm-item.is-active{background:rgb(219 234 254);box-shadow:inset 3px 0 0 rgb(37 99 235)}
+        .dark .sm-item.is-active{background:rgb(30 58 138 / .4);box-shadow:inset 3px 0 0 rgb(96 165 250)}
+        .sm-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+        .sm-dot .material-symbols-outlined{font-size:14px}
+        .sm-meta{min-width:0;flex:1}
+        .sm-name{font-weight:600;font-size:12px;color:rgb(17 24 39);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .dark .sm-name{color:rgb(243 244 246)}
+        .sm-sub{font-size:10px;color:rgb(107 114 128);margin-top:1px}
+        .sm-sub b{color:rgb(37 99 235);font-weight:700}
+        .dark .sm-sub b{color:rgb(96 165 250)}
+        .sm-empty{padding:30px 16px;text-align:center;color:rgb(107 114 128);font-size:12px}
+        .sm-map-wrap{height:520px;border-radius:8px;border:1px solid rgb(229 231 235);background:#f3f4f6;overflow:hidden}
+        .sm-browser--simple .sm-map-wrap{height:340px}
+        .dark .sm-map-wrap{border-color:rgb(55 65 81)}
+        .sm-map{width:100%;height:100%}
+        .sm-pin{background:none;border:none}
+        .sm-pin-inner{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
+        .sm-pin-inner .material-symbols-outlined{font-size:14px}
+        .sm-pin-inner:hover{transform:scale(1.3);z-index:1000}
+        .sm-center{background:none;border:none;position:relative}
+        .sm-center-inner{position:absolute;top:0;left:0;width:32px;height:32px;border-radius:50%;background:rgb(37 99 235);color:#fff;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 10px rgba(37,99,235,.4);z-index:2}
+        .sm-center-inner .material-symbols-outlined{font-size:18px}
+        .sm-center-pulse{position:absolute;top:-4px;left:-4px;width:40px;height:40px;border-radius:50%;background:rgb(37 99 235 / .25);animation:sm-pulse 2s ease-in-out infinite;z-index:1}
+        @keyframes sm-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.4);opacity:.1}}
+        </style>
     @endPushOnce
     @once
         <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
     @endonce
 
-    <div wire:ignore
-         x-data="{
-             initMap() {
-                 const el = this.$el;
-                 if (el._leaflet_id) return;
+    <div class="sm-browser{{ $hasPois ? '' : ' sm-browser--simple' }}" wire:ignore>
+        @if($hasPois)
+            <div class="sm-list" id="{{ $poiBrowserId }}-list">
+                <div class="sm-summary">
+                    <strong>{{ count($projected) }}</strong> POIs lân cận · <strong>{{ count($grouped) }}</strong> nhóm
+                </div>
+                @foreach($grouped as $groupKey => $items)
+                    @php [$grpIcon, $grpLabel] = $groupLabels[$groupKey] ?? ['place', $groupKey]; @endphp
+                    <div class="sm-grp-h">
+                        <span class="material-symbols-outlined">{{ $grpIcon }}</span>{{ $grpLabel }}
+                        <span class="sm-grp-ct">{{ count($items) }}</span>
+                    </div>
+                    @foreach($items as $p)
+                        <div class="sm-item" data-poi-id="{{ $p['id'] }}">
+                            <div class="sm-dot" style="background:{{ $p['color'] }}">
+                                <span class="material-symbols-outlined">{{ $p['icon'] }}</span>
+                            </div>
+                            <div class="sm-meta">
+                                <div class="sm-name">{{ $p['name'] }}</div>
+                                <div class="sm-sub">{{ $p['gLabel'] }} · <b>{{ $p['dist'] }}m</b></div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endforeach
+            </div>
+        @endif
 
-                 delete L.Icon.Default.prototype._getIconUrl;
-                 L.Icon.Default.mergeOptions({
-                     iconUrl:       '/vendor/leaflet/images/marker-icon.png',
-                     iconRetinaUrl: '/vendor/leaflet/images/marker-icon-2x.png',
-                     shadowUrl:     '/vendor/leaflet/images/marker-shadow.png',
-                 });
-
-                 const map = L.map(el).setView([{{ $lat }}, {{ $lon }}], 16);
-                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                     attribution: '&copy; OpenStreetMap contributors',
-                     maxZoom: 19,
-                 }).addTo(map);
-                 L.circleMarker([{{ $lat }}, {{ $lon }}], {
-                     radius: 8,
-                     color: '#1d4ed8',
-                     fillColor: '#2563EB',
-                     fillOpacity: 1,
-                     weight: 3,
-                 }).addTo(map).bindPopup('{{ $screenName }}').openPopup();
-                 L.circle([{{ $lat }}, {{ $lon }}], {
-                     radius: 100, color: '#3B82F6', fillColor: '#93C5FD', fillOpacity: 0.35, weight: 2,
-                 }).addTo(map);
-             }
-         }"
-         x-init="initMap()"
-         style="height:320px;width:100%;z-index:0;border-radius:0.5rem;overflow:hidden;">
+        <div class="sm-map-wrap">
+            <div id="{{ $poiBrowserId }}-map" class="sm-map"></div>
+        </div>
     </div>
-@else
-    <p class="text-sm italic text-gray-400">Không có tọa độ GPS.</p>
+
+    <script>
+    (function(){
+        var initFn = function(){
+            if (typeof L === 'undefined') { setTimeout(initFn, 50); return; }
+            var mapEl = document.getElementById('{{ $poiBrowserId }}-map');
+            if (!mapEl || mapEl._smInited) return;
+            mapEl._smInited = true;
+
+            var POIS  = @json($projected);
+            var CENTER = { lat: {{ (float) $lat }}, lon: {{ (float) $lon }}, name: @json($screenName) };
+
+            var map = L.map(mapEl, {
+                center: [CENTER.lat, CENTER.lon],
+                zoom: 17,
+                zoomControl: true,
+                scrollWheelZoom: true,
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap',
+                maxZoom: 19,
+            }).addTo(map);
+
+            // Center pin (screen location)
+            var centerIcon = L.divIcon({
+                className: 'sm-center',
+                html: '<div class="sm-center-pulse"></div>'
+                    + '<div class="sm-center-inner"><span class="material-symbols-outlined">my_location</span></div>',
+                iconSize: [32, 32], iconAnchor: [16, 16],
+            });
+            L.marker([CENTER.lat, CENTER.lon], { icon: centerIcon, zIndexOffset: 1000 })
+                .addTo(map)
+                .bindPopup('<div style="font-weight:700;font-size:13px">' + CENTER.name + '</div>')
+                .openPopup();
+
+            L.circle([CENTER.lat, CENTER.lon], {
+                radius: 100,
+                color: '#3B82F6',
+                fillColor: '#93C5FD',
+                fillOpacity: 0.15,
+                weight: 1,
+            }).addTo(map);
+
+            // POI markers
+            var markers = {};
+            POIS.forEach(function(p){
+                var icon = L.divIcon({
+                    className: 'sm-pin',
+                    html: '<div class="sm-pin-inner" style="background:'+p.color+'">'
+                        + '<span class="material-symbols-outlined">'+p.icon+'</span></div>',
+                    iconSize: [26, 26], iconAnchor: [13, 13],
+                });
+                var m = L.marker([p.lat, p.lon], { icon: icon, zIndexOffset: 100 })
+                    .addTo(map)
+                    .bindPopup(
+                        '<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+                      + '<div style="font-size:11px;color:#666;margin-top:2px">'+p.gLabel+' · '+p.dist+'m</div>'
+                    );
+                markers[p.id] = m;
+            });
+
+            // Wire click POI list → flyTo + popup
+            var list = document.getElementById('{{ $poiBrowserId }}-list');
+            if (list) {
+                list.addEventListener('click', function(e){
+                    var item = e.target.closest('.sm-item');
+                    if (!item) return;
+                    var id = item.getAttribute('data-poi-id');
+                    var marker = markers[id];
+                    if (!marker) return;
+                    list.querySelectorAll('.sm-item.is-active').forEach(function(el){ el.classList.remove('is-active'); });
+                    item.classList.add('is-active');
+                    map.flyTo(marker.getLatLng(), 18, { duration: 0.6 });
+                    setTimeout(function(){ marker.openPopup(); }, 650);
+                });
+            }
+
+            setTimeout(function(){ map.invalidateSize(); }, 100);
+        };
+        initFn();
+    })();
+    </script>
 @endif
