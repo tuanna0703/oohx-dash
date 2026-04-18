@@ -6,6 +6,7 @@ use App\Models\Network;
 use App\Models\Screen;
 use App\Models\Site;
 use App\Models\VenueCategory;
+use App\Services\PoiContextEnricher;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Support\RawJs;
@@ -736,6 +737,67 @@ abstract class BaseScreenResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+
+                    // ── AI Context Enrichment (Phase 1) ──────────
+                    Tables\Actions\Action::make('enrich_ai_context')
+                        ->label('Enrich AI Context')
+                        ->icon('heroicon-o-sparkles')
+                        ->color('primary')
+                        ->modalHeading(fn (Screen $r) => "AI Context: {$r->name}")
+                        ->modalDescription('Phân tích POI xung quanh từ OpenStreetMap + Claude Haiku inference. Cost ~$0.005 mỗi lần chạy.')
+                        ->modalWidth('5xl')
+                        ->modalSubmitActionLabel('Apply vào Screen')
+                        ->modalCancelActionLabel('Huỷ')
+                        ->visible(fn (Screen $r) => (bool) ($r->site?->lat && $r->site?->lon))
+                        ->mountUsing(function (\Filament\Forms\Form $form, Screen $record) {
+                            try {
+                                $result = app(PoiContextEnricher::class)->enrichScreen($record, 500);
+                            } catch (\Throwable $e) {
+                                Notification::make()
+                                    ->title('Enrichment lỗi')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                                throw $e;
+                            }
+                            $cacheKey = 'enrich:' . (auth()->id() ?? 'anon') . ':' . $record->id . ':' . now()->timestamp;
+                            \Cache::put($cacheKey, $result, now()->addMinutes(15));
+                            $form->fill(['cache_key' => $cacheKey]);
+                        })
+                        ->form([
+                            Forms\Components\Hidden::make('cache_key'),
+                            Forms\Components\Placeholder::make('preview')
+                                ->label('')
+                                ->content(function (Forms\Get $get): \Illuminate\Support\HtmlString {
+                                    $result = \Cache::get($get('cache_key'));
+                                    if (! $result) {
+                                        return new \Illuminate\Support\HtmlString('<p class="text-danger-600">Cache hết hạn — đóng modal và mở lại.</p>');
+                                    }
+                                    return new \Illuminate\Support\HtmlString(
+                                        view('filament.shared.components.enrich-ai-preview', ['result' => $result])->render()
+                                    );
+                                })
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (array $data, Screen $record) {
+                            $result = \Cache::get($data['cache_key'] ?? '');
+                            if (! $result || empty($result['ai'])) {
+                                Notification::make()
+                                    ->title('Không có AI output để apply')
+                                    ->body('Chạy lại enrichment hoặc kiểm tra ANTHROPIC_API_KEY.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            app(PoiContextEnricher::class)->applyToScreen($record, $result);
+                            \Cache::forget($data['cache_key']);
+                            Notification::make()
+                                ->title('Đã apply AI context')
+                                ->body('Audience profile, time performance, nearby context đã update. Tab Insights ở detail page sẽ render data mới.')
+                                ->success()
+                                ->send();
+                        }),
+
                     Tables\Actions\Action::make('toggle_rtb')
                         ->label(fn (Screen $r) => $r->inventory?->programmatic_enabled ? 'Disable RTB' : 'Enable RTB')
                         ->icon('heroicon-o-signal')
@@ -754,6 +816,39 @@ abstract class BaseScreenResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('bulk_enrich_ai')
+                        ->label('Enrich AI Context (batch)')
+                        ->icon('heroicon-o-sparkles')
+                        ->color('primary')
+                        ->requiresConfirmation()
+                        ->modalDescription(fn ($records) => sprintf(
+                            'Sẽ chạy AI enrichment cho %d screens (~%d giây + ~$%s). Chỉ áp cho screen có lat/lon.',
+                            $records->count(),
+                            $records->count() * 30,
+                            number_format($records->count() * 0.005, 3)
+                        ))
+                        ->action(function ($records) {
+                            $enricher = app(PoiContextEnricher::class);
+                            $ok = 0; $fail = 0; $skip = 0;
+                            foreach ($records as $screen) {
+                                if (! $screen->site?->lat || ! $screen->site?->lon) { $skip++; continue; }
+                                try {
+                                    $result = $enricher->enrichScreen($screen, 500);
+                                    if (! empty($result['ai'])) {
+                                        $enricher->applyToScreen($screen, $result);
+                                        $ok++;
+                                    } else {
+                                        $fail++;
+                                    }
+                                } catch (\Throwable $e) {
+                                    $fail++;
+                                }
+                            }
+                            Notification::make()
+                                ->title("Batch enrich xong: {$ok} OK / {$fail} fail / {$skip} skip (no lat/lon)")
+                                ->success()
+                                ->send();
+                        }),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
