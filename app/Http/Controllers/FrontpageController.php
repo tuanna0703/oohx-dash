@@ -76,13 +76,65 @@ class FrontpageController extends Controller
             ? \App\Models\SavedItem::where('user_id', auth()->id())->where('screen_id', $screenModel->id)->exists()
             : false;
 
+        // Nearby POIs from OSM cache (populated by AI enrichment) — for map markers
+        $nearbyPois = $this->resolveNearbyPois($screenModel);
+
         return view('frontpage.detail', [
             'screen'         => $screenModel,
             'similarScreens' => $this->fp->getSimilarScreens($screenModel),
             'vnCatLabels'    => $this->fp->getVnCategoryLabels(),
             'bookedDates'    => $bookedDates,
             'isSaved'        => $isSaved,
+            'nearbyPois'     => $nearbyPois,
         ]);
+    }
+
+    /**
+     * Read OSM POIs from cache (set by PoiContextEnricher).
+     * Returns lightweight array [{lat, lon, name, category}] for map rendering.
+     */
+    private function resolveNearbyPois(\App\Models\Screen $screen): array
+    {
+        $lat = $screen->site?->lat;
+        $lon = $screen->site?->lon;
+        if (! $lat || ! $lon) return [];
+
+        $cacheKey = sprintf('osm_poi:%s:%s:%d',
+            number_format((float) $lat, 5, '.', ''),
+            number_format((float) $lon, 5, '.', ''),
+            500
+        );
+        $raw = \Cache::get($cacheKey);
+        if (! is_array($raw)) return [];
+
+        // Lightweight projection: chỉ lấy POI có name + lat/lon hợp lệ, max 60 markers
+        return collect($raw)
+            ->map(function ($p) {
+                $tags = $p['tags'] ?? [];
+                $name = $tags['name'] ?? $tags['name:vi'] ?? null;
+                if (! $name) return null;
+                $pLat = $p['lat'] ?? ($p['center']['lat'] ?? null);
+                $pLon = $p['lon'] ?? ($p['center']['lon'] ?? null);
+                if (! $pLat || ! $pLon) return null;
+                $cat = $tags['amenity']
+                    ?? $tags['shop']
+                    ?? $tags['leisure']
+                    ?? $tags['tourism']
+                    ?? $tags['office']
+                    ?? $tags['public_transport']
+                    ?? $tags['building']
+                    ?? 'other';
+                return [
+                    'lat'  => (float) $pLat,
+                    'lon'  => (float) $pLon,
+                    'name' => $name,
+                    'cat'  => $cat,
+                ];
+            })
+            ->filter()
+            ->take(60)
+            ->values()
+            ->all();
     }
 
     public function map(FrontpageListingRequest $request): View

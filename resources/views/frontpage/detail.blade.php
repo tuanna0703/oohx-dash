@@ -38,6 +38,16 @@
 .lb-prev:hover,.lb-next:hover,.lb-close:hover{background:rgba(255,255,255,.3)}
 .lb-counter{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px;font-weight:600}
 .gal-thumb-on{outline:2px solid var(--bl);outline-offset:1px;border-radius:8px}
+
+/* ── Map markers (detail page Vị trí tab) ── */
+.poi-dot{background:none;border:none}
+.poi-dot-inner{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer;transition:transform 160ms}
+.poi-dot-inner:hover{transform:scale(1.4);z-index:1000}
+
+.screen-pin{background:none;border:none;position:relative}
+.screen-pin-inner{position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:var(--bl);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid #fff;box-shadow:0 4px 16px rgba(42,79,246,.4);cursor:pointer;z-index:2}
+.screen-pin-pulse{position:absolute;top:-4px;left:-4px;width:52px;height:52px;border-radius:50%;background:rgba(42,79,246,.25);animation:screen-pulse 2s ease-in-out infinite;z-index:1}
+@keyframes screen-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.3);opacity:.1}}
 </style>
 @endpush
 
@@ -163,7 +173,13 @@
 </div>
 <div id="tp-map" class="tp">
 @if($screen->site?->lat && $screen->site?->lon)
-<div id="detail-map" style="width:100%;height:350px;border-radius:14px;border:1px solid var(--ln2);overflow:hidden;margin-bottom:16px"></div>
+<div id="detail-map" style="width:100%;height:420px;border-radius:14px;border:1px solid var(--ln2);overflow:hidden;margin-bottom:12px"></div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--t3);margin-bottom:14px">
+    <span style="display:inline-flex;align-items:center;gap:6px"><span class="map-legend-dot" style="background:var(--bl);width:14px;height:14px;border-radius:50%;display:inline-block"></span> Vị trí màn hình</span>
+    @if(! empty($nearbyPois))
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="map-legend-dot" style="background:#7F8C8D;width:10px;height:10px;border-radius:50%;display:inline-block"></span> {{ count($nearbyPois) }} POI lân cận (OSM)</span>
+    @endif
+</div>
 <div style="font-size:13px;color:var(--t3)">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--bl)" style="width:14px;height:14px;vertical-align:-2px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
     {{ $screen->site->address ?? '' }}{{ $screen->site->address && $screen->site->city ? ', ' : '' }}{{ $screen->site->city ?? '' }}
@@ -468,24 +484,105 @@ function sw(el,id){
   // Initial calculation
   updateCalc();
 
-  // Leaflet map for location tab
+  // Leaflet map for location tab — screen pin + nearby POIs (from OSM cache)
   @if($screen->site?->lat && $screen->site?->lon)
   var mapEl = document.getElementById('detail-map');
   if (mapEl) {
     var mapTab = document.querySelector('[onclick*="tp-map"]');
     var mapInited = false;
+    var DETAIL_LAT = {{ (float)$screen->site->lat }};
+    var DETAIL_LNG = {{ (float)$screen->site->lon }};
+    var DETAIL_POIS = @json($nearbyPois ?? []);
+
+    // POI category → color/emoji palette
+    var POI_STYLE = {
+      cafe:        {color:'#8B4513', emoji:'☕'},
+      restaurant:  {color:'#E67E22', emoji:'🍴'},
+      fast_food:   {color:'#E74C3C', emoji:'🍔'},
+      bar:         {color:'#9B59B6', emoji:'🍺'},
+      school:      {color:'#3498DB', emoji:'🎓'},
+      university:  {color:'#2980B9', emoji:'🏛'},
+      kindergarten:{color:'#3498DB', emoji:'🎓'},
+      hospital:    {color:'#E74C3C', emoji:'🏥'},
+      clinic:      {color:'#E91E63', emoji:'⚕'},
+      pharmacy:    {color:'#27AE60', emoji:'💊'},
+      bank:        {color:'#16A085', emoji:'🏦'},
+      atm:         {color:'#16A085', emoji:'💳'},
+      fuel:        {color:'#F39C12', emoji:'⛽'},
+      parking:     {color:'#7F8C8D', emoji:'🅿'},
+      cinema:      {color:'#9B59B6', emoji:'🎬'},
+      hotel:       {color:'#34495E', emoji:'🏨'},
+      mall:        {color:'#E67E22', emoji:'🛍'},
+      supermarket: {color:'#27AE60', emoji:'🛒'},
+      convenience: {color:'#27AE60', emoji:'🏪'},
+      clothes:     {color:'#E91E63', emoji:'👕'},
+      gym:         {color:'#16A085', emoji:'💪'},
+      fitness_centre:{color:'#16A085', emoji:'💪'},
+      bus_station: {color:'#3498DB', emoji:'🚌'},
+      station:     {color:'#3498DB', emoji:'🚏'},
+      park:        {color:'#27AE60', emoji:'🌳'},
+      office:      {color:'#34495E', emoji:'🏢'},
+      company:     {color:'#34495E', emoji:'🏢'},
+    };
+
+    function poiStyle(cat) {
+      return POI_STYLE[cat] || {color:'#7F8C8D', emoji:'📍'};
+    }
+
     function initDetailMap(){
       if (mapInited) return;
+      if (typeof L === 'undefined') { setTimeout(initDetailMap, 200); return; }
       mapInited = true;
-      var lat = {{ (float)$screen->site->lat }};
-      var lng = {{ (float)$screen->site->lon }};
-      var dmap = L.map('detail-map',{center:[lat,lng],zoom:16,zoomControl:true,scrollWheelZoom:false});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(dmap);
-      L.marker([lat,lng]).addTo(dmap).bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}').openPopup();
-      setTimeout(function(){dmap.invalidateSize();},200);
+
+      var dmap = L.map('detail-map', {
+        center:[DETAIL_LAT, DETAIL_LNG],
+        zoom: 17,
+        zoomControl: true,
+        scrollWheelZoom: false,
+      });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:'&copy; OSM', maxZoom:19
+      }).addTo(dmap);
+
+      // POI markers (small colored dots, behind screen pin)
+      DETAIL_POIS.forEach(function(p){
+        var s = poiStyle(p.cat);
+        var ic = L.divIcon({
+          className: 'poi-dot',
+          html: '<div class="poi-dot-inner" style="background:'+s.color+'">'+s.emoji+'</div>',
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        });
+        L.marker([p.lat, p.lon], {icon: ic, zIndexOffset: 100})
+          .addTo(dmap)
+          .bindPopup('<div style="font-weight:600;font-size:12px">'+p.name+'</div>'
+                   + '<div style="font-size:11px;color:#888;margin-top:2px">'+(p.cat||'')+'</div>');
+      });
+
+      // Screen pin (prominent, on top)
+      var screenIcon = L.divIcon({
+        className: 'screen-pin',
+        html: '<div class="screen-pin-inner">📺</div><div class="screen-pin-pulse"></div>',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
+      });
+      L.marker([DETAIL_LAT, DETAIL_LNG], {icon: screenIcon, zIndexOffset: 1000})
+        .addTo(dmap)
+        .bindPopup('<b>{{ e($screen->name) }}</b><br>{{ e($screen->site->address ?? "") }}')
+        .openPopup();
+
+      // Force reflow after tab show (Leaflet bug khi container display:none lúc init)
+      setTimeout(function(){ dmap.invalidateSize(); }, 100);
+      setTimeout(function(){ dmap.invalidateSize(); }, 400);
     }
-    // Init on tab click (lazy — map tab may be hidden)
-    if (mapTab) mapTab.addEventListener('click',function(){ setTimeout(initDetailMap,100); });
+
+    // Init on tab click (lazy — map tab có thể đang hidden lúc page load)
+    if (mapTab) mapTab.addEventListener('click', function(){ setTimeout(initDetailMap, 50); });
+
+    // Hoặc init ngay nếu tab Vị trí đang active sẵn
+    if (document.getElementById('tp-map')?.classList.contains('on')) {
+      setTimeout(initDetailMap, 200);
+    }
   }
   @endif
 })();
