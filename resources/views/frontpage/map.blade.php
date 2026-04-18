@@ -49,13 +49,18 @@
                         </div>
                     </div>
                     @foreach($siteScreens->take(5) as $pin)
+                    @php $pinPrice = (float) ($pin->inventory?->display_price ?? 0); @endphp
                     <div class="mp-card mp-card-nested" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                         <div class="mp-card-img">
                             <img src="{{ $pin->display_photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
                         </div>
                         <div class="mp-card-info">
                             <div class="mp-card-nm">{{ $pin->name }}</div>
-                            <div class="mp-card-pr">{{ number_format((float) ($pin->inventory?->display_price ?? 0), 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
+                            @if($pinPrice > 0)
+                            <div class="mp-card-pr">{{ number_format($pinPrice, 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
+                            @else
+                            <div class="mp-card-pr mp-card-pr-quote">Liên hệ báo giá</div>
+                            @endif
                         </div>
                     </div>
                     @endforeach
@@ -65,7 +70,10 @@
                 </div>
                 @else
                 {{-- Single screen, no group --}}
-                @php $pin = $siteScreens->first(); @endphp
+                @php
+                    $pin = $siteScreens->first();
+                    $pinPrice = (float) ($pin->inventory?->display_price ?? 0);
+                @endphp
                 <div class="mp-card" data-uuid="{{ $pin->slug ?? $pin->uuid }}" data-lat="{{ $site->lat }}" data-lng="{{ $site->lon }}">
                     <div class="mp-card-img">
                         <img src="{{ $pin->display_photo ?? 'https://placehold.co/200x200/F5F5F7/6E6E73?text=—' }}" loading="lazy" alt="{{ $pin->name }}">
@@ -77,7 +85,11 @@
                             {{ $site->city ?? '' }}
                         </div>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <div class="mp-card-pr">{{ number_format((float) ($pin->inventory?->display_price ?? 0), 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
+                            @if($pinPrice > 0)
+                            <div class="mp-card-pr">{{ number_format($pinPrice, 0, ',', '.') }} ₫<span>/{{ $pin->inventory?->display_price_unit ?? 'tháng' }}</span></div>
+                            @else
+                            <div class="mp-card-pr mp-card-pr-quote">Liên hệ báo giá</div>
+                            @endif
                             <span class="badge b-grn" style="font-size:11px;padding:3px 8px">Còn trống</span>
                         </div>
                     </div>

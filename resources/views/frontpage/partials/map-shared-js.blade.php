@@ -169,13 +169,16 @@
                 if (titleEl) titleEl.textContent = pin.screenCount + ' màn hình tại đây';
                 var bodyHtml = pin.screens.map(function(s) {
                     var unit = s.priceUnit || 'tháng';
+                    var priceHtml = (s.price && s.price > 0)
+                        ? '<div class="mpop-list-price">' + M.fmtPrice(s.price) + '₫<span>/' + unit + '</span></div>'
+                        : '<div class="mpop-list-price mpop-list-price-quote">Liên hệ</div>';
                     return '<a href="/explore/' + s.id + '" class="mpop-list-item">'
                         + '<div class="mpop-list-thumb">' + (s.photo ? '<img src="' + s.photo + '" alt="" loading="lazy">' : '') + '</div>'
                         + '<div class="mpop-list-info">'
                         + '<div class="mpop-list-name">' + s.name + '</div>'
                         + '<div class="mpop-list-meta">' + (s.size ? s.size + ' · ' : '') + (s.typeLabel || '') + '</div>'
                         + '</div>'
-                        + '<div class="mpop-list-price">' + M.fmtPrice(s.price) + '₫<span>/' + unit + '</span></div>'
+                        + priceHtml
                         + '<svg viewBox="0 0 24 24" fill="var(--t4)" class="mpop-list-arr"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'
                         + '</a>';
                 }).join('');
@@ -187,9 +190,12 @@
             if (listEl) listEl.style.display = 'none';
             var priceEl = document.getElementById(pfx + 'popup-price');
             var unitEl = document.getElementById(pfx + 'popup-price-unit');
+            var quoteEl = document.getElementById(pfx + 'popup-price-quote');
             var linkEl = document.getElementById(pfx + 'popup-link');
-            if (priceEl) priceEl.textContent = M.fmtPrice(firstScreen.price) + ' ₫';
-            if (unitEl) unitEl.textContent = '/ ' + (firstScreen.priceUnit || 'tháng');
+            var hasPrice = firstScreen.price && firstScreen.price > 0;
+            if (priceEl) { priceEl.textContent = hasPrice ? M.fmtPrice(firstScreen.price) + ' ₫' : ''; priceEl.style.display = hasPrice ? '' : 'none'; }
+            if (unitEl)  { unitEl.textContent  = hasPrice ? '/ ' + (firstScreen.priceUnit || 'tháng') : ''; unitEl.style.display = hasPrice ? '' : 'none'; }
+            if (quoteEl) { quoteEl.style.display = hasPrice ? 'none' : ''; }
             if (linkEl) linkEl.href = '/explore/' + firstScreen.id;
         }
 
