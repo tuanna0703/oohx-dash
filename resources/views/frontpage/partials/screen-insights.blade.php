@@ -47,7 +47,6 @@
         if ($src === 'owner') return ['label' => 'Đo', 'title' => 'Owner cung cấp từ đo thực tế'];
         return null;
     };
-@endphp
 
     $placementLabels = [
         'entrance'   => 'Lối vào',
