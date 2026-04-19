@@ -35,6 +35,15 @@ return [
         // Cột dùng làm `external_id` khi push screens → Data Engine.
         // Team chốt `uuid` (canonical, ổn định, khác với auto-increment id).
         'external_id_column' => env('OOHX_EXTERNAL_ID_COLUMN', 'uuid'),
+
+        // Full shell command to run ingest trên Data Engine VPS.
+        // Path của Python repo có thể khác nhau tùy cách ops deploy — configure
+        // qua env OOHX_INGEST_CMD. Default giả định repo ở `~/python-data-engine`.
+        // Command sẽ được exec qua `ssh user@host '<command>'`.
+        'ingest_cmd' => env(
+            'OOHX_INGEST_CMD',
+            'cd ~/python-data-engine && .venv/bin/python -m app.cli ingest-screens --file ~/inbox/screens.json'
+        ),
     ],
 
 ];

@@ -73,7 +73,7 @@ class OohxSyncToEngine extends Command
                 '-o', 'StrictHostKeyChecking=accept-new',
                 '-o', 'ConnectTimeout=15',
                 "{$remoteUser}@{$remoteHost}",
-                'cd ~/python-data-engine && .venv/bin/python -m app.cli ingest-screens --file ~/inbox/screens.json',
+                $cfg['ingest_cmd'],
             ]);
         }
 
