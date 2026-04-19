@@ -6,10 +6,22 @@
     $time          = $screen->time_performance ?? [];
     $nearby        = $screen->nearby_context   ?? [];
 
+    // Traffic source: Data Engine (authoritative) > owner override > null
+    $de            = $screen->traffic_estimate;
+    $dailyImp      = $de?->estimated_daily_impressions ?? $screen->daily_impressions;
+    $dailyImpSrc   = $de?->estimated_daily_impressions !== null ? 'de'
+                    : ($screen->daily_footfall ? 'owner' : null);
+    $dailyPassby   = $de?->estimated_daily_passby ?? $screen->daily_footfall;
+    $dailyPassbySrc= $de?->estimated_daily_passby !== null ? 'de'
+                    : ($screen->daily_footfall ? 'owner' : null);
+    $monthlyReach  = $de?->estimated_monthly_reach ?? $screen->monthly_reach;
+    $monthlyReachSrc = $de?->estimated_monthly_reach !== null ? 'de'
+                    : ($screen->monthly_reach ? 'owner' : null);
+
     $hasAudience   = ! empty(array_filter($audience, fn ($v) => $v !== null && $v !== ''));
     $hasTime       = ! empty(array_filter($time,     fn ($v) => $v !== null && $v !== ''));
     $hasNearby     = ! empty(array_filter($nearby,   fn ($v) => ! empty($v)));
-    $hasTraffic    = $screen->daily_footfall || $screen->monthly_reach || $screen->daily_impressions;
+    $hasTraffic    = $dailyPassby || $monthlyReach || $dailyImp;
     $hasPlacement  = ! empty($screen->placement_zone);
     $hasAnything   = $hasAudience || $hasTime || $hasNearby || $hasTraffic || $hasPlacement;
 
@@ -22,6 +34,21 @@
         'landscape' => 'Ngang', 'portrait' => 'Dọc', 'square' => 'Vuông',
     ];
     $dayLabels = ['mon'=>'T2','tue'=>'T3','wed'=>'T4','thu'=>'T5','fri'=>'T6','sat'=>'T7','sun'=>'CN'];
+
+    // Tailwind classes cho source badge — inline để Blade compile clean
+    $badgeFor = function (?string $src) {
+        if ($src === 'de') return [
+            'label' => 'DE',
+            'title' => 'Ước tính OOHX Data Engine',
+            'class' => 'bg-primary-500 text-white',
+        ];
+        if ($src === 'owner') return [
+            'label' => 'Đo',
+            'title' => 'Owner cung cấp từ đo thực tế',
+            'class' => 'bg-emerald-500 text-white',
+        ];
+        return null;
+    };
 @endphp
 
 <div class="space-y-4 text-sm">
@@ -36,22 +63,34 @@
     {{-- ── 1. Stat row ─────────────────────────────────────────── --}}
     @if($hasTraffic || $hasPlacement || ! empty($time['peak_hour_start']))
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        @if($screen->daily_footfall)
+        @if($dailyPassby)
+        @php $b = $badgeFor($dailyPassbySrc); @endphp
         <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Lượt khách / ngày</div>
-            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($screen->daily_footfall) }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1 flex items-center gap-1.5">
+                <span>Lượt khách / ngày</span>
+                @if($b)<span class="px-1.5 py-0 rounded text-[9px] {{ $b['class'] }}" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+            </div>
+            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($dailyPassby) }}</div>
         </div>
         @endif
-        @if($screen->monthly_reach)
+        @if($monthlyReach)
+        @php $b = $badgeFor($monthlyReachSrc); @endphp
         <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Reach / tháng</div>
-            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($screen->monthly_reach) }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1 flex items-center gap-1.5">
+                <span>Reach / tháng</span>
+                @if($b)<span class="px-1.5 py-0 rounded text-[9px] {{ $b['class'] }}" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+            </div>
+            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($monthlyReach) }}</div>
         </div>
         @endif
-        @if($screen->daily_impressions)
+        @if($dailyImp)
+        @php $b = $badgeFor($dailyImpSrc); @endphp
         <div class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Impr. / ngày <span class="font-normal lowercase">(ước tính)</span></div>
-            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($screen->daily_impressions) }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1 flex items-center gap-1.5">
+                <span>Impr. / ngày</span>
+                @if($b)<span class="px-1.5 py-0 rounded text-[9px] {{ $b['class'] }}" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+            </div>
+            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($dailyImp) }}</div>
         </div>
         @endif
         @if(! empty($time['peak_hour_start']) || ! empty($time['peak_hour_end']))
@@ -234,9 +273,28 @@
     @endif
 
     {{-- ── 5. Methodology footnote ────────────────────────────── --}}
-    @if(! empty($screen->traffic_methodology_note))
-    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/40 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-xs text-gray-600 dark:text-gray-400 break-words">
-        <strong class="text-gray-700 dark:text-gray-200">Nguồn dữ liệu:</strong> {{ $screen->traffic_methodology_note }}
+    @if($de || ! empty($screen->traffic_methodology_note))
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/40 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-xs text-gray-600 dark:text-gray-400 break-words space-y-1">
+        @if($de)
+            <div>
+                <strong class="text-gray-700 dark:text-gray-200">Traffic source:</strong>
+                OOHX Data Engine
+                @if($de->estimation_method) · method <code class="text-[11px]">{{ $de->estimation_method }}</code>@endif
+                @if($de->confidence_score !== null)
+                    · confidence
+                    @php $c = (float) $de->confidence_score; $tier = $c >= 0.7 ? 'high' : ($c >= 0.5 ? 'mid' : 'low'); @endphp
+                    <strong>{{ number_format($c, 2) }} ({{ $tier }})</strong>
+                @endif
+                @if($de->last_calculated_at)
+                    · {{ \Illuminate\Support\Carbon::parse($de->last_calculated_at)->diffForHumans() }}
+                @endif
+            </div>
+        @endif
+        @if(! empty($screen->traffic_methodology_note))
+            <div>
+                <strong class="text-gray-700 dark:text-gray-200">Audience/context:</strong> {{ $screen->traffic_methodology_note }}
+            </div>
+        @endif
     </div>
     @endif
 

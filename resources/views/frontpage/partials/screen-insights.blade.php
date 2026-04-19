@@ -1,6 +1,12 @@
 {{-- Phase 1 Inventory Intelligence block.
      Receives: $screen (App\Models\Screen)
      Render guard: caller should check $screen->has_insights before include.
+
+     Traffic numbers (impressions, passby, reach) ưu tiên Data Engine estimate
+     (authoritative, rule-based). Phase 1 columns (daily_footfall, monthly_reach)
+     dùng làm:
+       - Override nếu owner đo thực tế → hiện badge "Đo thực tế"
+       - Fallback khi Data Engine chưa có estimate (pending/stale tunnel)
 --}}
 @php
     $audience       = $screen->audience_profile ?? [];
@@ -9,8 +15,39 @@
     $hasAudience    = !empty(array_filter($audience, fn($v) => $v !== null && $v !== ''));
     $hasTime        = !empty(array_filter($time,     fn($v) => $v !== null && $v !== ''));
     $hasNearby      = !empty(array_filter($nearby,   fn($v) => !empty($v)));
-    $hasTraffic     = $screen->daily_footfall || $screen->monthly_reach || $screen->daily_impressions;
     $hasPlacement   = !empty($screen->placement_zone);
+
+    // ── Traffic source resolution (Data Engine > owner override > AI fallback) ──
+    $de = $screen->traffic_estimate; // cached accessor, null nếu chưa có hoặc tunnel down
+
+    // Daily impressions: DE > owner daily_footfall×0.6 (via accessor) > null
+    $dailyImp         = $de?->estimated_daily_impressions ?? $screen->daily_impressions;
+    $dailyImpSource   = $de?->estimated_daily_impressions !== null ? 'de'
+                       : ($screen->daily_footfall ? 'owner' : null);
+
+    // Daily passby (Data Engine only — Phase 1 không có field tương đương)
+    $dailyPassby      = $de?->estimated_daily_passby ?? $screen->daily_footfall;
+    $dailyPassbySource= $de?->estimated_daily_passby !== null ? 'de'
+                       : ($screen->daily_footfall ? 'owner' : null);
+
+    // Monthly reach: DE > Phase 1 monthly_reach
+    $monthlyReach     = $de?->estimated_monthly_reach ?? $screen->monthly_reach;
+    $monthlyReachSrc  = $de?->estimated_monthly_reach !== null ? 'de'
+                       : ($screen->monthly_reach ? 'owner' : null);
+
+    $hasTraffic       = $dailyImp || $monthlyReach || $dailyPassby;
+
+    // Confidence + method cho tooltip badge
+    $deConfidence     = $de?->confidence_score;
+    $deMethod         = $de?->estimation_method;
+    $deCalcAt         = $de?->last_calculated_at;
+
+    $sourceBadge = function (?string $src) {
+        if ($src === 'de')    return ['label' => 'DE', 'title' => 'Ước tính bởi OOHX Data Engine (rule-based)'];
+        if ($src === 'owner') return ['label' => 'Đo', 'title' => 'Owner cung cấp từ đo thực tế'];
+        return null;
+    };
+@endphp
 
     $placementLabels = [
         'entrance'   => 'Lối vào',
@@ -43,25 +80,34 @@
     {{-- ── 1. STAT ROW ─────────────────────────────────────────────── --}}
     @if($hasTraffic || $hasPlacement || ($time['peak_hour_start'] ?? null))
     <div class="ins-stats">
-        @if($screen->daily_footfall)
-        <div class="ins-stat">
-            <div class="ins-stat-l">Lượt khách / ngày</div>
-            <div class="ins-stat-v">{{ number_format($screen->daily_footfall) }}</div>
-        </div>
+        @if($dailyPassby)
+            @php $b = $sourceBadge($dailyPassbySource); @endphp
+            <div class="ins-stat">
+                <div class="ins-stat-l">Lượt khách / ngày
+                    @if($b)<span class="ins-stat-src" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+                </div>
+                <div class="ins-stat-v">{{ number_format($dailyPassby) }}</div>
+            </div>
         @endif
 
-        @if($screen->monthly_reach)
-        <div class="ins-stat">
-            <div class="ins-stat-l">Reach / tháng</div>
-            <div class="ins-stat-v">{{ number_format($screen->monthly_reach) }}</div>
-        </div>
+        @if($monthlyReach)
+            @php $b = $sourceBadge($monthlyReachSrc); @endphp
+            <div class="ins-stat">
+                <div class="ins-stat-l">Reach / tháng
+                    @if($b)<span class="ins-stat-src" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+                </div>
+                <div class="ins-stat-v">{{ number_format($monthlyReach) }}</div>
+            </div>
         @endif
 
-        @if($screen->daily_impressions)
-        <div class="ins-stat">
-            <div class="ins-stat-l">Impressions / ngày <small>(ước tính)</small></div>
-            <div class="ins-stat-v">{{ number_format($screen->daily_impressions) }}</div>
-        </div>
+        @if($dailyImp)
+            @php $b = $sourceBadge($dailyImpSource); @endphp
+            <div class="ins-stat">
+                <div class="ins-stat-l">Impressions / ngày
+                    @if($b)<span class="ins-stat-src" title="{{ $b['title'] }}">{{ $b['label'] }}</span>@endif
+                </div>
+                <div class="ins-stat-v">{{ number_format($dailyImp) }}</div>
+            </div>
         @endif
 
         @if(!empty($time['peak_hour_start']) || !empty($time['peak_hour_end']))
@@ -87,6 +133,25 @@
         </div>
         @endif
     </div>
+
+    {{-- Data Engine methodology line (chỉ hiện khi có estimate từ DE) --}}
+    @if($de)
+        <div class="ins-source" style="margin-top:-8px">
+            <strong>Nguồn traffic:</strong> OOHX Data Engine ·
+            Method: <code>{{ $deMethod ?? '—' }}</code> ·
+            @if($deConfidence !== null)
+                Confidence:
+                @php
+                    $c = (float) $deConfidence;
+                    $tier = $c >= 0.7 ? 'cao' : ($c >= 0.5 ? 'trung bình' : 'thấp');
+                @endphp
+                <strong>{{ number_format($c, 2) }}</strong> ({{ $tier }}) ·
+            @endif
+            @if($deCalcAt)
+                Cập nhật {{ \Illuminate\Support\Carbon::parse($deCalcAt)->diffForHumans() }}
+            @endif
+        </div>
+    @endif
     @endif
 
     {{-- ── 2. AUDIENCE PROFILE ─────────────────────────────────────── --}}

@@ -317,4 +317,28 @@ class Screen extends Model
             || ! empty($this->nearby_context)
         );
     }
+
+    /**
+     * Lookup Data Engine estimate cho screen này, cached 5 phút per uuid.
+     *
+     * Sử dụng ở cả Insights (stat row) và listing (batch fetch preferred).
+     * Silent fail nếu tunnel down — return null để display graceful fallback.
+     */
+    public function getTrafficEstimateAttribute(): ?object
+    {
+        if (! $this->uuid) return null;
+
+        return \Cache::remember(
+            "oohx:estimate:{$this->uuid}",
+            now()->addMinutes(5),
+            function () {
+                try {
+                    return app(\App\Services\OohxDataEngine::class)
+                        ->getEstimateByExternalId($this->uuid);
+                } catch (\Throwable) {
+                    return null;
+                }
+            },
+        );
+    }
 }
