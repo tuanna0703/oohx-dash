@@ -46,7 +46,17 @@ class OohxSyncToEngine extends Command
             return self::FAILURE;
         }
 
-        // 2. Rsync
+        // 2. Ensure remote inbox exists (idempotent) — tránh rsync exit 3
+        $this->info("🔧 Ensuring remote inbox exists: {$remoteInbox}");
+        $this->runCmd([
+            'ssh', '-i', $sshKey,
+            '-o', 'StrictHostKeyChecking=accept-new',
+            '-o', 'ConnectTimeout=15',
+            "{$remoteUser}@{$remoteHost}",
+            "mkdir -p {$remoteInbox}",
+        ]);
+
+        // 3. Rsync
         $this->info("☁ Rsync to {$remoteUser}@{$remoteHost}:{$remoteInbox}/screens.json");
         $this->runCmd([
             'rsync', '-avz', '--chmod=644',
@@ -55,7 +65,7 @@ class OohxSyncToEngine extends Command
             "{$remoteUser}@{$remoteHost}:{$remoteInbox}/screens.json",
         ]);
 
-        // 3. Trigger ingest
+        // 4. Trigger ingest
         if (! $this->option('skip-ingest')) {
             $this->info('⚙ Triggering ingest-screens on Data Engine');
             $this->runCmd([
