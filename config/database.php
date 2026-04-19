@@ -99,6 +99,23 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        // OOHX Data Engine (read-only, qua SSH tunnel 127.0.0.1:5433 → 139.162.20.95:5432)
+        // Schema `output` chứa estimates, `core` chứa screens được Laravel sync lên.
+        // User `oohx_readonly` chỉ có quyền SELECT — không INSERT/UPDATE/DELETE.
+        'oohx' => [
+            'driver'      => 'pgsql',
+            'host'        => env('DB_OOHX_HOST', '127.0.0.1'),
+            'port'        => env('DB_OOHX_PORT', 5433),
+            'database'    => env('DB_OOHX_DATABASE', 'oohx_data'),
+            'username'    => env('DB_OOHX_USERNAME', 'oohx_readonly'),
+            'password'    => env('DB_OOHX_PASSWORD', ''),
+            'charset'     => 'utf8',
+            'prefix'      => '',
+            'schema'      => 'output',
+            'sslmode'     => 'prefer',
+            'search_path' => 'output,core,public',
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

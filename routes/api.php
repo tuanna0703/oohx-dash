@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\OohxEstimateController;
 use App\Http\Controllers\Api\V1\OwnerController;
 use App\Http\Controllers\Api\V1\PlayerController;
 use App\Http\Controllers\Api\V1\ScreenController;
@@ -30,6 +31,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'ability:inventory'])->group(fu
     Route::get('inventory/screens/{screen_id}', [InventoryController::class, 'show']);
 
     Route::post('inventory/webhook/register',   [WebhookController::class, 'register']);
+
+    // ── OOHX Data Engine estimates (read-only, qua SSH tunnel PostgreSQL) ──
+    Route::get('oohx/estimates',                [OohxEstimateController::class, 'topByCity']);
+    Route::get('oohx/estimates/{externalId}',   [OohxEstimateController::class, 'show']);
 });
 
 // ── Public player endpoints (screen UUID auth) ──────────────
