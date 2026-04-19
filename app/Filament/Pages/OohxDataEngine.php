@@ -125,7 +125,7 @@ class OohxDataEngine extends Page
                 }
 
                 $body = $parsed
-                    ? "Processed: {$parsed['processed']} · Failed: " . ($parsed['failed'] ?? 0)
+                    ? $this->formatJsonSummary($parsed)
                     : mb_strimwidth($result['output'], 0, 300, '…');
 
                 Notification::make()
@@ -176,7 +176,7 @@ class OohxDataEngine extends Page
 
                 $parsed = $this->parseJsonOutput($result['output'] ?? '');
                 $body = $parsed
-                    ? "City: {$city} · Processed: {$parsed['processed']} · Failed: " . ($parsed['failed'] ?? 0)
+                    ? "City: {$city} · " . $this->formatJsonSummary($parsed)
                     : mb_strimwidth($result['output'], 0, 300, '…');
 
                 Notification::make()
@@ -308,6 +308,22 @@ class OohxDataEngine extends Page
             if (is_array($parsed)) return $parsed;
         }
         return null;
+    }
+
+    /**
+     * Format parsed JSON dict thành "key1: v1 · key2: v2" cho notification body.
+     * Schema CLI output khác nhau: {processed, failed}, {city, recomputed}, ...
+     * → render generic thay vì hardcode key.
+     */
+    private function formatJsonSummary(array $parsed): string
+    {
+        $parts = [];
+        foreach ($parsed as $key => $value) {
+            if (is_scalar($value) || is_null($value)) {
+                $parts[] = ucfirst(str_replace('_', ' ', $key)) . ': ' . ($value ?? '—');
+            }
+        }
+        return implode(' · ', $parts) ?: json_encode($parsed);
     }
 
     /**
