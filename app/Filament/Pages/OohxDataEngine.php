@@ -37,6 +37,14 @@ class OohxDataEngine extends Page
     {
         return [
             $this->syncNowAction(),
+            \Filament\Actions\ActionGroup::make([
+                $this->recomputeQueueAction(),
+                $this->recomputeCityAction(),
+            ])
+                ->label('Recompute')
+                ->icon('heroicon-o-arrow-path')
+                ->color('warning')
+                ->button(),
             $this->exportOnlyAction(),
             $this->testConnectionAction(),
             $this->lookupAction(),
@@ -84,6 +92,97 @@ class OohxDataEngine extends Page
                     ->title('Connection test')
                     ->body(implode("\n", $result['messages']))
                     ->{$result['ok'] ? 'success' : 'danger'}()
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /**
+     * Force drain pending recompute queue (CLI: recompute-pending-jobs --max 500).
+     * Dùng khi queue stuck hoặc muốn fresh estimates ngay.
+     */
+    public function recomputeQueueAction(): Action
+    {
+        return Action::make('recomputeQueue')
+            ->label('Recompute pending jobs')
+            ->icon('heroicon-o-queue-list')
+            ->requiresConfirmation()
+            ->modalHeading('Drain pending jobs?')
+            ->modalDescription('Process tất cả jobs đang trong queue (max 500). Không ảnh hưởng screens không có job.')
+            ->modalSubmitActionLabel('Drain ngay')
+            ->action(function () {
+                $result = $this->runRemoteCommand(config('oohx.data_engine.recompute_queue_cmd'));
+                $parsed = $this->parseJsonOutput($result['output'] ?? '');
+
+                if (! $result['ok']) {
+                    Notification::make()
+                        ->title('Recompute queue failed')
+                        ->body($result['error'] ?? 'Unknown error')
+                        ->danger()
+                        ->persistent()
+                        ->send();
+                    return;
+                }
+
+                $body = $parsed
+                    ? "Processed: {$parsed['processed']} · Failed: " . ($parsed['failed'] ?? 0)
+                    : mb_strimwidth($result['output'], 0, 300, '…');
+
+                Notification::make()
+                    ->title('Queue drained')
+                    ->body($body)
+                    ->success()
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /**
+     * Recompute toàn bộ screens trong 1 city (CLI: recompute-city --city X).
+     * List cities tự động fetch từ core.screens distinct.
+     */
+    public function recomputeCityAction(): Action
+    {
+        return Action::make('recomputeCity')
+            ->label('Recompute by city')
+            ->icon('heroicon-o-map')
+            ->requiresConfirmation()
+            ->modalHeading('Recompute 1 city')
+            ->modalDescription('Force recompute tất cả screens trong city đã chọn. Có thể mất 30-60s tuỳ số screens.')
+            ->form([
+                \Filament\Forms\Components\Select::make('city')
+                    ->label('City')
+                    ->options(fn () => $this->cityOptions())
+                    ->required()
+                    ->searchable(),
+            ])
+            ->action(function (array $data) {
+                $city = $data['city'];
+                $template = config('oohx.data_engine.recompute_city_cmd');
+                // Escape shell arg để tránh injection (city có thể có spaces như "Ha Noi")
+                $cmd = str_replace('{city}', escapeshellarg($city), $template);
+
+                $result = $this->runRemoteCommand($cmd);
+
+                if (! $result['ok']) {
+                    Notification::make()
+                        ->title("Recompute city '{$city}' failed")
+                        ->body($result['error'] ?? 'Unknown error')
+                        ->danger()
+                        ->persistent()
+                        ->send();
+                    return;
+                }
+
+                $parsed = $this->parseJsonOutput($result['output'] ?? '');
+                $body = $parsed
+                    ? "City: {$city} · Processed: {$parsed['processed']} · Failed: " . ($parsed['failed'] ?? 0)
+                    : mb_strimwidth($result['output'], 0, 300, '…');
+
+                Notification::make()
+                    ->title("Recomputed {$city}")
+                    ->body($body)
+                    ->success()
                     ->persistent()
                     ->send();
             });
@@ -150,6 +249,66 @@ class OohxDataEngine extends Page
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────
+
+    /**
+     * Fetch distinct cities từ core.screens cho filter dropdown.
+     * Silent fail nếu tunnel down — return [] thay vì crash modal.
+     */
+    private function cityOptions(): array
+    {
+        try {
+            $rows = DB::connection('oohx')->select("
+                SELECT DISTINCT city FROM core.screens
+                WHERE city IS NOT NULL AND city != ''
+                ORDER BY city
+            ");
+            return collect($rows)->pluck('city', 'city')->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * SSH + exec shell command trên Data Engine VPS. Timeout 120s.
+     * Returns ['ok' => bool, 'output' => string, 'error' => ?string].
+     */
+    private function runRemoteCommand(string $remoteCmd): array
+    {
+        $cfg = config('oohx.data_engine');
+        try {
+            $p = new Process([
+                'ssh', '-i', $cfg['ssh_key'],
+                '-o', 'StrictHostKeyChecking=accept-new',
+                '-o', 'ConnectTimeout=15',
+                '-o', 'BatchMode=yes',
+                "{$cfg['remote_user']}@{$cfg['remote_host']}",
+                $remoteCmd,
+            ], null, null, null, 120);
+            $p->run();
+
+            return [
+                'ok'     => $p->isSuccessful(),
+                'output' => $p->getOutput(),
+                'error'  => $p->isSuccessful() ? null : ($p->getErrorOutput() ?: 'exit code ' . $p->getExitCode()),
+            ];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'output' => '', 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Parse Data Engine JSON output như {"processed": N, "failed": M}.
+     * Returns null nếu không parse được.
+     */
+    private function parseJsonOutput(string $out): ?array
+    {
+        // Find last { ... } block in output (ignore log lines trước đó)
+        if (preg_match('/\{[^{}]*\}\s*$/s', trim($out), $m)) {
+            $parsed = json_decode($m[0], true);
+            if (is_array($parsed)) return $parsed;
+        }
+        return null;
+    }
 
     /**
      * Run an artisan command + show result as Filament notification.

@@ -44,6 +44,19 @@ return [
             'OOHX_INGEST_CMD',
             'cd ~/python-data-engine && .venv/bin/python -m app.cli ingest-screens --file ~/inbox/screens.json'
         ),
+
+        // Drain pending jobs queue. Max size là số jobs process tối đa / lần.
+        'recompute_queue_cmd' => env(
+            'OOHX_RECOMPUTE_QUEUE_CMD',
+            'cd ~/apps/oohx-matrix/python-data-engine && .venv/bin/python -m app.cli recompute-pending-jobs --max 500'
+        ),
+
+        // Recompute tất cả screens trong 1 city. Template có placeholder {city}
+        // sẽ được escape + replace tại runtime.
+        'recompute_city_cmd' => env(
+            'OOHX_RECOMPUTE_CITY_CMD',
+            'cd ~/apps/oohx-matrix/python-data-engine && .venv/bin/python -m app.cli recompute-city --city {city}'
+        ),
     ],
 
 ];
