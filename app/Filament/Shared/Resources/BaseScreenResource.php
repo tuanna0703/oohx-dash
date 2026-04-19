@@ -1112,6 +1112,17 @@ abstract class BaseScreenResource extends Resource
                         ->columnSpanFull()
                         ->visible(fn (Screen $r) => $r->site?->lat !== null),
                 ]),
+
+            // ── Section: Data Engine estimate (read-only, từ VPS riêng) ─────
+            // 1 query per render (vs N cho nhiều TextEntry) — lookup trong ViewEntry Blade.
+            Infolists\Components\Section::make('Data Engine — traffic estimate')
+                ->icon('heroicon-o-cpu-chip')
+                ->description('Rule-based estimate từ OOHX Data Engine (POI + road network). Update mỗi 30 phút.')
+                ->collapsible()
+                ->schema([
+                    Infolists\Components\ViewEntry::make('data_engine_estimate')
+                        ->view('filament.shared.components.data-engine-estimate'),
+                ]),
         ]);
     }
 }
