@@ -258,6 +258,9 @@ class OohxDataEngine extends Page
 
     /**
      * Quick config sanity checks (để show warning khi setup thiếu).
+     *
+     * Dùng `@file_exists()` để tránh open_basedir warning làm crash page khi
+     * SSH key đặt ngoài project path (PHP-FPM thường sandbox /root/).
      */
     private function configCheck(): array
     {
@@ -269,11 +272,23 @@ class OohxDataEngine extends Page
             'label' => 'DB password configured',
             'hint'  => 'Set DB_OOHX_PASSWORD in .env',
         ];
+
+        $sshKeyOk = false;
+        $sshHint  = 'Generate via ssh-keygen, set OOHX_SSH_KEY in .env';
+        try {
+            $sshKeyOk = @is_readable($cfg['ssh_key']);
+            if (! $sshKeyOk) {
+                $sshHint .= '. Nếu key nằm ngoài project (vd /root/.ssh/) PHP-FPM không đọc được (open_basedir). Move vào storage/app/oohx-ssh/ và chown cho www user.';
+            }
+        } catch (\Throwable $e) {
+            $sshHint = 'Open_basedir chặn: ' . $e->getMessage() . '. Move key vào ' . base_path('storage/app/oohx-ssh/') . '.';
+        }
         $checks[] = [
-            'ok'    => file_exists($cfg['ssh_key']),
-            'label' => "SSH key exists: {$cfg['ssh_key']}",
-            'hint'  => 'Generate via ssh-keygen, set OOHX_SSH_KEY in .env',
+            'ok'    => $sshKeyOk,
+            'label' => "SSH key readable: {$cfg['ssh_key']}",
+            'hint'  => $sshHint,
         ];
+
         $checks[] = [
             'ok'    => ! empty($cfg['ingest_cmd']),
             'label' => 'Ingest command configured',
