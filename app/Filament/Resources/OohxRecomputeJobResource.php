@@ -234,7 +234,7 @@ class OohxRecomputeJobResource extends Resource
                     Infolists\Components\TextEntry::make('finished_at')->dateTime()->placeholder('—'),
                     Infolists\Components\TextEntry::make('duration_seconds')
                         ->label('Duration')
-                        ->formatStateUsing(fn (?int $s) => $s !== null ? "{$s}s" : '—'),
+                        ->formatStateUsing(fn ($state) => $state !== null ? "{$state}s" : '—'),
                     Infolists\Components\TextEntry::make('cancelled_at')->dateTime()->placeholder('—'),
                 ]),
 
