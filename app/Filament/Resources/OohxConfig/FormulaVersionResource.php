@@ -146,19 +146,36 @@ class FormulaVersionResource extends Resource
                     ->color('success')
                     ->visible(fn (FormulaVersion $record) => ! $record->is_active)
                     ->requiresConfirmation()
-                    ->modalDescription(fn (FormulaVersion $record) =>
-                        "Switch active version → {$record->tag}. Python sẽ dùng formula mới trong ≤ 5 phút.")
-                    ->action(function (FormulaVersion $record) {
+                    ->modalHeading(fn (FormulaVersion $record) => "Activate {$record->tag}?")
+                    ->modalDescription('Switch active version. Python sẽ dùng formula mới trong ≤ 5 phút. Existing estimates vẫn dùng version cũ cho tới khi recompute.')
+                    ->form([
+                        Forms\Components\Checkbox::make('recompute_stale')
+                            ->label('Also enqueue recompute-stale job')
+                            ->helperText('Tự trigger bulk recompute cho screens chưa có estimate trên version mới. Khuyến nghị cho production changes.')
+                            ->default(false),
+                    ])
+                    ->action(function (FormulaVersion $record, array $data) {
                         try {
                             app(ConfigManagerService::class)->activateVersion($record->tag);
-                            Notification::make()
-                                ->title("Activated {$record->tag}")
-                                ->success()->send();
+
+                            if ($data['recompute_stale'] ?? false) {
+                                $job = app(\App\Services\Oohx\JobOrchestrator::class)
+                                    ->enqueueBulkAction('recompute_stale', priority: 50);
+                                Notification::make()
+                                    ->title("Activated {$record->tag} + enqueued recompute-stale")
+                                    ->body("Job #{$job->id} queued. Xem progress ở Recompute Jobs.")
+                                    ->success()->persistent()->send();
+                            } else {
+                                Notification::make()
+                                    ->title("Activated {$record->tag}")
+                                    ->body('Trigger recompute manually từ Recompute Jobs nếu cần.')
+                                    ->success()->send();
+                            }
                         } catch (\Throwable $e) {
                             Notification::make()
                                 ->title('Activate failed')
                                 ->body($e->getMessage())
-                                ->danger()->send();
+                                ->danger()->persistent()->send();
                         }
                     }),
             ])
