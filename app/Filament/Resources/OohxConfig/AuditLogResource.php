@@ -79,15 +79,19 @@ class AuditLogResource extends Resource
                     ->wrap()
                     ->limit(40),
 
-                Tables\Columns\TextColumn::make('old_value')
+                Tables\Columns\TextColumn::make('old_value_display')
                     ->label('Before')
-                    ->formatStateUsing(fn ($state) => $state ? json_encode($state, JSON_UNESCAPED_UNICODE) : '—')
+                    ->getStateUsing(fn ($record) => $record->old_value
+                        ? json_encode($record->old_value, JSON_UNESCAPED_UNICODE)
+                        : '—')
                     ->limit(40)
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('new_value')
+                Tables\Columns\TextColumn::make('new_value_display')
                     ->label('After')
-                    ->formatStateUsing(fn ($state) => $state ? json_encode($state, JSON_UNESCAPED_UNICODE) : '—')
+                    ->getStateUsing(fn ($record) => $record->new_value
+                        ? json_encode($record->new_value, JSON_UNESCAPED_UNICODE)
+                        : '—')
                     ->limit(40)
                     ->toggleable(),
 
@@ -148,20 +152,18 @@ class AuditLogResource extends Resource
             Infolists\Components\Section::make('Before / After')
                 ->columns(2)
                 ->schema([
-                    Infolists\Components\TextEntry::make('old_value')
+                    Infolists\Components\TextEntry::make('old_value_json')
                         ->label('Before')
-                        ->formatStateUsing(fn ($state) => $state
-                            ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                        ->getStateUsing(fn ($record) => $record->old_value
+                            ? json_encode($record->old_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                             : '—')
-                        ->prose()
-                        ->markdown(false),
-                    Infolists\Components\TextEntry::make('new_value')
+                        ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap break-all']),
+                    Infolists\Components\TextEntry::make('new_value_json')
                         ->label('After')
-                        ->formatStateUsing(fn ($state) => $state
-                            ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                        ->getStateUsing(fn ($record) => $record->new_value
+                            ? json_encode($record->new_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                             : '—')
-                        ->prose()
-                        ->markdown(false),
+                        ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap break-all']),
                 ]),
         ]);
     }

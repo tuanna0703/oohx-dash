@@ -259,11 +259,17 @@ class OohxRecomputeJobResource extends Resource
                 ->collapsible()
                 ->collapsed()
                 ->schema([
-                    Infolists\Components\TextEntry::make('payload')
+                    Infolists\Components\TextEntry::make('payload_json')
                         ->label(false)
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))
-                        ->prose()
-                        ->markdown(false),
+                        // getStateUsing replace state NGAY — Filament không thấy array nữa
+                        ->getStateUsing(fn ($record) => json_encode(
+                            $record->payload ?? [],
+                            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+                        ))
+                        ->columnSpanFull()
+                        ->extraAttributes([
+                            'class' => 'font-mono text-xs whitespace-pre-wrap break-all',
+                        ]),
                 ]),
         ]);
     }
