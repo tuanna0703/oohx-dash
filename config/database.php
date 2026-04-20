@@ -116,6 +116,26 @@ return [
             'search_path' => 'output,core,public',
         ],
 
+        // OOHX Data Engine — control plane (Phase 2.A).
+        // Cùng tunnel 127.0.0.1:5433, khác user `oohx_control` với quyền:
+        //   - INSERT/UPDATE/DELETE trên config.* (trừ audit_log: SELECT+INSERT only)
+        //   - INSERT/UPDATE trên core.recompute_jobs, collectors.collector_runs
+        //   - SELECT everywhere
+        //   - KHÔNG có quyền write output.*, metrics.*, source.*
+        'oohx_control' => [
+            'driver'      => 'pgsql',
+            'host'        => env('DB_OOHX_HOST', '127.0.0.1'),
+            'port'        => env('DB_OOHX_PORT', 5433),
+            'database'    => env('DB_OOHX_DATABASE', 'oohx_data'),
+            'username'    => env('DB_OOHX_CONTROL_USERNAME', 'oohx_control'),
+            'password'    => env('DB_OOHX_CONTROL_PASSWORD', ''),
+            'charset'     => 'utf8',
+            'prefix'      => '',
+            'schema'      => 'config',
+            'sslmode'     => 'prefer',
+            'search_path' => 'config,core,collectors,output,public',
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

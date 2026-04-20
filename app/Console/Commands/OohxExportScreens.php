@@ -174,6 +174,15 @@ class OohxExportScreens extends Command
     {
         if (! $city) return null;
         $trim = trim($city);
+
+        // Defensive: 1 vài screens có city lưu sai dạng "Ninh Bình > Phường X"
+        // (nhập tay hoặc concat city + commune). Tách theo " > " và lấy phần đầu
+        // để Data Engine match được trong base_city_traffic.
+        // Nếu source data fix sau (sửa column sites.city) thì branch này cũng safe.
+        if (str_contains($trim, ' > ')) {
+            $trim = trim(explode(' > ', $trim, 2)[0]);
+        }
+
         return self::CITY_MAP[$trim] ?? $trim;
     }
 }
