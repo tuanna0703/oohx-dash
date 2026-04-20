@@ -39,11 +39,18 @@ class SeasonalityFactor extends Model
     ];
 
     /**
-     * Synthetic route key "city:month" — cho Filament record routing.
+     * Synthetic key "city:month" — cho cả Filament record routing + table rendering.
+     * `getKey()` override quan trọng: Filament HasRecords::getTableRecordKey() gọi
+     * trực tiếp `->getKey()`, null sẽ crash.
      */
-    public function getRouteKey(): string
+    public function getKey(): string
     {
         return "{$this->city}:{$this->month}";
+    }
+
+    public function getRouteKey(): string
+    {
+        return $this->getKey();
     }
 
     public function getRouteKeyName(): string
