@@ -7,6 +7,7 @@ use App\Models\Oohx\Config\BaseCityTraffic;
 use App\Models\Oohx\Config\DeliveryDefault;
 use App\Models\Oohx\Config\FormulaVersion;
 use App\Models\Oohx\Config\RoadClassMultiplier;
+use App\Models\Oohx\Config\SeasonalityFactor;
 use App\Models\Oohx\Config\ZoneFactor;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -151,6 +152,84 @@ class ConfigManagerService
      * So sánh 2 version snapshot, return list của coefficient khác biệt.
      * Mỗi diff entry: {group, key, before, after, delta}.
      */
+    /**
+     * Phase 2.D — Upsert seasonality factor per (city, month).
+     * Composite key không fit GROUP_MAP pattern nên method riêng.
+     *
+     * @throws \InvalidArgumentException nếu month out of 1..12 hoặc factor out of (0, 2]
+     */
+    public function updateSeasonalityFactor(
+        string $city,
+        int $month,
+        float $factor,
+        ?string $note = null,
+    ): SeasonalityFactor {
+        if ($month < 1 || $month > 12) {
+            throw new \InvalidArgumentException("month must be 1..12, got {$month}");
+        }
+        if ($factor <= 0 || $factor > 2) {
+            throw new \InvalidArgumentException("factor must be in (0, 2], got {$factor}");
+        }
+
+        $actor = $this->resolveActor();
+
+        return DB::connection(self::CONNECTION)->transaction(function () use ($city, $month, $factor, $note, $actor) {
+            $existing = SeasonalityFactor::byKey($city, $month)->first();
+            $oldValue = $existing?->factor;
+
+            if ($existing) {
+                // UPDATE
+                SeasonalityFactor::where('city', $city)->where('month', $month)->update([
+                    'factor'     => $factor,
+                    'note'       => $note,
+                    'updated_by' => $actor,
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // INSERT
+                SeasonalityFactor::create([
+                    'city'       => $city,
+                    'month'      => $month,
+                    'factor'     => $factor,
+                    'note'       => $note,
+                    'updated_by' => $actor,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            AuditLog::create([
+                'actor'      => $actor,
+                'action'     => 'update_seasonality',
+                'target'     => "city={$city},month={$month}",
+                'old_value'  => ['value' => $oldValue],
+                'new_value'  => ['value' => $factor],
+                'note'       => $note,
+                'created_at' => now(),
+            ]);
+
+            return SeasonalityFactor::byKey($city, $month)->first();
+        });
+    }
+
+    /**
+     * Fetch all seasonality factors keyed by [city][month] → value.
+     * Dùng cho heatmap view.
+     */
+    public function seasonalityHeatmapData(): array
+    {
+        $rows = SeasonalityFactor::orderBy('city')->orderBy('month')->get();
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r->city][(int) $r->month] = [
+                'factor'     => (float) $r->factor,
+                'note'       => $r->note,
+                'updated_at' => $r->updated_at,
+                'updated_by' => $r->updated_by,
+            ];
+        }
+        return $map;
+    }
+
     public function diffVersions(string $tagA, string $tagB): array
     {
         $a = FormulaVersion::where('tag', $tagA)->firstOrFail()->snapshot;

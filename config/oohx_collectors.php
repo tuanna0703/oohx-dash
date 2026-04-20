@@ -52,12 +52,24 @@ return [
         'color'         => 'info',
     ],
 
-    // ── Placeholder cho Phase 2.D (chưa ship) ────────────────────────
-    // 'osm_roads' => [
-    //     'display_name' => 'OSM Roads (osm2pgsql)',
-    //     'cadence_hours' => 720, // monthly
-    //     ...
-    // ],
+    'osm_roads' => [
+        'display_name'  => 'Roads (OpenStreetMap / Overpass)',
+        'description'   => 'Fetch highway ways (motorway..service) in bbox. '
+                         . 'UPSERT into source.roads with LineString geometry + '
+                         . 'road_class / lane_count / oneway / maxspeed.',
+        'provider'      => 'Overpass API (multi-endpoint fallback)',
+        'cost'          => 'free',
+        'rate_limit'    => '10,000 queries/day per IP',
+        'cadence_hours' => 720, // monthly
+        'supports_city' => true,
+        'supports_bbox' => true,
+        'cache_ttl_hours' => 24,
+        'expected_runtime_seconds' => 180, // ~15 tiles × 5-15s
+        'icon'          => 'heroicon-o-truck',
+        'color'         => 'warning',
+    ],
+
+    // ── Placeholder Phase 3 (chưa ship) ──────────────────────────────
     // 'worldpop_population' => [
     //     'display_name' => 'WorldPop Population (raster → H3)',
     //     'cadence_hours' => 8760, // yearly

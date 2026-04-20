@@ -47,8 +47,8 @@ class OohxEstimateResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        // Eager-load screen relation — used in nhiều columns để tránh N+1
-        return parent::getEloquentQuery()->with('screen');
+        // Eager-load screen + contextMetrics (Phase 2.D factor display) — tránh N+1
+        return parent::getEloquentQuery()->with(['screen', 'contextMetrics']);
     }
 
     public static function table(Table $table): Table
@@ -132,6 +132,37 @@ class OohxEstimateResource extends Resource
                         default         => 'danger',
                     })
                     ->sortable(),
+
+                // Phase 2.D — contextual factors từ metrics.screen_context_metrics
+                Tables\Columns\TextColumn::make('contextMetrics.weather_factor')
+                    ->label('Weather')
+                    ->badge()
+                    ->formatStateUsing(fn (?float $state) => $state !== null
+                        ? number_format($state, 2)
+                        : '—')
+                    ->color(fn (?float $state) => match (true) {
+                        $state === null => 'gray',
+                        $state < 0.86   => 'danger',
+                        $state < 0.96   => 'warning',
+                        default         => 'success',
+                    })
+                    ->tooltip('weather_factor — 0.70-1.00, < 1 khi mưa/thời tiết xấu')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('contextMetrics.seasonality_factor')
+                    ->label('Seasonality')
+                    ->badge()
+                    ->formatStateUsing(fn (?float $state) => $state !== null
+                        ? number_format($state, 2)
+                        : '—')
+                    ->color(fn (?float $state) => match (true) {
+                        $state === null => 'gray',
+                        $state > 1.05   => 'success',
+                        $state < 0.95   => 'danger',
+                        default         => 'warning',
+                    })
+                    ->tooltip('seasonality_factor — >1 peak (summer), <1 low (Tet)')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('estimation_method')
                     ->label('Method')
@@ -341,6 +372,49 @@ class OohxEstimateResource extends Resource
                         ->money('VND')
                         ->placeholder('—')
                         ->columnSpan(2),
+                ]),
+
+            // Phase 2.D — Contextual factors applied bởi formula
+            Infolists\Components\Section::make('Contextual factors (Phase 2.D)')
+                ->icon('heroicon-o-sparkles')
+                ->description('Weather/seasonality/calibration multiplier apply vào passby (outdoor) hoặc screen_flow (indoor, sensitivity 0.3).')
+                ->columns(3)
+                ->visible(fn ($record) => $record->contextMetrics !== null)
+                ->schema([
+                    Infolists\Components\TextEntry::make('contextMetrics.weather_factor')
+                        ->label('Weather factor')
+                        ->badge()
+                        ->formatStateUsing(fn (?float $state) => $state !== null
+                            ? number_format($state, 3)
+                            : '— (no recent weather data)')
+                        ->color(fn (?float $state) => match (true) {
+                            $state === null => 'gray',
+                            $state < 0.86   => 'danger',
+                            $state < 0.96   => 'warning',
+                            default         => 'success',
+                        })
+                        ->helperText('0.70-1.00, < 1 khi mưa/thời tiết xấu. NULL nếu weather snapshot > 6h'),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.seasonality_factor')
+                        ->label('Seasonality factor')
+                        ->badge()
+                        ->formatStateUsing(fn (?float $state) => $state !== null
+                            ? number_format($state, 3)
+                            : '— (city not seeded)')
+                        ->color(fn (?float $state) => match (true) {
+                            $state === null => 'gray',
+                            $state > 1.05   => 'success',
+                            $state < 0.95   => 'danger',
+                            default         => 'warning',
+                        })
+                        ->helperText('> 1 peak season · < 1 low (Tet) · theo city + month hiện tại'),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.calibration_factor')
+                        ->label('Calibration factor')
+                        ->badge()
+                        ->placeholder('—')
+                        ->color('gray')
+                        ->helperText('(Phase 3 — hiện NULL → estimator dùng 1.0)'),
                 ]),
         ]);
     }

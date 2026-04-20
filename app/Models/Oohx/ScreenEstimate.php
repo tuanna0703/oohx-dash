@@ -4,6 +4,7 @@ namespace App\Models\Oohx;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Read-only projection của `output.screen_traffic_estimates` trên Data Engine VPS.
@@ -40,5 +41,14 @@ class ScreenEstimate extends Model
     public function screen(): BelongsTo
     {
         return $this->belongsTo(Screen::class, 'screen_id');
+    }
+
+    /**
+     * metrics.screen_context_metrics — same screen_id PK.
+     * Phase 2.D dùng để hiện weather_factor + seasonality_factor trên Resource.
+     */
+    public function contextMetrics(): HasOne
+    {
+        return $this->hasOne(ScreenContextMetrics::class, 'screen_id', 'screen_id');
     }
 }
