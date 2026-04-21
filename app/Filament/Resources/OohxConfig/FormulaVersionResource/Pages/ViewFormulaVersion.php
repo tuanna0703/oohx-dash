@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\OohxConfig\FormulaVersionResource\Pages;
 
 use App\Filament\Resources\OohxConfig\FormulaVersionResource;
+use App\Filament\Resources\OohxRecomputeJobResource;
+use App\Models\Oohx\Config\AuditLog;
 use App\Services\Oohx\ConfigManagerService;
 use App\Services\Oohx\JobOrchestrator;
 use Filament\Actions;
@@ -17,6 +19,59 @@ class ViewFormulaVersion extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Phase 3.A — Preview impact (dry-run)
+            Actions\Action::make('preview')
+                ->label('Preview impact')
+                ->icon('heroicon-o-magnifying-glass-plus')
+                ->color('info')
+                ->visible(fn () => ! $this->record->is_active)
+                ->modalHeading(fn () => "Preview {$this->record->tag} vs active")
+                ->modalDescription('Dry-run so sánh estimates. KHÔNG touch output.* table.')
+                ->form([
+                    Forms\Components\Select::make('city')
+                        ->label('City filter (optional)')
+                        ->options(fn () => \App\Models\Oohx\Screen::query()
+                            ->whereNotNull('city')
+                            ->distinct()
+                            ->orderBy('city')
+                            ->pluck('city', 'city')
+                            ->toArray())
+                        ->placeholder('All cities')
+                        ->searchable(),
+                    Forms\Components\TextInput::make('sample_size')
+                        ->label('Sample size')
+                        ->required()
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(JobOrchestrator::PREVIEW_MAX_SAMPLE_SIZE)
+                        ->default(100),
+                    Forms\Components\TextInput::make('seed')
+                        ->label('Seed (optional)')
+                        ->numeric()
+                        ->helperText('Reproducible — cùng seed → cùng sample.'),
+                ])
+                ->action(function (array $data) {
+                    try {
+                        $job = app(JobOrchestrator::class)->enqueuePreview(
+                            tag: $this->record->tag,
+                            sampleSize: (int) $data['sample_size'],
+                            city: $data['city'] ?? null,
+                            seed: isset($data['seed']) && $data['seed'] !== '' ? (int) $data['seed'] : null,
+                        );
+                        Notification::make()
+                            ->title("Preview job #{$job->id} queued")
+                            ->body("Polling job detail page để xem result khi done.")
+                            ->success()->persistent()->send();
+
+                        redirect()->to(OohxRecomputeJobResource::getUrl('view', ['record' => $job->id]));
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('Enqueue preview failed')
+                            ->body($e->getMessage())
+                            ->danger()->persistent()->send();
+                    }
+                }),
+
             Actions\Action::make('activate')
                 ->label('Activate this version')
                 ->icon('heroicon-o-check-circle')
@@ -24,7 +79,13 @@ class ViewFormulaVersion extends ViewRecord
                 ->visible(fn () => ! $this->record->is_active)
                 ->requiresConfirmation()
                 ->modalHeading(fn () => "Activate {$this->record->tag}?")
-                ->modalDescription('Switch active version. Python sẽ dùng formula mới trong ≤ 5 phút. Existing estimates vẫn dùng version cũ cho tới khi recompute.')
+                ->modalDescription(function () {
+                    $hasPreview = app(JobOrchestrator::class)->hasRecentPreview($this->record->tag, minutes: 30);
+                    $warning = $hasPreview
+                        ? ''
+                        : "⚠ No preview run in last 30m. Recommend Preview impact trước. ";
+                    return $warning . 'Switch active version. Python sẽ dùng formula mới trong ≤ 5 phút.';
+                })
                 ->form([
                     Forms\Components\Checkbox::make('recompute_stale')
                         ->label('Also enqueue recompute-stale job')
@@ -33,7 +94,19 @@ class ViewFormulaVersion extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     try {
+                        $hasPreview = app(JobOrchestrator::class)->hasRecentPreview($this->record->tag, minutes: 30);
+
                         app(ConfigManagerService::class)->activateVersion($this->record->tag);
+
+                        if (! $hasPreview) {
+                            AuditLog::create([
+                                'actor'      => auth()->user()?->email ?? 'system',
+                                'action'     => 'activate_without_preview',
+                                'target'     => "tag={$this->record->tag}",
+                                'note'       => 'Activated without recent preview (last 30m).',
+                                'created_at' => now(),
+                            ]);
+                        }
 
                         if ($data['recompute_stale'] ?? false) {
                             $job = app(JobOrchestrator::class)->enqueueBulkAction('recompute_stale', priority: 50);

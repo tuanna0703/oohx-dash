@@ -64,10 +64,11 @@ class OohxRecomputeJobResource extends Resource
                     ->label('Type')
                     ->badge()
                     ->color(fn (string $state) => match ($state) {
-                        'screen' => 'info',
-                        'city'   => 'warning',
-                        'bulk'   => 'primary',
-                        default  => 'gray',
+                        'screen'  => 'info',
+                        'city'    => 'warning',
+                        'bulk'    => 'primary',
+                        'preview' => 'gray',
+                        default   => 'gray',
                     })
                     ->sortable(),
 
@@ -138,9 +139,10 @@ class OohxRecomputeJobResource extends Resource
                     ]),
                 SelectFilter::make('job_type')
                     ->options([
-                        'screen' => 'Screen',
-                        'city'   => 'City',
-                        'bulk'   => 'Bulk',
+                        'screen'  => 'Screen',
+                        'city'    => 'City',
+                        'bulk'    => 'Bulk',
+                        'preview' => 'Preview (Phase 3.A)',
                     ]),
                 SelectFilter::make('city')
                     ->label('City (city-type jobs)')
@@ -244,6 +246,16 @@ class OohxRecomputeJobResource extends Resource
                 ->schema([
                     Infolists\Components\ViewEntry::make('progress_widget')
                         ->view('filament.resources.oohx-recompute-job.progress-widget'),
+                ]),
+
+            // Phase 3.A — Preview result panel (dry-run so sánh version)
+            Infolists\Components\Section::make('Preview result')
+                ->icon('heroicon-o-magnifying-glass-plus')
+                ->description('Dry-run comparison — NOT applied to output.screen_traffic_estimates.')
+                ->visible(fn ($record) => $record->is_preview)
+                ->schema([
+                    Infolists\Components\ViewEntry::make('preview_widget')
+                        ->view('filament.resources.oohx-recompute-job.preview-result'),
                 ]),
 
             Infolists\Components\Section::make('Error')

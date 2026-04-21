@@ -140,6 +140,70 @@ class FormulaVersionResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
+                // Phase 3.A — Preview impact (dry-run so sánh với active version)
+                Tables\Actions\Action::make('preview')
+                    ->label('Preview impact')
+                    ->icon('heroicon-o-magnifying-glass-plus')
+                    ->color('info')
+                    ->visible(fn (FormulaVersion $record) => ! $record->is_active)
+                    ->modalHeading(fn (FormulaVersion $record) => "Preview {$record->tag} vs active")
+                    ->modalDescription('Dry-run so sánh estimates — sample N screens. KHÔNG touch output.* table. Chỉ in-memory comparison.')
+                    ->form([
+                        Forms\Components\Select::make('city')
+                            ->label('City filter (optional)')
+                            ->options(fn () => \App\Models\Oohx\Screen::query()
+                                ->whereNotNull('city')
+                                ->distinct()
+                                ->orderBy('city')
+                                ->pluck('city', 'city')
+                                ->toArray())
+                            ->placeholder('All cities')
+                            ->searchable(),
+
+                        Forms\Components\TextInput::make('sample_size')
+                            ->label('Sample size')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(\App\Services\Oohx\JobOrchestrator::PREVIEW_MAX_SAMPLE_SIZE)
+                            ->default(100)
+                            ->helperText('Max 2000. Default 100 recommended cho main market.'),
+
+                        Forms\Components\TextInput::make('seed')
+                            ->label('Seed (optional)')
+                            ->numeric()
+                            ->placeholder('vd: 42')
+                            ->helperText('Reproducible — cùng seed → cùng sample screens.'),
+                    ])
+                    ->action(function (FormulaVersion $record, array $data) {
+                        try {
+                            $job = app(\App\Services\Oohx\JobOrchestrator::class)->enqueuePreview(
+                                tag: $record->tag,
+                                sampleSize: (int) $data['sample_size'],
+                                city: $data['city'] ?? null,
+                                seed: isset($data['seed']) && $data['seed'] !== '' ? (int) $data['seed'] : null,
+                            );
+                            Notification::make()
+                                ->title("Preview job #{$job->id} queued")
+                                ->body("Worker cron sẽ pick lên trong ≤10 phút. View result ở Recompute Jobs.")
+                                ->success()
+                                ->persistent()
+                                ->send();
+
+                            // Redirect sang job detail để user poll result
+                            redirect()->to(
+                                \App\Filament\Resources\OohxRecomputeJobResource::getUrl('view', ['record' => $job->id])
+                            );
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Enqueue preview failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
+
                 Tables\Actions\Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-o-check-circle')
@@ -147,7 +211,15 @@ class FormulaVersionResource extends Resource
                     ->visible(fn (FormulaVersion $record) => ! $record->is_active)
                     ->requiresConfirmation()
                     ->modalHeading(fn (FormulaVersion $record) => "Activate {$record->tag}?")
-                    ->modalDescription('Switch active version. Python sẽ dùng formula mới trong ≤ 5 phút. Existing estimates vẫn dùng version cũ cho tới khi recompute.')
+                    // Phase 3.A — Soft-gate: warning nếu chưa preview trong 30 phút
+                    ->modalDescription(function (FormulaVersion $record) {
+                        $hasPreview = app(\App\Services\Oohx\JobOrchestrator::class)
+                            ->hasRecentPreview($record->tag, minutes: 30);
+                        $warning = $hasPreview
+                            ? ''
+                            : "⚠ No preview run recently (last 30m). Recommend \"Preview impact\" trước để review delta_pct_p99. ";
+                        return $warning . 'Switch active version. Python sẽ dùng formula mới trong ≤ 5 phút. Existing estimates vẫn dùng version cũ cho tới khi recompute.';
+                    })
                     ->form([
                         Forms\Components\Checkbox::make('recompute_stale')
                             ->label('Also enqueue recompute-stale job')
@@ -156,7 +228,21 @@ class FormulaVersionResource extends Resource
                     ])
                     ->action(function (FormulaVersion $record, array $data) {
                         try {
+                            $hasPreview = app(\App\Services\Oohx\JobOrchestrator::class)
+                                ->hasRecentPreview($record->tag, minutes: 30);
+
                             app(ConfigManagerService::class)->activateVersion($record->tag);
+
+                            // Audit log explicitly khi activate without preview (soft-gate trace)
+                            if (! $hasPreview) {
+                                \App\Models\Oohx\Config\AuditLog::create([
+                                    'actor'      => auth()->user()?->email ?? 'system',
+                                    'action'     => 'activate_without_preview',
+                                    'target'     => "tag={$record->tag}",
+                                    'note'       => 'Activated without recent preview (last 30m).',
+                                    'created_at' => now(),
+                                ]);
+                            }
 
                             if ($data['recompute_stale'] ?? false) {
                                 $job = app(\App\Services\Oohx\JobOrchestrator::class)

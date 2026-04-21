@@ -103,9 +103,10 @@ class RecomputeJob extends Model
 
     /**
      * Target label for table display:
-     *   screen → screen name (or id)
-     *   city   → city
-     *   bulk   → action name (or "bulk N screens")
+     *   screen  → screen name (or id)
+     *   city    → city
+     *   bulk    → action name (or "bulk N screens")
+     *   preview → "preview tag=X [city=Y]"  (Phase 3.A)
      */
     public function getTargetLabelAttribute(): string
     {
@@ -117,8 +118,31 @@ class RecomputeJob extends Model
             'bulk'   => $this->action ?? (isset($this->payload['screen_ids'])
                           ? 'bulk · ' . count($this->payload['screen_ids']) . ' screens'
                           : 'bulk'),
+            'preview' => 'tag=' . ($this->payload['tag'] ?? '?')
+                        . (isset($this->payload['city']) && $this->payload['city']
+                            ? ' · city=' . $this->payload['city']
+                            : '')
+                        . ' · n=' . ($this->payload['sample_size'] ?? '?'),
             default  => '—',
         };
+    }
+
+    /**
+     * Phase 3.A — True nếu job là preview type (conditional rendering).
+     */
+    public function getIsPreviewAttribute(): bool
+    {
+        return $this->job_type === 'preview';
+    }
+
+    /**
+     * Phase 3.A — Preview result (payload.result). Null cho đến khi worker done.
+     */
+    public function getPreviewResultAttribute(): ?array
+    {
+        if (! $this->is_preview) return null;
+        $r = $this->payload['result'] ?? null;
+        return is_array($r) ? $r : null;
     }
 
     /**

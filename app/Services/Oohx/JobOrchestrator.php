@@ -31,6 +31,9 @@ class JobOrchestrator
     /** Valid bulk actions theo Data Engine backend (PHASE-2B-HANDOFF §1.2). */
     public const BULK_ACTIONS = ['recompute_all', 'recompute_stale', 'recompute_by_city'];
 
+    /** Cap theo Data Engine `_MAX_SAMPLE_SIZE` (PHASE-3A-HANDOFF §3.2). */
+    public const PREVIEW_MAX_SAMPLE_SIZE = 2000;
+
     // ── Enqueue ────────────────────────────────────────────────────────
 
     public function enqueueScreen(int $screenId, int $priority = 100, array $payload = []): RecomputeJob
@@ -127,6 +130,66 @@ class JobOrchestrator
                 'requested_at' => now(),
             ]);
         });
+    }
+
+    /**
+     * Phase 3.A — Enqueue dry-run preview job.
+     * Worker Python so sánh formula `$tag` vs active version cho sample N screens.
+     * KHÔNG touch output.screen_traffic_estimates — chỉ in-memory comparison.
+     *
+     * Result lưu vào payload->result khi done (schema xem PHASE-3A-HANDOFF §4).
+     *
+     * @throws \InvalidArgumentException khi sample_size out of range
+     */
+    public function enqueuePreview(
+        string $tag,
+        int $sampleSize = 100,
+        ?string $city = null,
+        ?int $seed = null,
+        int $priority = 120,
+    ): RecomputeJob {
+        if ($sampleSize < 1 || $sampleSize > self::PREVIEW_MAX_SAMPLE_SIZE) {
+            throw new \InvalidArgumentException(
+                "sample_size must be 1.." . self::PREVIEW_MAX_SAMPLE_SIZE . ", got {$sampleSize}"
+            );
+        }
+
+        $target = "tag={$tag}" . ($city ? ",city={$city}" : '');
+
+        return $this->audit('enqueue_preview', $target, function () use ($tag, $sampleSize, $city, $seed, $priority) {
+            return RecomputeJob::create([
+                'job_type'     => 'preview',
+                'payload'      => $this->tagActor([
+                    'tag'         => $tag,
+                    'sample_size' => $sampleSize,
+                    'city'        => $city,
+                    'seed'        => $seed,
+                ]),
+                'priority'     => $priority,
+                'status'       => 'pending',
+                'retry_count'  => 0,
+                'requested_at' => now(),
+            ]);
+        });
+    }
+
+    /**
+     * Phase 3.A — Check có preview gần đây cho tag này không (soft-gate activation).
+     * Dùng AuditLog entries với action='enqueue_preview', target prefix "tag={tag}".
+     *
+     * @return bool true nếu có ít nhất 1 preview trong $minutes phút qua
+     */
+    public function hasRecentPreview(string $tag, int $minutes = 30): bool
+    {
+        try {
+            return \App\Models\Oohx\Config\AuditLog::query()
+                ->where('action', 'enqueue_preview')
+                ->where('target', 'like', "tag={$tag}%")
+                ->where('created_at', '>=', now()->subMinutes($minutes))
+                ->exists();
+        } catch (\Throwable) {
+            return false; // fail-safe: giả định đã preview để không block activate
+        }
     }
 
     // ── Mutate existing jobs ──────────────────────────────────────────
