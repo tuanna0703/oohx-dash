@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ScreenImportResource\Pages;
 
 use App\Filament\Resources\ScreenImportResource;
 use App\Models\ScreenImport;
+use App\Models\Owner;
 use App\Services\ScreenImport\ScreenImportService;
 use App\Services\ScreenImport\TemplateGenerator;
 use Filament\Actions;
@@ -45,6 +46,14 @@ class ListScreenImports extends ListRecords
                 ->modalDescription('Hệ thống sẽ phân tích file và AI sẽ đề xuất mapping cột → field.')
                 ->modalSubmitActionLabel('Upload & Analyze')
                 ->form([
+                    Forms\Components\Select::make('owner_id')
+                        ->label('Media Owner')
+                        ->required()
+                        ->options(fn () => Owner::orderBy('name')->pluck('name', 'id')->all())
+                        ->default(fn () => auth()->user()?->current_owner_id)
+                        ->searchable()
+                        ->helperText('Screens sẽ thuộc owner này. Admin cần chọn rõ; publisher auto-fill.'),
+
                     Forms\Components\FileUpload::make('file')
                         ->label('Excel / CSV file')
                         ->required()
@@ -76,7 +85,7 @@ class ListScreenImports extends ListRecords
 
                     $import = ScreenImport::create([
                         'id'                => (string) Str::uuid(),
-                        'owner_id'          => auth()->user()?->current_owner_id ?? auth()->user()?->owner_id ?? 1,
+                        'owner_id'          => $data['owner_id'],
                         'uploaded_by'       => auth()->id(),
                         'original_filename' => $originalName,
                         'file_path'         => $filePath,
