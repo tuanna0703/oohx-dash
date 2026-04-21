@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * metrics.screen_context_metrics — 1 row per screen, output của enrichment step.
  *
- * Read-only trên connection `oohx` (oohx_readonly user có SELECT, không có write).
+ * Connection `oohx_control` — role này có SELECT trên metrics.* (per PHASE-2A-HANDOFF §4.2.1),
+ * trong khi `oohx_readonly` KHÔNG có quyền schema metrics. Read-only từ Laravel (chỉ SELECT).
+ *
  * Phase 2.D thêm 3 cột: weather_factor, seasonality_factor, calibration_factor.
  *
  * Dùng bởi:
@@ -17,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ScreenContextMetrics extends Model
 {
-    protected $connection = 'oohx';
+    protected $connection = 'oohx_control';
     protected $table      = 'metrics.screen_context_metrics';
     protected $primaryKey = 'screen_id';
     public    $incrementing = false;
