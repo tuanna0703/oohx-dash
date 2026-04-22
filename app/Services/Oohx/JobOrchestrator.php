@@ -34,6 +34,12 @@ class JobOrchestrator
     /** Cap theo Data Engine `_MAX_SAMPLE_SIZE` (PHASE-3A-HANDOFF §3.2). */
     public const PREVIEW_MAX_SAMPLE_SIZE = 2000;
 
+    /** Phase 4.1 — campaign scope caps (sanity bounds, matches DE validation). */
+    public const CAMPAIGN_MIN_SCREENS = 1;
+    public const CAMPAIGN_MAX_SCREENS = 500;
+    public const CAMPAIGN_MIN_DURATION_DAYS = 1;
+    public const CAMPAIGN_MAX_DURATION_DAYS = 365;
+
     // ── Enqueue ────────────────────────────────────────────────────────
 
     public function enqueueScreen(int $screenId, int $priority = 100, array $payload = []): RecomputeJob
@@ -190,6 +196,103 @@ class JobOrchestrator
         } catch (\Throwable) {
             return false; // fail-safe: giả định đã preview để không block activate
         }
+    }
+
+    /**
+     * Phase 4.1 — Enqueue campaign estimation job.
+     *
+     * Input `$laravelScreenIds` là ULIDs của local `screens` table. Service tự
+     * resolve qua 2-hop: Laravel ULID → uuid (LocalScreen.uuid) → DE bigint
+     * (core.screens.id WHERE external_id=uuid). Bỏ screen nào không resolve
+     * được và throw nếu cuối cùng không còn screen nào valid.
+     *
+     * DE worker aggregate via ST_GeoHash precision 7 → lưu vào
+     * `output.campaign_estimates`. Result schema: PHASE-4.1-HANDOFF §5.
+     *
+     * @param  list<string>  $laravelScreenIds  ULID của local screens
+     * @param  int           $durationDays      1..365
+     * @param  ?string       $campaignName      Optional — human label
+     * @param  ?float        $totalBudget       Optional VND
+     * @param  ?string       $notes             Free text
+     * @param  int           $priority          Default 110 — giữa preview (120) và bulk (150)
+     *
+     * @throws \InvalidArgumentException khi input invalid hoặc không resolve được screens
+     */
+    public function enqueueCampaign(
+        array $laravelScreenIds,
+        int $durationDays,
+        ?string $campaignName = null,
+        ?float $totalBudget = null,
+        ?string $notes = null,
+        int $priority = 110,
+    ): RecomputeJob {
+        // Validate inputs
+        if (count($laravelScreenIds) < self::CAMPAIGN_MIN_SCREENS) {
+            throw new \InvalidArgumentException('Cần ≥ 1 screen cho campaign');
+        }
+        if (count($laravelScreenIds) > self::CAMPAIGN_MAX_SCREENS) {
+            throw new \InvalidArgumentException(
+                'Vượt cap ' . self::CAMPAIGN_MAX_SCREENS . ' screens / campaign'
+            );
+        }
+        if ($durationDays < self::CAMPAIGN_MIN_DURATION_DAYS || $durationDays > self::CAMPAIGN_MAX_DURATION_DAYS) {
+            throw new \InvalidArgumentException(
+                "duration_days phải trong " . self::CAMPAIGN_MIN_DURATION_DAYS .
+                '..' . self::CAMPAIGN_MAX_DURATION_DAYS . ", got {$durationDays}"
+            );
+        }
+        if ($totalBudget !== null && $totalBudget < 0) {
+            throw new \InvalidArgumentException('total_budget không được âm');
+        }
+
+        // 2-hop resolution: Laravel ULID → Laravel.uuid → DE core.screens.id
+        $uuids = \App\Models\Screen::withoutGlobalScopes()
+            ->whereIn('id', $laravelScreenIds)
+            ->pluck('uuid')
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($uuids)) {
+            throw new \InvalidArgumentException(
+                'Không tìm thấy Laravel screen nào với IDs đã cho (hoặc screens chưa có uuid)'
+            );
+        }
+
+        $deScreenIds = \App\Models\Oohx\Screen::query()
+            ->whereIn('external_id', $uuids)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        if (empty($deScreenIds)) {
+            throw new \InvalidArgumentException(
+                'Không có screen nào khớp trên Data Engine (chạy oohx:sync-to-engine trước)'
+            );
+        }
+
+        $target = "n=" . count($deScreenIds) . " · {$durationDays}d"
+            . ($campaignName ? " · {$campaignName}" : '');
+
+        return $this->audit('enqueue_campaign', $target, function () use (
+            $deScreenIds, $durationDays, $campaignName, $totalBudget, $notes, $priority,
+        ) {
+            return RecomputeJob::create([
+                'job_type'     => 'campaign_estimate',
+                'payload'      => $this->tagActor(array_filter([
+                    'screen_ids'    => $deScreenIds,
+                    'duration_days' => $durationDays,
+                    'campaign_name' => $campaignName,
+                    'total_budget'  => $totalBudget,
+                    'notes'         => $notes,
+                ], fn ($v) => $v !== null && $v !== '')),
+                'priority'     => $priority,
+                'status'       => 'pending',
+                'retry_count'  => 0,
+                'requested_at' => now(),
+            ]);
+        });
     }
 
     // ── Mutate existing jobs ──────────────────────────────────────────

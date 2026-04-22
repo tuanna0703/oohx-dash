@@ -258,6 +258,56 @@ class OohxRecomputeJobResource extends Resource
                         ->view('filament.resources.oohx-recompute-job.preview-result'),
                 ]),
 
+            // Phase 4.1 — Campaign estimate result
+            Infolists\Components\Section::make('Campaign forecast')
+                ->icon('heroicon-o-megaphone')
+                ->description('Aggregate impressions + reach. Click "View campaign forecast" header action cho full breakdown.')
+                ->visible(fn ($record) => $record->is_campaign && $record->campaign_result !== null)
+                ->columns(4)
+                ->schema([
+                    Infolists\Components\TextEntry::make('campaign_result.total_impressions_for_duration')
+                        ->label('Total impressions')
+                        ->numeric(decimalPlaces: 0)
+                        ->weight('bold')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['total_impressions_for_duration'] ?? null),
+                    Infolists\Components\TextEntry::make('campaign_result.estimated_unique_reach')
+                        ->label('Unique reach')
+                        ->numeric(decimalPlaces: 0)
+                        ->getStateUsing(fn ($record) => $record->campaign_result['estimated_unique_reach'] ?? null),
+                    Infolists\Components\TextEntry::make('campaign_result.estimated_frequency')
+                        ->label('Frequency')
+                        ->formatStateUsing(fn (?float $state) => $state !== null ? number_format($state, 1) . '×' : '—')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['estimated_frequency'] ?? null),
+                    Infolists\Components\TextEntry::make('campaign_result.estimated_cpm')
+                        ->label('CPM')
+                        ->money('VND')
+                        ->default('—')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['estimated_cpm'] ?? null),
+
+                    Infolists\Components\TextEntry::make('campaign_result.screens_with_estimate')
+                        ->label('Screens with data')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['screens_with_estimate'] ?? 0),
+                    Infolists\Components\TextEntry::make('campaign_result.screens_missing_estimate')
+                        ->label('Missing')
+                        ->badge()
+                        ->color(fn ($state) => ($state ?? 0) > 0 ? 'warning' : 'gray')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['screens_missing_estimate'] ?? 0),
+                    Infolists\Components\TextEntry::make('campaign_result.unique_geohash_cells')
+                        ->label('Distinct areas')
+                        ->getStateUsing(fn ($record) => $record->campaign_result['unique_geohash_cells'] ?? null),
+                    Infolists\Components\TextEntry::make('campaign_result.avg_confidence')
+                        ->label('Avg confidence')
+                        ->badge()
+                        ->formatStateUsing(fn (?float $state) => $state !== null ? number_format($state, 2) : '—')
+                        ->color(fn (?float $state) => match (true) {
+                            $state === null => 'gray',
+                            $state >= 0.7   => 'success',
+                            $state >= 0.5   => 'warning',
+                            default         => 'danger',
+                        })
+                        ->getStateUsing(fn ($record) => $record->campaign_result['avg_confidence'] ?? null),
+                ]),
+
             Infolists\Components\Section::make('Error')
                 ->visible(fn ($record) => ! empty($record->error_message))
                 ->schema([

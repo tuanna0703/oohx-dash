@@ -27,6 +27,19 @@ class ViewRecomputeJob extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Phase 4.1 — campaign job done → link sang campaign detail
+            Actions\Action::make('viewCampaign')
+                ->label('View campaign forecast')
+                ->icon('heroicon-o-megaphone')
+                ->color('success')
+                ->visible(fn () => $this->record->is_campaign
+                    && $this->record->status === 'done'
+                    && $this->record->campaign_id)
+                ->url(fn () => \App\Filament\Resources\OohxCampaignEstimateResource::getUrl(
+                    'view',
+                    ['record' => $this->record->campaign_id]
+                )),
+
             Actions\Action::make('retry')
                 ->label('Retry')
                 ->icon('heroicon-o-arrow-path')

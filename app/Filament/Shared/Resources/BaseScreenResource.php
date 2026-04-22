@@ -883,6 +883,25 @@ abstract class BaseScreenResource extends Resource
                                 ->success()
                                 ->send();
                         }),
+
+                    // Phase 4.1 — pre-populate Campaign Planner với selected screens
+                    Tables\Actions\BulkAction::make('plan_campaign')
+                        ->label('Plan campaign with selected')
+                        ->icon('heroicon-o-megaphone')
+                        ->color('info')
+                        ->deselectRecordsAfterCompletion()
+                        ->action(function ($records) {
+                            if ($records->isEmpty()) {
+                                Notification::make()->title('Chọn ít nhất 1 screen')->warning()->send();
+                                return;
+                            }
+                            $ids = $records->pluck('id')->take(500)->implode(',');
+                            $url = \App\Filament\Resources\OohxCampaignEstimateResource::getUrl('create', [
+                                'screens' => $ids,
+                            ]);
+                            return redirect($url);
+                        }),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

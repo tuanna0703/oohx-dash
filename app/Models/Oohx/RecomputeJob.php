@@ -103,10 +103,11 @@ class RecomputeJob extends Model
 
     /**
      * Target label for table display:
-     *   screen  → screen name (or id)
-     *   city    → city
-     *   bulk    → action name (or "bulk N screens")
-     *   preview → "preview tag=X [city=Y]"  (Phase 3.A)
+     *   screen            → screen name (or id)
+     *   city              → city
+     *   bulk              → action name (or "bulk N screens")
+     *   preview           → "preview tag=X [city=Y]"  (Phase 3.A)
+     *   campaign_estimate → "name · N screens × D days" (Phase 4.1)
      */
     public function getTargetLabelAttribute(): string
     {
@@ -123,6 +124,11 @@ class RecomputeJob extends Model
                             ? ' · city=' . $this->payload['city']
                             : '')
                         . ' · n=' . ($this->payload['sample_size'] ?? '?'),
+            'campaign_estimate' => (isset($this->payload['campaign_name']) && $this->payload['campaign_name']
+                        ? "{$this->payload['campaign_name']} · "
+                        : 'campaign · ')
+                        . count($this->payload['screen_ids'] ?? []) . ' screens × '
+                        . ($this->payload['duration_days'] ?? '?') . ' days',
             default  => '—',
         };
     }
@@ -143,6 +149,34 @@ class RecomputeJob extends Model
         if (! $this->is_preview) return null;
         $r = $this->payload['result'] ?? null;
         return is_array($r) ? $r : null;
+    }
+
+    /**
+     * Phase 4.1 — True nếu job là campaign_estimate (conditional rendering).
+     */
+    public function getIsCampaignAttribute(): bool
+    {
+        return $this->job_type === 'campaign_estimate';
+    }
+
+    /**
+     * Phase 4.1 — Campaign result (payload.result). Null cho đến khi worker done.
+     * Schema: xem PHASE-4.1-HANDOFF §5.
+     */
+    public function getCampaignResultAttribute(): ?array
+    {
+        if (! $this->is_campaign) return null;
+        $r = $this->payload['result'] ?? null;
+        return is_array($r) ? $r : null;
+    }
+
+    /**
+     * Phase 4.1 — campaign_estimates.id sau khi worker persist. Null khi chưa done.
+     */
+    public function getCampaignIdAttribute(): ?int
+    {
+        $id = $this->campaign_result['id'] ?? null;
+        return is_numeric($id) ? (int) $id : null;
     }
 
     /**
