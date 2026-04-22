@@ -19,7 +19,8 @@ class CampaignEstimate extends Model
     public    $timestamps = false;
 
     protected $casts = [
-        'screen_ids'                     => 'array',
+        // Note: screen_ids = Postgres `bigint[]` → text format "{1,2,3}", KHÔNG phải JSON.
+        // Laravel 'array' cast dùng json_decode → fail → empty. Xử lý qua accessor thay vì cast.
         'duration_days'                  => 'integer',
         'screens_with_estimate'          => 'integer',
         'screens_missing_estimate'       => 'integer',
@@ -36,6 +37,38 @@ class CampaignEstimate extends Model
     ];
 
     // ── Accessors for UI ────────────────────────────────────────────────
+
+    /**
+     * Parse Postgres `bigint[]` text format "{1,2,3,42,58}" → PHP list<int>.
+     * Laravel 'array' cast không work với PG array (không phải JSON).
+     * Tolerant: JSON format [1,2,3] hoặc already-array cũng xử lý được.
+     *
+     * @return list<int>
+     */
+    public function getScreenIdsAttribute($value): array
+    {
+        if (is_array($value)) return array_map('intval', $value);
+        if ($value === null || $value === '' || $value === '{}') return [];
+
+        // PG text format: {1,2,3} → strip braces → explode
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if (str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) {
+                $inner = trim($trimmed, '{}');
+                if ($inner === '') return [];
+                return array_values(array_map(
+                    fn ($v) => (int) trim($v, '" '),
+                    explode(',', $inner),
+                ));
+            }
+
+            // Fallback: try JSON decode (in case DE stores as JSONB)
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded)) return array_map('intval', $decoded);
+        }
+
+        return [];
+    }
 
     /**
      * Confidence tier label + color — reused từ ScreenEstimate pattern.
