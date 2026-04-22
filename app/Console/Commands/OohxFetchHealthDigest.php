@@ -12,13 +12,14 @@ use Symfony\Component\Process\Process;
 /**
  * Phase 3.A Part 2 — fetch DE health digest JSON via scp.
  *
- * Schedule mỗi 30 phút qua Laravel scheduler. DE cron viết file mỗi 08:00 UTC
- * (daily digest) nên chạy nhiều lần không tốn gì — idempotent scp với
- * same-mtime sẽ skip.
+ * Primary target: `health-digest-latest.json` (symlink DE refresh hourly +5min).
+ * Secondary: date-pattern files `health-digest-YYYYMMDD.json` (audit history).
+ *
+ * Schedule mỗi 10 phút — match DE refresh cycle (hourly). Handoff §4.2.
  *
  * Silent-fail khi:
  *   - SSH key không tồn tại (chưa setup infra)
- *   - Remote file chưa có (DE cron chưa chạy)
+ *   - Remote file chưa có (first deploy / scp error)
  *   - Network timeout
  *
  * Luôn log, không throw — cho chạy unattended trong cron.
@@ -26,12 +27,14 @@ use Symfony\Component\Process\Process;
 class OohxFetchHealthDigest extends Command
 {
     protected $signature = 'oohx:fetch-health
-                            {--date= : YYYYMMDD (default hôm nay UTC)}
-                            {--all : Thử fetch cả 7 ngày gần nhất}';
+                            {--date= : YYYYMMDD (fetch 1 file theo ngày)}
+                            {--all : Fetch cả 7 ngày gần nhất + latest}
+                            {--latest-only : Chỉ fetch latest.json, skip date files}';
     protected $description = 'SCP health digest JSON từ Data Engine VPS về storage/app/oohx-health.';
 
     private const CACHE_KEY = 'oohx:health:last_fetch';
     private const STORAGE_DIR = 'oohx-health';
+    private const LATEST_FILENAME = 'health-digest-latest.json';
 
     public function handle(HealthDigestService $service): int
     {
@@ -49,18 +52,17 @@ class OohxFetchHealthDigest extends Command
             return self::FAILURE;
         }
 
-        // Ensure local dir exists
         $localDir = Storage::disk('local')->path(self::STORAGE_DIR);
         if (! is_dir($localDir)) {
             @mkdir($localDir, 0755, true);
         }
 
-        $dates = $this->targetDates();
+        $targets = $this->buildTargets();
         $successCount = 0;
+        $totalAttempts = count($targets);
         $lastError = null;
 
-        foreach ($dates as $date) {
-            $filename  = "health-digest-{$date}.json";
+        foreach ($targets as $filename) {
             $remotePath = "{$remoteDir}/{$filename}";
             $localPath  = "{$localDir}/{$filename}";
 
@@ -70,6 +72,7 @@ class OohxFetchHealthDigest extends Command
                 '-o', 'StrictHostKeyChecking=accept-new',
                 '-o', 'ConnectTimeout=15',
                 '-o', 'BatchMode=yes',
+                '-q',
                 "{$remoteUser}@{$remoteHost}:{$remotePath}",
                 $localPath,
             ]);
@@ -86,49 +89,56 @@ class OohxFetchHealthDigest extends Command
             }
         }
 
-        $service->forget(); // bust cache so next Filament read picks up new file
+        $service->forget(); // bust cache so next read picks up fresh file
 
         if ($successCount === 0) {
             $this->recordFetch('failed', $lastError ?? 'No files fetched');
             Log::info('oohx:fetch-health — no files fetched', [
-                'dates' => $dates,
-                'error' => $lastError,
+                'targets' => $targets,
+                'error'   => $lastError,
             ]);
-            return self::FAILURE; // non-zero exit so scheduler can alert if needed
+            return self::FAILURE;
         }
 
-        $this->recordFetch('success', "Fetched {$successCount}/" . count($dates) . ' file(s)');
+        $this->recordFetch('success', "Fetched {$successCount}/{$totalAttempts} file(s)");
         return self::SUCCESS;
     }
 
     /**
-     * @return list<string>  YYYYMMDD date strings
+     * Build danh sách remote filenames cần scp.
+     *
+     * Default (scheduled run): chỉ `latest.json` — DE cron refresh hourly.
+     * `--all`: latest + 7 ngày audit history.
+     * `--date=YYYYMMDD`: chỉ file ngày đó.
+     * `--latest-only`: chỉ latest (explicit, same as default).
+     *
+     * @return list<string>
      */
-    private function targetDates(): array
+    private function buildTargets(): array
     {
         if ($this->option('date')) {
-            return [$this->option('date')];
+            return ["health-digest-{$this->option('date')}.json"];
         }
 
         if ($this->option('all')) {
             $now = now('UTC');
-            return array_map(
-                fn ($i) => $now->copy()->subDays($i)->format('Ymd'),
+            $dates = array_map(
+                fn ($i) => 'health-digest-' . $now->copy()->subDays($i)->format('Ymd') . '.json',
                 range(0, 6),
             );
+            return array_merge([self::LATEST_FILENAME], $dates);
         }
 
-        // Default: try today + yesterday (DE cron may not have run yet today)
-        $now = now('UTC');
-        return [$now->format('Ymd'), $now->copy()->subDay()->format('Ymd')];
+        // Default + --latest-only: only latest.json (per handoff §4.2)
+        return [self::LATEST_FILENAME];
     }
 
     private function recordFetch(string $status, ?string $message): void
     {
         Cache::put(self::CACHE_KEY, [
-            'status'    => $status,
-            'message'   => $message,
-            'at'        => now()->toIso8601String(),
+            'status'  => $status,
+            'message' => $message,
+            'at'      => now()->toIso8601String(),
         ], now()->addDay());
     }
 }

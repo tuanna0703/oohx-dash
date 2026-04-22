@@ -18,10 +18,10 @@ Schedule::command('oohx:sync-to-engine')
     ->appendOutputTo(storage_path('logs/oohx-sync.log'));
 
 // ── Phase 3.A Part 2: fetch DE health digest via scp ──
-// DE cron daily 08:00 UTC; Laravel polls 30 phút để cover delay + retry.
-// Non-overlapping + background → không chặn queue worker.
+// Primary target: health-digest-latest.json (DE cron refresh hourly +5min).
+// Poll 10 phút để pick up cập nhật DE nhanh. Handoff §4.2.
 Schedule::command('oohx:fetch-health')
-    ->everyThirtyMinutes()
+    ->everyTenMinutes()
     ->withoutOverlapping(5)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/oohx-health.log'));

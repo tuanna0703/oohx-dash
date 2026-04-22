@@ -54,13 +54,24 @@ class HealthDigestService
 
     /**
      * Resolve path của digest file mới nhất trong storage dir.
-     * Prefer hôm nay, fallback hôm qua (UTC — match DE cron timezone).
+     *
+     * Priority (handoff §4.2):
+     *   1. health-digest-latest.json — DE cron refresh hourly +5min, primary source
+     *   2. health-digest-YYYYMMDD.json — audit fallback (today → 7 days back)
+     *
+     * Trả về null nếu không có file nào → UI hiện empty state.
      */
     public function latestPath(): ?string
     {
         $disk = Storage::disk('local');
 
-        // Try today first, then walk back up to 7 days
+        // 1. Prefer latest.json (DE symlink, refreshed hourly)
+        $latest = self::STORAGE_DIR . '/health-digest-latest.json';
+        if ($disk->exists($latest)) {
+            return $disk->path($latest);
+        }
+
+        // 2. Fallback: date-pattern, walk back 7 days
         $today = now('UTC');
         for ($i = 0; $i < 7; $i++) {
             $date = $today->copy()->subDays($i)->format('Ymd');
@@ -70,15 +81,16 @@ class HealthDigestService
             }
         }
 
-        // Broader scan — find any matching file
+        // 3. Broader scan — pick newest matching pattern
         $files = $disk->files(self::STORAGE_DIR);
         $matches = array_values(array_filter(
             $files,
-            fn ($f) => preg_match('#/health-digest-\d{8}\.json$#', $f) || preg_match('#^' . self::STORAGE_DIR . '/health-digest-\d{8}\.json$#', $f),
+            fn ($f) => preg_match('#/health-digest-\d{8}\.json$#', $f)
+                   || preg_match('#^' . self::STORAGE_DIR . '/health-digest-\d{8}\.json$#', $f),
         ));
         if (! $matches) return null;
 
-        rsort($matches); // newest first by filename
+        rsort($matches);
         return $disk->path($matches[0]);
     }
 
