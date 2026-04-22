@@ -54,7 +54,24 @@ class OohxFetchHealthDigest extends Command
 
         $localDir = Storage::disk('local')->path(self::STORAGE_DIR);
         if (! is_dir($localDir)) {
-            @mkdir($localDir, 0755, true);
+            @mkdir($localDir, 0775, true);
+        }
+
+        // Pre-flight writability check — báo sớm nếu user khác đã tạo dir
+        // (typical aaPanel bug: manual run qua root tạo dir 0755 root:root,
+        // sau đó scheduler chạy dưới www bị denied).
+        if (! is_writable($localDir)) {
+            $owner = function_exists('posix_getpwuid') && function_exists('fileowner')
+                ? (posix_getpwuid(fileowner($localDir))['name'] ?? fileowner($localDir))
+                : fileowner($localDir);
+            $current = function_exists('posix_getpwuid') && function_exists('posix_geteuid')
+                ? (posix_getpwuid(posix_geteuid())['name'] ?? 'unknown')
+                : 'unknown';
+            $msg = "Local dir {$localDir} not writable by current user ({$current}); owner={$owner}. "
+                 . 'Fix: chown -R www:www storage/app/private/oohx-health && chmod -R 775 storage/app/private/oohx-health';
+            $this->error($msg);
+            $this->recordFetch('failed', $msg);
+            return self::FAILURE;
         }
 
         $targets = $this->buildTargets();
