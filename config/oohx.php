@@ -57,6 +57,14 @@ return [
             'OOHX_RECOMPUTE_CITY_CMD',
             'cd ~/apps/oohx-matrix/python-data-engine && .venv/bin/python -m app.cli recompute-city --city {city}'
         ),
+
+        // Phase 3.A Part 2 — remote path của health digest JSON trên DE VPS.
+        // DE cron viết file theo định dạng health-digest-YYYYMMDD.json hàng ngày 08:00 UTC.
+        // Laravel scp mỗi 30 phút về `storage/app/oohx-health/`.
+        'health_digest_remote_dir' => env(
+            'OOHX_HEALTH_REMOTE_DIR',
+            '/home/oohx/logs'
+        ),
     ],
 
 ];

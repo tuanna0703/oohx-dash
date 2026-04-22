@@ -28,6 +28,7 @@ class ScreenContextMetrics extends Model
     protected $casts = [
         // Road + POI context
         'lane_count'             => 'integer',
+        'nearest_road_id'        => 'integer',
         'poi_count_100m'         => 'integer',
         'poi_count_300m'         => 'integer',
         'poi_count_500m'         => 'integer',
@@ -84,5 +85,50 @@ class ScreenContextMetrics extends Model
         if ($f > 1.05) return 'success';
         if ($f < 0.95) return 'danger';
         return 'warning';
+    }
+
+    /**
+     * Phase 3.A Part 2 — data-completeness check (handoff §2.4 Option B).
+     *
+     * Screen coi là có "complete data" nếu cả 2 tín hiệu dưới đều có:
+     *   - `nearest_road_id` resolved (PostGIS spatial join matched)
+     *   - `poi_count_300m > 0` (ít nhất 1 POI trong bán kính 300m)
+     *
+     * City/region độc lập — không hardcode 'HCMC'. Khi DE team ingest Đà Nẵng,
+     * Hải Phòng... badge tự detect. Trước khi roads/POIs parity chạy xong, badge
+     * sẽ hiện "incomplete" cho city đó.
+     */
+    public function getHasCompleteDataAttribute(): bool
+    {
+        return $this->nearest_road_id !== null
+            && ($this->poi_count_300m ?? 0) > 0;
+    }
+
+    /** Color cho Filament badge: success khi complete, warning khi thiếu. */
+    public function getCompletenessBadgeColorAttribute(): string
+    {
+        return $this->has_complete_data ? 'success' : 'warning';
+    }
+
+    public function getCompletenessBadgeLabelAttribute(): string
+    {
+        return $this->has_complete_data ? 'Complete' : 'Incomplete data';
+    }
+
+    /**
+     * Chi tiết thiếu gì — dùng tooltip hiển thị UX. Trả empty khi complete.
+     *
+     * @return list<string>
+     */
+    public function getMissingDataReasonsAttribute(): array
+    {
+        $reasons = [];
+        if ($this->nearest_road_id === null) {
+            $reasons[] = 'No nearest road match (roads.* chưa ingest cho city này)';
+        }
+        if (($this->poi_count_300m ?? 0) === 0) {
+            $reasons[] = 'Không có POI trong bán kính 300m (pois.* chưa ingest)';
+        }
+        return $reasons;
     }
 }

@@ -96,6 +96,22 @@ class OohxEstimateResource extends Resource
                     ->label('Zone')
                     ->toggleable(),
 
+                // Phase 3.A Part 2 — data completeness badge (handoff §2.4 Option B)
+                Tables\Columns\IconColumn::make('data_complete')
+                    ->label('Data')
+                    ->getStateUsing(fn ($record) => $record->contextMetrics?->has_complete_data ?? false)
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-exclamation-triangle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn ($record) => $record->contextMetrics
+                        ? ($record->contextMetrics->has_complete_data
+                            ? 'Complete: nearest road + POIs resolved'
+                            : 'Incomplete: ' . implode(' · ', $record->contextMetrics->missing_data_reasons))
+                        : 'No context metrics yet — screen chưa được enrich')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('estimated_daily_impressions')
                     ->label('Daily imps')
                     ->numeric(decimalPlaces: 0, thousandsSeparator: ',')
@@ -372,6 +388,36 @@ class OohxEstimateResource extends Resource
                         ->money('VND')
                         ->placeholder('—')
                         ->columnSpan(2),
+                ]),
+
+            // Phase 3.A Part 2 — Data completeness (handoff §2.4)
+            Infolists\Components\Section::make('Data completeness')
+                ->icon('heroicon-o-shield-exclamation')
+                ->description('Auto-detect từ screen_context_metrics. Warning hiện khi roads/POIs chưa ingest cho city này.')
+                ->columns(3)
+                ->visible(fn ($record) => $record->contextMetrics !== null)
+                ->schema([
+                    Infolists\Components\TextEntry::make('contextMetrics.completeness_badge_label')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn ($record) => $record->contextMetrics?->completeness_badge_color ?? 'gray'),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.nearest_road_id')
+                        ->label('Nearest road ID')
+                        ->placeholder('—')
+                        ->color(fn ($state) => $state === null ? 'danger' : null),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.poi_count_300m')
+                        ->label('POI count (300m)')
+                        ->numeric()
+                        ->placeholder('0')
+                        ->color(fn ($state) => ($state ?? 0) === 0 ? 'danger' : null),
+
+                    Infolists\Components\TextEntry::make('missing_reasons')
+                        ->label('Issues')
+                        ->getStateUsing(fn ($record) => implode(' · ', $record->contextMetrics?->missing_data_reasons ?? []) ?: '—')
+                        ->columnSpanFull()
+                        ->visible(fn ($record) => ! ($record->contextMetrics?->has_complete_data ?? true)),
                 ]),
 
             // Phase 2.D — Contextual factors applied bởi formula
