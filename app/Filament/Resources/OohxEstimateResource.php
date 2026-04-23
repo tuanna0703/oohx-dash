@@ -96,21 +96,34 @@ class OohxEstimateResource extends Resource
                     ->label('Zone')
                     ->toggleable(),
 
-                // Phase 3.A Part 2 — data completeness badge (handoff §2.4 Option B)
-                Tables\Columns\IconColumn::make('data_complete')
+                // Phase 3.A Part 2 + 4.2.1 — data completeness 3-tier badge
+                Tables\Columns\TextColumn::make('data_completeness')
                     ->label('Data')
-                    ->getStateUsing(fn ($record) => $record->contextMetrics?->has_complete_data ?? false)
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-exclamation-triangle')
-                    ->trueColor('success')
-                    ->falseColor('warning')
+                    ->badge()
+                    ->getStateUsing(fn ($record) => $record->contextMetrics
+                        ? $record->contextMetrics->completeness_badge_label
+                        : 'No metrics')
+                    ->color(fn ($record) => $record->contextMetrics?->completeness_badge_color ?? 'gray')
                     ->tooltip(fn ($record) => $record->contextMetrics
                         ? ($record->contextMetrics->has_complete_data
-                            ? 'Complete: nearest road + POIs resolved'
-                            : 'Incomplete: ' . implode(' · ', $record->contextMetrics->missing_data_reasons))
+                            ? 'Complete: road + POI + population resolved'
+                            : implode(' · ', $record->contextMetrics->missing_data_reasons))
                         : 'No context metrics yet — screen chưa được enrich')
                     ->toggleable(),
+
+                // Phase 4.2.1 — population density (toggleable, hidden by default)
+                Tables\Columns\TextColumn::make('contextMetrics.population_density_300m')
+                    ->label('Pop density (300m)')
+                    ->numeric(decimalPlaces: 0, thousandsSeparator: ',')
+                    ->suffix(' /km²')
+                    ->placeholder('—')
+                    ->color(fn (?float $state) => match (true) {
+                        $state === null  => 'gray',
+                        $state >= 30000  => 'success',  // dense urban
+                        $state >= 10000  => 'info',     // residential
+                        default          => 'warning',  // suburban / rural
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('estimated_daily_impressions')
                     ->label('Daily imps')
@@ -390,11 +403,11 @@ class OohxEstimateResource extends Resource
                         ->columnSpan(2),
                 ]),
 
-            // Phase 3.A Part 2 — Data completeness (handoff §2.4)
+            // Phase 3.A Part 2 + Phase 4.2.1 — Data completeness 3-source check
             Infolists\Components\Section::make('Data completeness')
                 ->icon('heroicon-o-shield-exclamation')
-                ->description('Auto-detect từ screen_context_metrics. Warning hiện khi roads/POIs chưa ingest cho city này.')
-                ->columns(3)
+                ->description('3-source check: road + POI + population (HRSL). Warning hiện khi thiếu source nào.')
+                ->columns(4)
                 ->visible(fn ($record) => $record->contextMetrics !== null)
                 ->schema([
                     Infolists\Components\TextEntry::make('contextMetrics.completeness_badge_label')
@@ -412,6 +425,24 @@ class OohxEstimateResource extends Resource
                         ->numeric()
                         ->placeholder('0')
                         ->color(fn ($state) => ($state ?? 0) === 0 ? 'danger' : null),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.population_density_300m')
+                        ->label('Population (300m)')
+                        ->numeric(decimalPlaces: 0)
+                        ->suffix(' /km²')
+                        ->placeholder('— (HRSL chưa cover)')
+                        ->color(fn ($state) => match (true) {
+                            $state === null => 'danger',
+                            $state >= 30000 => 'success',
+                            $state >= 10000 => 'info',
+                            default         => 'warning',
+                        })
+                        ->helperText(fn ($state) => match (true) {
+                            $state === null => null,
+                            $state >= 30000 => 'Dense urban',
+                            $state >= 10000 => 'Residential',
+                            default         => 'Suburban / rural',
+                        }),
 
                     Infolists\Components\TextEntry::make('missing_reasons')
                         ->label('Issues')

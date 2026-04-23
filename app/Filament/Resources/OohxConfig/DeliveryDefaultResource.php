@@ -31,18 +31,24 @@ class DeliveryDefaultResource extends Resource
             Forms\Components\Select::make('key')
                 ->label('Key')
                 ->options(array_combine(DeliveryDefault::KEYS, DeliveryDefault::KEYS))
-                ->helperText('Whitelist key Data Engine recognise.')
+                ->helperText('Whitelist key Data Engine recognise. Phase 4.1+4.2.1 added 6 new keys.')
                 ->required()
                 ->disabled(fn ($record) => (bool) $record)
-                ->dehydrated(true),
+                ->dehydrated(true)
+                ->live(),
 
             Forms\Components\TextInput::make('value')
                 ->label('Value')
-                ->helperText('Khoảng [0, 100]. Vd: visibility 0.25, share_of_voice 0.125, dwell_factor 1.20.')
+                ->helperText(function (Forms\Get $get) {
+                    $key = $get('key');
+                    if (! $key) return 'Chọn key trước để xem range hợp lệ.';
+                    [, , $label] = DeliveryDefault::rangeFor($key);
+                    return "Range: {$label}. Phase 4.2.1 widened DB CHECK to 0..1,000,000.";
+                })
                 ->required()
                 ->numeric()
                 ->minValue(0)
-                ->maxValue(100)
+                ->maxValue(1000000)   // Phase 4.2.1 migration 014 widened constraint
                 ->step(0.001),
 
             Forms\Components\Textarea::make('description')

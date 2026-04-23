@@ -93,14 +93,18 @@ class CampaignEstimate extends Model
     }
 
     /**
-     * Frequency warning — handoff §6.2: frequency > 100 → over-saturation.
+     * Frequency warning thresholds — tuned per Phase 4.2 consolidated handoff §6.3.
+     *
+     * Phase 4.2.1 chuyển reach formula sang density-driven → reach numbers
+     * giảm so với Phase 4.1 → frequency tự nhiên cao hơn. Tiers cũ (>50 warn,
+     * >100 critical) thành quá nhạy cảm. Tune lên: >100 warn, >500 critical.
      */
     public function getFrequencyWarningAttribute(): ?string
     {
         $f = $this->estimated_frequency;
         if ($f === null) return null;
-        if ($f > 100)  return 'Over-saturation — same viewers exposed nhiều lần';
-        if ($f > 50)   return 'Frequency cao — cân nhắc thêm screens ở vùng khác';
+        if ($f > 500) return 'Over-saturation severe — same viewers exposed quá nhiều lần';
+        if ($f > 100) return 'Frequency cao — cân nhắc thêm screens ở vùng khác';
         return null;
     }
 
@@ -108,8 +112,8 @@ class CampaignEstimate extends Model
     {
         $f = $this->estimated_frequency;
         if ($f === null) return 'gray';
-        if ($f > 100) return 'danger';
-        if ($f > 50)  return 'warning';
+        if ($f > 500) return 'danger';
+        if ($f > 100) return 'warning';
         return 'success';
     }
 

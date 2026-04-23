@@ -195,7 +195,7 @@ class OohxCampaignEstimateResource extends Resource
                 ->columns(1)
                 ->visible(fn ($record) =>
                     ($record->screens_missing_estimate ?? 0) > 0
-                    || ($record->estimated_frequency ?? 0) > 50
+                    || ($record->estimated_frequency ?? 0) > 100
                     || ($record->avg_confidence !== null && $record->avg_confidence < 0.5))
                 ->schema([
                     Infolists\Components\TextEntry::make('missing_screens_warning')
@@ -210,7 +210,7 @@ class OohxCampaignEstimateResource extends Resource
                         ->badge()
                         ->color(fn ($record) => $record->frequency_color)
                         ->default('—')
-                        ->visible(fn ($record) => ($record->estimated_frequency ?? 0) > 50),
+                        ->visible(fn ($record) => ($record->estimated_frequency ?? 0) > 100),
 
                     Infolists\Components\TextEntry::make('avg_confidence_warning')
                         ->label('Low confidence')

@@ -50,6 +50,10 @@ class ScreenContextMetrics extends Model
         'seasonality_factor'     => 'float',
         'calibration_factor'     => 'float',
 
+        // Phase 4.2.1 — population density driven factor source
+        'population_density_300m' => 'float',
+        'population_density_500m' => 'float',
+
         'context_tags'           => 'array',
         'created_at'             => 'datetime',
         'updated_at'             => 'datetime',
@@ -88,31 +92,56 @@ class ScreenContextMetrics extends Model
     }
 
     /**
-     * Phase 3.A Part 2 — data-completeness check (handoff §2.4 Option B).
+     * Phase 3.A Part 2 — data-completeness check.
+     * Phase 4.2.1 — extended từ 2 → 3 sources (handoff §5).
      *
-     * Screen coi là có "complete data" nếu cả 2 tín hiệu dưới đều có:
-     *   - `nearest_road_id` resolved (PostGIS spatial join matched)
-     *   - `poi_count_300m > 0` (ít nhất 1 POI trong bán kính 300m)
+     * Tier:
+     *   complete (3/3)   → road + POI + population (full HRSL coverage city)
+     *   partial  (2/3)   → road + POI nhưng thiếu population (ngoài 4 HRSL cities)
+     *   incomplete (≤1)  → thiếu road hoặc POI (city chưa parity)
      *
-     * City/region độc lập — không hardcode 'HCMC'. Khi DE team ingest Đà Nẵng,
-     * Hải Phòng... badge tự detect. Trước khi roads/POIs parity chạy xong, badge
-     * sẽ hiện "incomplete" cho city đó.
+     * City-agnostic — không hardcode 'HCMC'. Khi DE ingest thêm city mới,
+     * tier tự update.
      */
     public function getHasCompleteDataAttribute(): bool
     {
-        return $this->nearest_road_id !== null
-            && ($this->poi_count_300m ?? 0) > 0;
+        return $this->completeness_tier === 'complete';
     }
 
-    /** Color cho Filament badge: success khi complete, warning khi thiếu. */
+    /**
+     * @return 'complete'|'partial'|'incomplete'
+     */
+    public function getCompletenessTierAttribute(): string
+    {
+        $road = $this->nearest_road_id !== null;
+        $poi  = ($this->poi_count_300m ?? 0) > 0;
+        $pop  = $this->population_density_300m !== null;
+
+        $count = (int) $road + (int) $poi + (int) $pop;
+        return match (true) {
+            $count === 3 => 'complete',
+            $count === 2 => 'partial',
+            default      => 'incomplete',
+        };
+    }
+
+    /** Color cho Filament badge — 3-tier (success/warning/danger). */
     public function getCompletenessBadgeColorAttribute(): string
     {
-        return $this->has_complete_data ? 'success' : 'warning';
+        return match ($this->completeness_tier) {
+            'complete'   => 'success',
+            'partial'    => 'warning',
+            'incomplete' => 'danger',
+        };
     }
 
     public function getCompletenessBadgeLabelAttribute(): string
     {
-        return $this->has_complete_data ? 'Complete' : 'Incomplete data';
+        return match ($this->completeness_tier) {
+            'complete'   => 'Complete',
+            'partial'    => 'Partial',
+            'incomplete' => 'Incomplete data',
+        };
     }
 
     /**
@@ -124,10 +153,13 @@ class ScreenContextMetrics extends Model
     {
         $reasons = [];
         if ($this->nearest_road_id === null) {
-            $reasons[] = 'No nearest road match (roads.* chưa ingest cho city này)';
+            $reasons[] = 'No nearest road (roads.* chưa ingest cho city này)';
         }
         if (($this->poi_count_300m ?? 0) === 0) {
-            $reasons[] = 'Không có POI trong bán kính 300m (pois.* chưa ingest)';
+            $reasons[] = 'Không có POI trong 300m (pois.* chưa ingest)';
+        }
+        if ($this->population_density_300m === null) {
+            $reasons[] = 'No population density (Phase 4.2.1 HRSL chưa cover city này)';
         }
         return $reasons;
     }
