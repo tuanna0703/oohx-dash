@@ -32,7 +32,9 @@ class ScreenContextMetrics extends Model
         'poi_count_100m'         => 'integer',
         'poi_count_300m'         => 'integer',
         'poi_count_500m'         => 'integer',
-        'venue_footfall'         => 'float',
+        'venue_footfall'            => 'float',
+        'venue_footfall_source'     => 'string',
+        'venue_footfall_updated_at' => 'datetime',
 
         // Resolved factors (0..1 hoặc 0..2)
         'zone_factor'            => 'float',
@@ -162,5 +164,28 @@ class ScreenContextMetrics extends Model
             $reasons[] = 'No population density (Phase 4.2.1 HRSL chưa cover city này)';
         }
         return $reasons;
+    }
+
+    /**
+     * Phase 4.2.2 — venue_footfall staleness indicator (handoff §3.4).
+     * Stale khi data > 45 ngày (cron refresh weekly → tolerance 6× cadence).
+     */
+    public function getVenueFootfallIsStaleAttribute(): bool
+    {
+        $at = $this->venue_footfall_updated_at;
+        if (! $at) return false;        // NULL = no data yet, not "stale"
+        return $at->diffInDays(now()) > 45;
+    }
+
+    /** Color cho source badge. */
+    public function getVenueFootfallSourceColorAttribute(): string
+    {
+        return match ($this->venue_footfall_source) {
+            'foursquare' => 'success',
+            'google'     => 'primary',
+            'osm'        => 'warning',          // fallback — lower quality
+            'foody', 'grab', 'momo' => 'info',  // future partnerships
+            default      => 'gray',
+        };
     }
 }

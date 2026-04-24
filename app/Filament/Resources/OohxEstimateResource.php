@@ -125,6 +125,18 @@ class OohxEstimateResource extends Resource
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                // Phase 4.2.2 — venue footfall source (toggleable, hidden by default)
+                Tables\Columns\TextColumn::make('contextMetrics.venue_footfall_source')
+                    ->label('VF source')
+                    ->badge()
+                    ->color(fn ($record) => $record->contextMetrics?->venue_footfall_source_color ?? 'gray')
+                    ->placeholder('—')
+                    ->tooltip(fn ($record) => $record->contextMetrics?->venue_footfall_updated_at
+                        ? 'Fetched ' . $record->contextMetrics->venue_footfall_updated_at->diffForHumans()
+                            . ($record->contextMetrics->venue_footfall_is_stale ? ' — STALE' : '')
+                        : 'No data')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('estimated_daily_impressions')
                     ->label('Daily imps')
                     ->numeric(decimalPlaces: 0, thousandsSeparator: ',')
@@ -449,6 +461,46 @@ class OohxEstimateResource extends Resource
                         ->getStateUsing(fn ($record) => implode(' · ', $record->contextMetrics?->missing_data_reasons ?? []) ?: '—')
                         ->columnSpanFull()
                         ->visible(fn ($record) => ! ($record->contextMetrics?->has_complete_data ?? true)),
+                ]),
+
+            // Phase 4.2.2 — Venue Footfall multi-provider (handoff §3.4)
+            Infolists\Components\Section::make('Venue Footfall')
+                ->icon('heroicon-o-map-pin')
+                ->description('Signal + source tracking. Source winner được chọn bởi priority chain trên DE (Foursquare > OSM fallback).')
+                ->columns(3)
+                ->visible(fn ($record) => $record->contextMetrics !== null)
+                ->schema([
+                    Infolists\Components\TextEntry::make('contextMetrics.venue_footfall')
+                        ->label('Signal (footfall proxy)')
+                        ->numeric(decimalPlaces: 2)
+                        ->placeholder('— (chưa fetch)')
+                        ->suffixAction(
+                            Infolists\Components\Actions\Action::make('stale')
+                                ->icon('heroicon-o-exclamation-triangle')
+                                ->color('danger')
+                                ->tooltip('Stale — updated > 45 ngày')
+                                ->visible(fn ($record) => $record->contextMetrics?->venue_footfall_is_stale ?? false)
+                        ),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.venue_footfall_source')
+                        ->label('Source')
+                        ->badge()
+                        ->color(fn ($record) => $record->contextMetrics?->venue_footfall_source_color ?? 'gray')
+                        ->placeholder('—')
+                        ->helperText(fn ($record) => match ($record->contextMetrics?->venue_footfall_source) {
+                            'foursquare' => 'Primary — paid API',
+                            'google'     => 'Premium — activated',
+                            'osm'        => 'Fallback — POI count proxy',
+                            'foody', 'grab', 'momo' => 'Partnership provider',
+                            default      => null,
+                        }),
+
+                    Infolists\Components\TextEntry::make('contextMetrics.venue_footfall_updated_at')
+                        ->label('Last fetched')
+                        ->dateTime()
+                        ->since()
+                        ->placeholder('never')
+                        ->color(fn ($record) => $record->contextMetrics?->venue_footfall_is_stale ? 'danger' : 'gray'),
                 ]),
 
             // Phase 2.D — Contextual factors applied bởi formula

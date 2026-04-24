@@ -76,6 +76,59 @@ return [
     //     ...
     // ],
 
+    // ── Phase 4.2.2 — Venue Footfall Multi-Provider ──────────────────
+    // Chain-of-responsibility: priority 1 = try first, 99 = fallback last.
+    // Toggle via config.delivery_defaults venue_footfall_enable_* keys.
+
+    'venue_footfall_foursquare' => [
+        'display_name'  => 'Venue Footfall — Foursquare',
+        'description'   => 'Fused Places API (popularity + rating) — primary provider, '
+                         . 'paid ~$0.006/call. Urban VN coverage decent, tỉnh mỏng hơn.',
+        'provider'      => 'Foursquare Places API (Fused)',
+        'cost'          => '~$0.006/call, ~$30/month @ 5k screens weekly',
+        'rate_limit'    => 'daily_budget config key (default 3000)',
+        'cadence_hours' => 168, // weekly
+        'supports_city' => true,
+        'supports_bbox' => false,
+        'cache_ttl_hours' => 24 * 30, // 30 days
+        'expected_runtime_seconds' => 5,
+        'icon'          => 'heroicon-o-map-pin',
+        'color'         => 'success',
+    ],
+
+    'venue_footfall_osm' => [
+        'display_name'  => 'Venue Footfall — OSM (fallback)',
+        'description'   => 'Overpass POI count × category weight (F&B × 2, retail × 1.5, '
+                         . 'office × 0.8). Always-on fallback khi primary fail/rate-limit.',
+        'provider'      => 'OSM Overpass API (multi-endpoint)',
+        'cost'          => 'free',
+        'rate_limit'    => '10,000 queries/day per IP',
+        'cadence_hours' => 168, // weekly
+        'supports_city' => true,
+        'supports_bbox' => false,
+        'cache_ttl_hours' => 24 * 30,
+        'expected_runtime_seconds' => 10,
+        'icon'          => 'heroicon-o-globe-alt',
+        'color'         => 'warning',
+    ],
+
+    'venue_footfall_google' => [
+        'display_name'  => 'Venue Footfall — Google (STUB)',
+        'description'   => 'Stub adapter. Kích hoạt sau khi OOHX đăng ký Google Places API. '
+                         . 'Flip venue_footfall_enable_google = 1.0 via Delivery defaults.',
+        'provider'      => 'Google Places API (pending registration)',
+        'cost'          => '$0.017/call Nearby Search + Fields',
+        'rate_limit'    => 'tier-based',
+        'cadence_hours' => 168, // weekly
+        'supports_city' => true,
+        'supports_bbox' => false,
+        'cache_ttl_hours' => 24 * 30,
+        'expected_runtime_seconds' => 3,
+        'icon'          => 'heroicon-o-building-office',
+        'color'         => 'gray',
+        'disabled'      => true, // UI greys out trigger button
+    ],
+
     // ── Cities built-in (handoff §2.5) — có default bbox/centroid bên Python ──
     // City khác collector vẫn chấp nhận nhưng fallback bbox từ AVG screen lat/lon;
     // Laravel UI validate có ≥1 active screen trước khi trigger.

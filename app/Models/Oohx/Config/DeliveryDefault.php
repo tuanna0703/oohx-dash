@@ -59,6 +59,19 @@ class DeliveryDefault extends Model
         'population_density_baseline_per_km2',   // 1000-50000, urban baseline
         'population_factor_min',                 // 0.1-1.0, rural floor
         'population_factor_max',                 // 1.0-5.0, dense core cap
+
+        // Phase 4.2.2 — venue footfall multi-provider
+        'venue_footfall_enable_foursquare',        // 0/1 toggle
+        'venue_footfall_enable_osm',               // 0/1 toggle
+        'venue_footfall_enable_google',            // 0/1 (flip khi OOHX đăng ký xong)
+        'venue_footfall_priority_foursquare',      // 1-99 chain order
+        'venue_footfall_priority_osm',             // 1-99 (default 99 = fallback)
+        'venue_footfall_priority_google',          // 1-99
+        'venue_footfall_cache_ttl_days',           // 1-365
+        'venue_footfall_min_confidence',           // 0-1
+        'venue_footfall_radius_m',                 // 50-1000
+        'venue_footfall_foursquare_daily_budget',  // calls/day cap
+        'venue_footfall_foursquare_cost_per_call_usd', // cost tracking
     ];
 
     /**
@@ -89,6 +102,25 @@ class DeliveryDefault extends Model
             'population_density_baseline_per_km2' => [1000.0,  50000.0, '1k..50k /km²'],
             'population_factor_min'               => [0.1,     1.0,     '0.1..1.0 (floor)'],
             'population_factor_max'               => [1.0,     5.0,     '1.0..5.0 (cap)'],
+
+            // Phase 4.2.2 venue footfall toggles (0/1)
+            'venue_footfall_enable_foursquare',
+            'venue_footfall_enable_osm',
+            'venue_footfall_enable_google'
+                => [0.0, 1.0, '0=off · 1=on'],
+
+            // Phase 4.2.2 provider priority (1 = try first, 99 = fallback)
+            'venue_footfall_priority_foursquare',
+            'venue_footfall_priority_osm',
+            'venue_footfall_priority_google'
+                => [1.0, 99.0, '1..99 (lower = try first)'],
+
+            // Phase 4.2.2 misc
+            'venue_footfall_cache_ttl_days'              => [1.0,   365.0,    '1..365 days'],
+            'venue_footfall_min_confidence'              => [0.0,   1.0,      '0..1 (reject below)'],
+            'venue_footfall_radius_m'                    => [50.0,  1000.0,   '50..1000 meters'],
+            'venue_footfall_foursquare_daily_budget'     => [0.0,   100000.0, '0..100k calls/day'],
+            'venue_footfall_foursquare_cost_per_call_usd' => [0.0,  1.0,      '$0..$1 / call'],
 
             default => [0.0, 1000000.0, '0..1,000,000'],
         };
