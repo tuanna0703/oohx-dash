@@ -64,11 +64,13 @@ class OohxRecomputeJobResource extends Resource
                     ->label('Type')
                     ->badge()
                     ->color(fn (string $state) => match ($state) {
-                        'screen'  => 'info',
-                        'city'    => 'warning',
-                        'bulk'    => 'primary',
-                        'preview' => 'gray',
-                        default   => 'gray',
+                        'screen'                 => 'info',
+                        'city'                   => 'warning',
+                        'bulk'                   => 'primary',
+                        'preview'                => 'gray',
+                        'campaign_estimate'      => 'success',
+                        'venue_footfall_refresh' => 'info',
+                        default                  => 'gray',
                     })
                     ->sortable(),
 
@@ -139,10 +141,12 @@ class OohxRecomputeJobResource extends Resource
                     ]),
                 SelectFilter::make('job_type')
                     ->options([
-                        'screen'  => 'Screen',
-                        'city'    => 'City',
-                        'bulk'    => 'Bulk',
-                        'preview' => 'Preview (Phase 3.A)',
+                        'screen'                 => 'Screen',
+                        'city'                   => 'City',
+                        'bulk'                   => 'Bulk',
+                        'preview'                => 'Preview (Phase 3.A)',
+                        'campaign_estimate'      => 'Campaign estimate (Phase 4.1)',
+                        'venue_footfall_refresh' => 'Venue footfall (Phase 4.2.2)',
                     ]),
                 SelectFilter::make('city')
                     ->label('City (city-type jobs)')
@@ -306,6 +310,58 @@ class OohxRecomputeJobResource extends Resource
                             default         => 'danger',
                         })
                         ->getStateUsing(fn ($record) => $record->campaign_result['avg_confidence'] ?? null),
+                ]),
+
+            // Phase 4.2.2 — Venue footfall refresh result
+            Infolists\Components\Section::make('Venue footfall result')
+                ->icon('heroicon-o-map-pin')
+                ->description('Multi-provider fetch kết quả. source_winner = provider có confidence cao nhất sau priority chain.')
+                ->visible(fn ($record) => $record->is_venue_footfall && $record->venue_footfall_result !== null)
+                ->columns(4)
+                ->schema([
+                    Infolists\Components\TextEntry::make('venue_footfall_result.source_winner')
+                        ->label('Winner source')
+                        ->badge()
+                        ->color(fn (?string $state) => match ($state) {
+                            'foursquare' => 'success',
+                            'google'     => 'primary',
+                            'osm'        => 'warning',
+                            default      => 'gray',
+                        })
+                        ->getStateUsing(fn ($record) => $record->venue_footfall_result['source_winner'] ?? null),
+                    Infolists\Components\TextEntry::make('venue_footfall_result.venues_count')
+                        ->label('Venues found')
+                        ->numeric()
+                        ->getStateUsing(fn ($record) => $record->venue_footfall_result['venues_count'] ?? 0),
+                    Infolists\Components\TextEntry::make('venue_footfall_result.footfall_proxy')
+                        ->label('Footfall proxy')
+                        ->numeric(decimalPlaces: 2)
+                        ->weight('bold')
+                        ->getStateUsing(fn ($record) => $record->venue_footfall_result['footfall_proxy'] ?? null),
+                    Infolists\Components\TextEntry::make('venue_footfall_result.confidence')
+                        ->label('Confidence')
+                        ->badge()
+                        ->formatStateUsing(fn (?float $state) => $state !== null ? number_format($state, 2) : '—')
+                        ->color(fn (?float $state) => match (true) {
+                            $state === null => 'gray',
+                            $state >= 0.7   => 'success',
+                            $state >= 0.5   => 'warning',
+                            default         => 'danger',
+                        })
+                        ->getStateUsing(fn ($record) => $record->venue_footfall_result['confidence'] ?? null),
+
+                    Infolists\Components\TextEntry::make('venue_footfall_result.cost_usd')
+                        ->label('Cost USD')
+                        ->money('USD', divideBy: 100)
+                        ->formatStateUsing(fn (?float $state) => $state !== null ? '$' . number_format($state, 4) : '—')
+                        ->color(fn ($state) => ($state ?? 0) > 0.1 ? 'warning' : 'gray')
+                        ->getStateUsing(fn ($record) => $record->venue_footfall_result['cost_usd'] ?? 0),
+
+                    Infolists\Components\TextEntry::make('venue_footfall_result.providers_tried')
+                        ->label('Providers tried')
+                        ->getStateUsing(fn ($record) => is_array($record->venue_footfall_result['providers_tried'] ?? null)
+                            ? implode(' → ', $record->venue_footfall_result['providers_tried'])
+                            : '—'),
                 ]),
 
             Infolists\Components\Section::make('Error')

@@ -129,8 +129,28 @@ class RecomputeJob extends Model
                         : 'campaign · ')
                         . count($this->payload['screen_ids'] ?? []) . ' screens × '
                         . ($this->payload['duration_days'] ?? '?') . ' days',
+            'venue_footfall_refresh' => self::renderVenueFootfallLabel($this->payload ?? []),
             default  => '—',
         };
+    }
+
+    /**
+     * Phase 4.2.2 — compose label cho venue_footfall_refresh job.
+     * Payload shapes (CLI handoff §4):
+     *   --screen-id 42            → "screen #42 · VF refresh [provider=X]"
+     *   --city HCMC --stale-days 30 → "city=HCMC · VF refresh (stale > 30d)"
+     */
+    private static function renderVenueFootfallLabel(array $payload): string
+    {
+        $provider = isset($payload['provider']) ? " [provider={$payload['provider']}]" : '';
+        if (! empty($payload['screen_id'])) {
+            return "screen #{$payload['screen_id']} · VF refresh{$provider}";
+        }
+        if (! empty($payload['city'])) {
+            $stale = isset($payload['stale_days']) ? " (stale > {$payload['stale_days']}d)" : '';
+            return "city={$payload['city']} · VF refresh{$stale}{$provider}";
+        }
+        return 'VF refresh' . $provider;
     }
 
     /**
@@ -177,6 +197,25 @@ class RecomputeJob extends Model
     {
         $id = $this->campaign_result['id'] ?? null;
         return is_numeric($id) ? (int) $id : null;
+    }
+
+    /**
+     * Phase 4.2.2 — True nếu job là venue_footfall_refresh (per-screen venue fetch).
+     */
+    public function getIsVenueFootfallAttribute(): bool
+    {
+        return $this->job_type === 'venue_footfall_refresh';
+    }
+
+    /**
+     * Phase 4.2.2 — Venue footfall result khi worker done (payload.result).
+     * Schema expected: {source_winner, venues_count, footfall_proxy, confidence, cost_usd}
+     */
+    public function getVenueFootfallResultAttribute(): ?array
+    {
+        if (! $this->is_venue_footfall) return null;
+        $r = $this->payload['result'] ?? null;
+        return is_array($r) ? $r : null;
     }
 
     /**
