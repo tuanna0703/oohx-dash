@@ -8,6 +8,7 @@ use App\Http\Controllers\Buyer\BuyerReportController;
 use App\Http\Controllers\Buyer\BuyerSettingsController;
 use App\Http\Controllers\Buyer\CartController;
 use App\Http\Controllers\Buyer\PaymentController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\FrontpageController;
 use App\Http\Controllers\SitemapController;
@@ -20,6 +21,12 @@ $dashDomain = config('domains.dash', 'dash.oohx.net');
 // ── Dashboard: dash.oohx.net ───────────────────────────
 Route::domain($dashDomain)->group(function () {
     Route::get('/', fn () => redirect('/admin'));
+
+    // ── User invitation accept flow (guest accessible) ──
+    Route::get('/invitations/{token}/accept',  [InvitationController::class, 'show'])
+        ->name('invitations.accept');
+    Route::post('/invitations/{token}/accept', [InvitationController::class, 'store'])
+        ->name('invitations.accept.store');
 });
 
 // ── Frontpage: oohx.net ────────────────────────────────

@@ -25,3 +25,6 @@ Schedule::command('oohx:fetch-health')
     ->withoutOverlapping(5)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/oohx-health.log'));
+
+// ── Prune expired user invitations daily ──
+Schedule::command('invitations:prune')->dailyAt('03:00');
