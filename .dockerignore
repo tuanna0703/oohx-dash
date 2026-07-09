@@ -1,0 +1,74 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Editor / IDE
+.idea
+.vscode
+.zed
+.fleet
+.nova
+.phpactor.json
+
+# Local env / runtime
+.env
+.env.*
+!.env.docker.example
+.env.backup
+.env.production
+auth.json
+
+# Dependencies (rebuild bên trong image)
+/node_modules
+/vendor
+
+# Build artifacts (rebuild bên trong image)
+/public/build
+/public/hot
+/public/storage
+/public/oohx-frontpage
+
+# Laravel runtime state
+/storage/app/public/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/pail
+/storage/*.key
+!/storage/app/public/.gitkeep
+!/storage/framework/cache/data/.gitkeep
+!/storage/framework/sessions/.gitkeep
+!/storage/framework/views/.gitkeep
+!/storage/logs/.gitkeep
+
+# Cache
+.phpunit.cache
+.phpunit.result.cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs not needed in image
+CLAUDE.md
+.CLAUDE
+docs
+*.md
+!README.md
+
+# Tests (giữ nếu muốn run trong CI; loại nếu chỉ build prod image)
+/tests
+
+# Docker files self
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Misc one-off scripts left around
+composer-setup.php
+composer.phar
+server.php
+Homestead.json
+Homestead.yaml

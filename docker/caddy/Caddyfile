@@ -1,0 +1,87 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Caddyfile — multi-domain reverse proxy + auto-TLS cho oohx-dash
+#
+# Domains đến từ env:
+#   FRONTPAGE_DOMAIN   — public marketing site + buyer auth (oohx.net)
+#   DASH_DOMAIN        — Filament admin/publisher/buyer panels (dash.oohx.net)
+#
+# Cả hai cùng phục vụ từ một Laravel codebase ở /var/www/html/public.
+# Caddy fastcgi tới container `app:9000`.
+# ─────────────────────────────────────────────────────────────────────────────
+{
+	# Email cho Let's Encrypt — set qua env CADDY_ACME_EMAIL khi deploy
+	email {$CADDY_ACME_EMAIL:admin@example.com}
+
+	# Logs ra stdout (docker logs caddy)
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+
+	# Server-wide tuning
+	servers {
+		max_header_size 8KB
+	}
+}
+
+# ── Snippet: shared config cho cả 2 domain (DRY) ─────────────────────────────
+(laravel-app) {
+	root * /var/www/html/public
+	encode zstd gzip
+
+	# Static asset caching dài hạn (Vite hash filenames)
+	@static {
+		path /build/* /storage/* *.ico *.png *.jpg *.jpeg *.svg *.webp *.woff *.woff2 *.ttf *.eot *.css *.js
+	}
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Block hidden files
+	@hidden {
+		path /\\.*
+	}
+	respond @hidden 403
+
+	# PHP via fastcgi
+	php_fastcgi app:9000 {
+		# Forward real client info
+		env HTTPS on
+		env HTTP_X_FORWARDED_PROTO https
+	}
+
+	file_server
+
+	# Errors → log
+	log {
+		output stdout
+		format json
+	}
+
+	# Health endpoint passthrough — Laravel `/up`
+	handle /up {
+		php_fastcgi app:9000
+	}
+}
+
+# ── Frontpage domain ─────────────────────────────────────────────────────────
+{$FRONTPAGE_DOMAIN} {
+	import laravel-app
+}
+
+# Redirect www → non-www (bỏ comment nếu muốn)
+# www.{$FRONTPAGE_DOMAIN} {
+#     redir https://{$FRONTPAGE_DOMAIN}{uri} permanent
+# }
+
+# ── Dashboard domain ─────────────────────────────────────────────────────────
+{$DASH_DOMAIN} {
+	import laravel-app
+
+	# Dash domain là internal — block crawler
+	header X-Robots-Tag "noindex, nofollow"
+}
+
+# ── Fallback: bất kỳ host khác → redirect frontpage ─────────────────────────
+:80, :443 {
+	redir https://{$FRONTPAGE_DOMAIN}{uri} permanent
+}

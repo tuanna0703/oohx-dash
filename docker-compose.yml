@@ -1,0 +1,185 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# oohx-dash — production stack
+#
+# Services (always-on):
+#   app         php-fpm runtime (Laravel + Filament)
+#   caddy       reverse proxy + auto-TLS (Let's Encrypt)
+#   queue       worker container — php artisan queue:work
+#   scheduler   php artisan schedule:work (Laravel 11+ in-process scheduler)
+#
+# Services (profile=dev):
+#   mysql       cho dev / staging (prod nên dùng managed DB)
+#   redis       optional cache / queue backend
+#   mailpit     SMTP catcher cho test invitation emails
+#
+# Usage:
+#   docker compose up -d                     # production-like (cần managed DB)
+#   docker compose --profile dev up -d       # full dev stack
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-app-base: &app-base
+  image: oohx-dash:${APP_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      PHP_VERSION: "8.3"
+      NODE_VERSION: "20"
+  env_file:
+    - .env
+  restart: unless-stopped
+  volumes:
+    - app_storage:/var/www/html/storage
+  networks:
+    - oohx
+  depends_on:
+    mysql:
+      condition: service_healthy
+      required: false
+
+services:
+  app:
+    <<: *app-base
+    container_name: oohx-app
+    environment:
+      CONTAINER_ROLE: app
+      SYNC_PUBLIC_DIR: /shared/public
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_public:/shared/public
+    healthcheck:
+      # TCP probe: verify php-fpm đang listen 9000. Cho ping/status sâu hơn,
+      # cài thêm `fcgi` package và dùng cgi-fcgi như đã định nghĩa trong www.conf.
+      test: ["CMD-SHELL", "test -e /proc/1 && (php -r 'echo @fsockopen(\"127.0.0.1\",9000)?\"ok\":\"\";' | grep -q ok)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  queue:
+    <<: *app-base
+    container_name: oohx-queue
+    environment:
+      CONTAINER_ROLE: queue
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --sleep=3
+      - --tries=3
+      - --max-time=3600
+      - --max-jobs=1000
+    depends_on:
+      app:
+        condition: service_started
+
+  scheduler:
+    <<: *app-base
+    container_name: oohx-scheduler
+    environment:
+      CONTAINER_ROLE: scheduler
+    command:
+      - php
+      - artisan
+      - schedule:work
+    depends_on:
+      app:
+        condition: service_started
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: oohx-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3 (QUIC)
+    environment:
+      FRONTPAGE_DOMAIN: ${FRONTPAGE_DOMAIN:-oohx.net}
+      DASH_DOMAIN: ${DASH_DOMAIN:-dash.oohx.net}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL:-admin@oohx.net}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - app_public:/var/www/html/public:ro      # static assets được app entrypoint sync vào
+      - app_storage:/var/www/html/storage:ro    # cho /storage/* (public uploads via storage:link)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - oohx
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Dev-only services (chạy với --profile dev) ──────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: oohx-mysql
+    profiles: ["dev"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-oohx_dash}
+      MYSQL_USER: ${DB_USERNAME:-oohx}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${DB_PORT_HOST:-3306}:3306"
+    networks:
+      - oohx
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: oohx-redis
+    profiles: ["dev"]
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - oohx
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: oohx-mailpit
+    profiles: ["dev"]
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"  # web UI
+    networks:
+      - oohx
+
+# ── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  app_storage:        # Laravel storage/ — share giữa app + queue + scheduler + caddy(ro)
+    name: oohx_storage
+  app_public:         # public/ image artifacts cho Caddy đọc (ephemeral nhưng cần shared)
+    name: oohx_public
+  caddy_data:
+    name: oohx_caddy_data
+  caddy_config:
+    name: oohx_caddy_config
+  mysql_data:
+    name: oohx_mysql_data
+  redis_data:
+    name: oohx_redis_data
+
+networks:
+  oohx:
+    name: oohx
+    driver: bridge
