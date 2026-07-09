@@ -15,6 +15,20 @@ class OrganizationUser extends Model
     public const ROLE_PLANNER = 'planner';
     public const ROLE_VIEWER  = 'viewer';
 
+    /** Labels hiển thị cho UI */
+    public const ROLES = [
+        'admin'   => 'Admin',
+        'planner' => 'Planner',
+        'viewer'  => 'Viewer',
+    ];
+
+    /** Mô tả ngắn về quyền của từng role — dùng làm helperText. */
+    public const ROLE_DESCRIPTIONS = [
+        'admin'   => '👑 Toàn quyền: quản lý team, tạo campaign, duyệt booking, payments.',
+        'planner' => '📋 Tạo campaign, submit booking, upload creative, xem reports. Không quản lý team.',
+        'viewer'  => '👁 Chỉ xem campaigns và reports, không chỉnh sửa.',
+    ];
+
     public const PERMISSIONS = [
         'admin'   => ['manage_team', 'create_campaign', 'submit_booking', 'upload_creative', 'view_campaigns', 'view_reports', 'manage_payments'],
         'planner' => ['create_campaign', 'submit_booking', 'upload_creative', 'view_campaigns', 'view_reports'],
@@ -39,5 +53,19 @@ class OrganizationUser extends Model
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Roles mà $actor được phép gán cho người khác.
+     * Chỉ super_admin mới được gán role 'admin' (tránh org admin tự nhân bản).
+     */
+    public static function assignableRolesFor(?User $actor): array
+    {
+        if ($actor?->hasRole('super_admin')) {
+            return self::ROLES;
+        }
+        $roles = self::ROLES;
+        unset($roles['admin']);
+        return $roles;
     }
 }

@@ -4,15 +4,16 @@ namespace App\Filament\Publisher\Resources;
 
 use App\Filament\Publisher\Resources\OwnerUserResource\Pages;
 use App\Models\OwnerUser;
-use App\Models\User;
 use App\Services\TenantPermission;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 class OwnerUserResource extends Resource
 {
@@ -29,20 +30,14 @@ class OwnerUserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return TenantPermission::check('manage_users')
-            || TenantPermission::check('view_inventory'); // owner & manager thấy, chỉ owner mới edit
+        // Chỉ owner-role và super_admin được xem danh sách team members
+        // (sales_manager / read_only / scheduler / reporting_only không có manage_users).
+        return TenantPermission::check('manage_users');
     }
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
-        if (! $user) return false;
-        if ($user->hasRole('super_admin')) return true;
-
-        return \App\Models\OwnerUser::where('owner_id', $user->current_owner_id)
-            ->where('user_id', $user->id)
-            ->where('role', 'owner')
-            ->exists();
+        return Gate::allows('create', OwnerUser::class);
     }
     // ── Chỉ scope data theo current_owner_id ─────────────────────────────────
 
@@ -58,23 +53,21 @@ class OwnerUserResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Invite Team Member')->schema([
+            Forms\Components\Section::make()
+                ->heading(fn(string $operation) => $operation === 'edit' ? 'Edit Team Member' : 'Invite Team Member')
+                ->schema([
 
-                Forms\Components\TextInput::make('email')
-                    ->label('Email address')
-                    ->email()
-                    ->required()
-                    ->placeholder('user@example.com')
-                    ->helperText('Nếu email chưa có tài khoản, hệ thống sẽ tự tạo và gửi invite.')
-                    ->dehydrated(false)   // không map trực tiếp vào OwnerUser
-                    ->visibleOn('create'),
+                Forms\Components\Placeholder::make('user_email')
+                    ->label('Email')
+                    ->content(fn(?OwnerUser $record) => $record?->user?->email ?? '—')
+                    ->visibleOn('edit'),
 
                 Forms\Components\Select::make('role')
                     ->label('Role')
-                    ->options(OwnerUser::roleOptions())
+                    ->options(fn() => OwnerUser::assignableRolesFor(auth()->user()))
                     ->required()
                     ->default('read_only')
-                    ->helperText(fn(?string $state) => static::roleDescription($state))
+                    ->helperText(fn(?string $state) => OwnerUser::ROLE_DESCRIPTIONS[$state] ?? '')
                     ->live(),
 
                 Forms\Components\CheckboxList::make('allowed_network_ids')
@@ -83,7 +76,9 @@ class OwnerUserResource extends Resource
                     ->options(fn() => \App\Models\Network::where('owner_id', auth()->user()->current_owner_id)
                         ->pluck('name', 'id'))
                     ->columns(2)
-                    ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
+                    ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only']))
+                    // Khi role không thuộc scheduler/read_only, dehydrate null để xoá restriction cũ.
+                    ->dehydrateStateUsing(fn($state, Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only']) ? $state : null),
 
             ])->columns(1),
         ]);
@@ -93,12 +88,6 @@ class OwnerUserResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $user = auth()->user();
-        $canManage = $user?->hasRole('super_admin') || \App\Models\OwnerUser::where('owner_id', $user?->current_owner_id)
-                ->where('user_id', $user?->id)
-                ->where('role', 'owner')
-                ->exists();
-
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
@@ -139,13 +128,13 @@ class OwnerUserResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
-                        ->visible($canManage)
+                        ->visible(fn(OwnerUser $record) => Gate::allows('update', $record))
                         ->before(function (OwnerUser $record) {
                             if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
                                 Notification::make()
                                     ->title('Không thể sửa quyền Owner')
                                     ->danger()->send();
-                                $this->halt();
+                                throw new Halt();
                             }
                         }),
 
@@ -156,14 +145,10 @@ class OwnerUserResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Remove team member?')
                         ->modalDescription('User sẽ không còn truy cập được vào owner này.')
-                        ->visible($canManage)
+                        ->visible(fn(OwnerUser $record) => Gate::allows('delete', $record))
                         ->action(function (OwnerUser $record) {
                             if ($record->user_id === auth()->id()) {
                                 Notification::make()->title('Không thể tự xoá chính mình')->danger()->send();
-                                return;
-                            }
-                            if ($record->role === 'owner' && ! auth()->user()->hasRole('super_admin')) {
-                                Notification::make()->title('Không thể xoá Owner khác')->danger()->send();
                                 return;
                             }
                             $record->delete();
@@ -180,26 +165,8 @@ class OwnerUserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListOwnerUsers::route('/'),
-            'create' => Pages\CreateOwnerUser::route('/create'),
-            'edit'   => Pages\EditOwnerUser::route('/{record}/edit'),
+            'index' => Pages\ListOwnerUsers::route('/'),
+            'edit'  => Pages\EditOwnerUser::route('/{record}/edit'),
         ];
     }
-
-    // ── Role description helper ───────────────────────────────────────────────
-
-    private static function roleDescription(?string $role): string
-    {
-        return match ($role) {
-            'owner'          => 'Toàn quyền: quản lý team, inventory, pricing, reports.',
-            'manager'        => 'Quản lý inventory, pricing và xem reports. Không quản lý được users.',
-            'scheduler'      => 'Thêm/sửa screens và import inventory. Không xem được reports.',
-            'read_only'      => 'Chỉ xem screens và sites, không chỉnh sửa.',
-            'reporting_only' => 'Chỉ xem và export reports, không thấy inventory.',
-            'sales_manager'  => 'Xem inventory và sales dashboard. Không chỉnh sửa.',
-            default          => '',
-        };
-    }
-
-
 }

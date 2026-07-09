@@ -225,4 +225,11 @@ class OrganizationResource extends Resource
             'edit'   => Pages\EditOrganization::route('/{record}/edit'),
         ];
     }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\OrganizationResource\RelationManagers\OrganizationUsersRelationManager::class,
+        ];
+    }
 }

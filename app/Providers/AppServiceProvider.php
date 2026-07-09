@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\OrganizationUser;
+use App\Models\Owner;
+use App\Models\OwnerUser;
 use App\Models\Screen;
 use App\Observers\ScreenObserver;
+use App\Policies\OrganizationUserPolicy;
+use App\Policies\OwnerPolicy;
+use App\Policies\OwnerUserPolicy;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use App\Http\Responses\LoginResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Screen::observe(ScreenObserver::class);
+
+        Gate::policy(Owner::class, OwnerPolicy::class);
+        Gate::policy(OwnerUser::class, OwnerUserPolicy::class);
+        Gate::policy(OrganizationUser::class, OrganizationUserPolicy::class);
 
         // Fix Livewire upload CORS: set APP_URL to match current request domain
         // so Livewire uploads go to the same origin (oohx.test or dash.oohx.test)

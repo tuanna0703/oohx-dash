@@ -32,6 +32,16 @@ class OwnerUser extends Model
         'sales_manager'  => 'Sales manager',
     ];
 
+    /** Mô tả ngắn về quyền của từng role — dùng làm helperText/Placeholder trong forms. */
+    public const ROLE_DESCRIPTIONS = [
+        'owner'          => '👑 Toàn quyền: quản lý team, inventory, pricing, reports.',
+        'manager'        => '🔧 Quản lý inventory & pricing, xem reports. Không quản lý được users.',
+        'scheduler'      => '📅 Thêm/sửa screens và import inventory. Không xem được reports.',
+        'read_only'      => '👁 Chỉ xem screens và sites, không chỉnh sửa.',
+        'reporting_only' => '📊 Chỉ xem và export reports, không thấy inventory.',
+        'sales_manager'  => '💼 Xem inventory và sales dashboard. Không chỉnh sửa.',
+    ];
+
     /**
      * Quyền theo từng role.
      * key = action, value = array roles được phép.
@@ -96,6 +106,20 @@ class OwnerUser extends Model
     public static function roleOptions(): array
     {
         return self::ROLES;
+    }
+
+    /**
+     * Roles mà $actor được phép gán cho người khác.
+     * Chỉ super_admin mới được gán role 'owner' (tránh tự nhân bản owner trong tenant).
+     */
+    public static function assignableRolesFor(?User $actor): array
+    {
+        if ($actor?->hasRole('super_admin')) {
+            return self::ROLES;
+        }
+        $roles = self::ROLES;
+        unset($roles['owner']);
+        return $roles;
     }
 
     /** Role hiện tại có phải owner không */

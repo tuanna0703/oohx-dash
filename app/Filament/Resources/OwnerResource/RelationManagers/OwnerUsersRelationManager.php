@@ -3,14 +3,14 @@
 namespace App\Filament\Resources\OwnerResource\RelationManagers;
 
 use App\Models\OwnerUser;
-use App\Models\User;
+use App\Models\UserInvitation;
+use App\Services\UserInvitationService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 
 class OwnerUsersRelationManager extends RelationManager
 {
@@ -38,7 +38,7 @@ class OwnerUsersRelationManager extends RelationManager
 
                 Forms\Components\Select::make('role')
                     ->label('Role')
-                    ->options(OwnerUser::ROLES)
+                    ->options(fn() => OwnerUser::assignableRolesFor(auth()->user()))
                     ->default('read_only')
                     ->required()
                     ->live()
@@ -46,15 +46,7 @@ class OwnerUsersRelationManager extends RelationManager
 
                 Forms\Components\Placeholder::make('role_desc')
                     ->label('Quyền hạn')
-                    ->content(fn(Forms\Get $get) => match ($get('role')) {
-                        'owner'          => '👑 Toàn quyền — quản lý team, inventory, pricing, reports.',
-                        'manager'        => '🔧 Quản lý inventory & pricing, xem reports. Không invite user.',
-                        'scheduler'      => '📅 Thêm/sửa screens, import file. Không xem reports.',
-                        'read_only'      => '👁 Chỉ xem screens & sites.',
-                        'reporting_only' => '📊 Chỉ xem & export reports.',
-                        'sales_manager'  => '💼 Xem inventory & sales dashboard.',
-                        default          => '',
-                    })
+                    ->content(fn(Forms\Get $get) => OwnerUser::ROLE_DESCRIPTIONS[$get('role')] ?? '')
                     ->columnSpan(1),
 
                 Forms\Components\CheckboxList::make('allowed_network_ids')
@@ -63,7 +55,8 @@ class OwnerUsersRelationManager extends RelationManager
                         ->pluck('name', 'id'))
                     ->columns(2)
                     ->columnSpan(2)
-                    ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
+                    ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only']))
+                    ->dehydrateStateUsing(fn($state, Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only']) ? $state : null),
 
             ]),
         ]);
@@ -131,22 +124,14 @@ class OwnerUsersRelationManager extends RelationManager
 
                         Forms\Components\Select::make('role')
                             ->label('Role')
-                            ->options(OwnerUser::ROLES)
+                            ->options(fn() => OwnerUser::assignableRolesFor(auth()->user()))
                             ->default('read_only')
                             ->required()
                             ->live(),
 
                         Forms\Components\Placeholder::make('role_desc')
                             ->label('Quyền hạn')
-                            ->content(fn(Forms\Get $get) => match ($get('role')) {
-                                'owner'          => '👑 Toàn quyền — quản lý team, inventory, pricing, reports.',
-                                'manager'        => '🔧 Quản lý inventory & pricing, xem reports. Không invite user.',
-                                'scheduler'      => '📅 Thêm/sửa screens, import file. Không xem reports.',
-                                'read_only'      => '👁 Chỉ xem screens & sites.',
-                                'reporting_only' => '📊 Chỉ xem & export reports.',
-                                'sales_manager'  => '💼 Xem inventory & sales dashboard.',
-                                default          => '',
-                            }),
+                            ->content(fn(Forms\Get $get) => OwnerUser::ROLE_DESCRIPTIONS[$get('role')] ?? ''),
 
                         Forms\Components\CheckboxList::make('allowed_network_ids')
                             ->label('Giới hạn Networks (để trống = tất cả)')
@@ -156,41 +141,28 @@ class OwnerUsersRelationManager extends RelationManager
                             ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
                     ])
                     ->action(function (array $data): void {
-                        $ownerId = $this->getOwnerRecord()->id;
-                        $email   = trim($data['email']);
+                        try {
+                            app(UserInvitationService::class)->invite(
+                                email:             $data['email'],
+                                tenantType:        UserInvitation::TENANT_OWNER,
+                                tenantId:          $this->getOwnerRecord()->id,
+                                role:              $data['role'],
+                                allowedNetworkIds: in_array($data['role'], ['scheduler', 'read_only'])
+                                    ? ($data['allowed_network_ids'] ?? null)
+                                    : null,
+                                invitedBy:         auth()->user(),
+                            );
 
-                        // Tìm hoặc tạo user
-                        $user = User::firstOrCreate(
-                            ['email' => $email],
-                            [
-                                'name'     => Str::before($email, '@'),
-                                'password' => bcrypt(Str::random(16)),
-                            ]
-                        );
-
-                        // Đã là member?
-                        if (OwnerUser::where('owner_id', $ownerId)->where('user_id', $user->id)->exists()) {
                             Notification::make()
-                                ->title("{$email} đã là thành viên của owner này")
-                                ->warning()->send();
-                            return;
+                                ->title("✅ Đã gửi lời mời tới {$data['email']}")
+                                ->body('Role: ' . (OwnerUser::ROLES[$data['role']] ?? $data['role']) . ' · hết hạn sau 7 ngày')
+                                ->success()->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Không gửi được lời mời')
+                                ->body($e->getMessage())
+                                ->danger()->send();
                         }
-
-                        OwnerUser::create([
-                            'owner_id'            => $ownerId,
-                            'user_id'             => $user->id,
-                            'role'                => $data['role'],
-                            'allowed_network_ids' => $data['allowed_network_ids'] ?? null,
-                        ]);
-
-                        // Gán current_owner_id nếu user chưa có
-                        if (! $user->current_owner_id) {
-                            $user->update(['current_owner_id' => $ownerId]);
-                        }
-
-                        Notification::make()
-                            ->title("✅ Đã thêm {$email} với role " . (OwnerUser::ROLES[$data['role']] ?? $data['role']))
-                            ->success()->send();
                     }),
             ])
             ->actions([
@@ -202,22 +174,14 @@ class OwnerUsersRelationManager extends RelationManager
                         ->form(fn(OwnerUser $record) => [
                             Forms\Components\Select::make('role')
                                 ->label('Role')
-                                ->options(OwnerUser::ROLES)
+                                ->options(fn() => OwnerUser::assignableRolesFor(auth()->user()))
                                 ->default($record->role)
                                 ->required()
                                 ->live(),
 
                             Forms\Components\Placeholder::make('role_desc')
                                 ->label('Quyền hạn')
-                                ->content(fn(Forms\Get $get) => match ($get('role')) {
-                                    'owner'          => '👑 Toàn quyền — quản lý team, inventory, pricing, reports.',
-                                    'manager'        => '🔧 Quản lý inventory & pricing, xem reports.',
-                                    'scheduler'      => '📅 Thêm/sửa screens, import file.',
-                                    'read_only'      => '👁 Chỉ xem screens & sites.',
-                                    'reporting_only' => '📊 Chỉ xem & export reports.',
-                                    'sales_manager'  => '💼 Xem inventory & sales dashboard.',
-                                    default          => '',
-                                }),
+                                ->content(fn(Forms\Get $get) => OwnerUser::ROLE_DESCRIPTIONS[$get('role')] ?? ''),
 
                             Forms\Components\CheckboxList::make('allowed_network_ids')
                                 ->label('Giới hạn Networks')
@@ -230,7 +194,9 @@ class OwnerUsersRelationManager extends RelationManager
                         ->action(function (OwnerUser $record, array $data): void {
                             $record->update([
                                 'role'                => $data['role'],
-                                'allowed_network_ids' => $data['allowed_network_ids'] ?? null,
+                                'allowed_network_ids' => in_array($data['role'], ['scheduler', 'read_only'])
+                                    ? ($data['allowed_network_ids'] ?? null)
+                                    : null,
                             ]);
                             Notification::make()
                                 ->title('Role đã được cập nhật')

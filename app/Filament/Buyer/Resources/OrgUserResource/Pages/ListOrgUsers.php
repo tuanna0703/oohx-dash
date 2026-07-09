@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Publisher\Resources\OwnerUserResource\Pages;
+namespace App\Filament\Buyer\Resources\OrgUserResource\Pages;
 
-use App\Filament\Publisher\Resources\OwnerUserResource;
-use App\Models\OwnerUser;
+use App\Filament\Buyer\Resources\OrgUserResource;
+use App\Models\OrganizationUser;
 use App\Models\UserInvitation;
 use App\Services\UserInvitationService;
 use Filament\Actions;
@@ -12,13 +12,13 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Gate;
 
-class ListOwnerUsers extends ListRecords
+class ListOrgUsers extends ListRecords
 {
-    protected static string $resource = OwnerUserResource::class;
+    protected static string $resource = OrgUserResource::class;
 
     protected function getHeaderActions(): array
     {
-        if (! Gate::allows('create', OwnerUser::class)) {
+        if (! Gate::allows('create', OrganizationUser::class)) {
             return [];
         }
 
@@ -33,40 +33,29 @@ class ListOwnerUsers extends ListRecords
                         ->email()
                         ->required()
                         ->placeholder('user@example.com')
-                        ->helperText('Email lời mời sẽ được gửi đến địa chỉ này. Nếu chưa có tài khoản, user sẽ tự tạo password khi accept.'),
+                        ->helperText('Email lời mời sẽ được gửi đến địa chỉ này.'),
 
                     Forms\Components\Select::make('role')
                         ->label('Role')
-                        ->options(fn() => OwnerUser::assignableRolesFor(auth()->user()))
-                        ->default('read_only')
+                        ->options(fn() => OrganizationUser::assignableRolesFor(auth()->user()))
+                        ->default('viewer')
                         ->required()
                         ->live()
-                        ->helperText(fn(?string $state) => OwnerUser::ROLE_DESCRIPTIONS[$state] ?? ''),
-
-                    Forms\Components\CheckboxList::make('allowed_network_ids')
-                        ->label('Giới hạn Networks (để trống = tất cả)')
-                        ->options(fn() => \App\Models\Network::where(
-                            'owner_id', auth()->user()->current_owner_id
-                        )->pluck('name', 'id'))
-                        ->columns(2)
-                        ->visible(fn(Forms\Get $get) => in_array($get('role'), ['scheduler', 'read_only'])),
+                        ->helperText(fn(?string $state) => OrganizationUser::ROLE_DESCRIPTIONS[$state] ?? ''),
                 ])
                 ->action(function (array $data): void {
                     try {
                         app(UserInvitationService::class)->invite(
                             email:             $data['email'],
-                            tenantType:        UserInvitation::TENANT_OWNER,
-                            tenantId:          auth()->user()->current_owner_id,
+                            tenantType:        UserInvitation::TENANT_ORGANIZATION,
+                            tenantId:          auth()->user()->current_organization_id,
                             role:              $data['role'],
-                            allowedNetworkIds: in_array($data['role'], ['scheduler', 'read_only'])
-                                ? ($data['allowed_network_ids'] ?? null)
-                                : null,
+                            allowedNetworkIds: null,
                             invitedBy:         auth()->user(),
                         );
-
                         Notification::make()
                             ->title("✅ Đã gửi lời mời tới {$data['email']}")
-                            ->body('Role: ' . (OwnerUser::ROLES[$data['role']] ?? $data['role']) . ' · hết hạn sau 7 ngày')
+                            ->body('Role: ' . (OrganizationUser::ROLES[$data['role']] ?? $data['role']) . ' · hết hạn sau 7 ngày')
                             ->success()->send();
                     } catch (\Throwable $e) {
                         Notification::make()
