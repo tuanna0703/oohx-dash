@@ -35,7 +35,7 @@
 
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <a href="{{ route('buyer.campaigns.show', $campaign) }}" class="btn btn-p btn-sm">Xem Campaign</a>
-            <a href="{{ route('buyer.dashboard') }}" class="btn btn-s btn-sm">Dashboard</a>
+            <a href="{{ route('buyer.dashboard') }}" class="btn btn-s btn-sm">Bảng điều khiển</a>
         </div>
     </div>
 </div>

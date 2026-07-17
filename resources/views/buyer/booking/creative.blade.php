@@ -8,7 +8,7 @@
     <div class="wz-steps">
         <div class="wz-step done"><div class="wz-step-n">&#10003;</div><div class="wz-step-l">Thông tin</div></div>
         <div class="wz-step-line done"></div>
-        <div class="wz-step on"><div class="wz-step-n">2</div><div class="wz-step-l">Creative</div></div>
+        <div class="wz-step on"><div class="wz-step-n">2</div><div class="wz-step-l">Nội dung quảng cáo</div></div>
         <div class="wz-step-line"></div>
         <div class="wz-step"><div class="wz-step-n">3</div><div class="wz-step-l">Xác nhận</div></div>
     </div>

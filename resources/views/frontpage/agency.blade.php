@@ -18,9 +18,9 @@
 <div class="w">
     <div class="cat-chips">
         <div class="cat-chip on">Tất cả ({{ $agencies->total() }})</div>
-        <div class="cat-chip">Agency</div>
-        <div class="cat-chip">Brand</div>
-        <div class="cat-chip">Client</div>
+        <div class="cat-chip">Đại lý</div>
+        <div class="cat-chip">Nhãn hàng</div>
+        <div class="cat-chip">Khách hàng</div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <div style="font-size:14px;font-weight:600;color:var(--t2)">Hiển thị <strong style="color:var(--bl)">{{ $agencies->total() }}</strong> agencies</div>

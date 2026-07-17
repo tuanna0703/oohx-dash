@@ -39,7 +39,7 @@
 
     {{-- Stats --}}
     <div class="oc-card-stats">
-        <div class="oc-card-stat"><div class="oc-card-stat-n">{{ $agency->campaign_count ?? 0 }}</div><div class="oc-card-stat-l">Campaigns</div></div>
+        <div class="oc-card-stat"><div class="oc-card-stat-n">{{ $agency->campaign_count ?? 0 }}</div><div class="oc-card-stat-l">Chiến dịch</div></div>
         <div class="oc-card-stat"><div class="oc-card-stat-n">{{ $agency->payment_terms_days ?? '—' }}@if($agency->payment_terms_days)<span style="font-size:11px;color:var(--t4)">d</span>@endif</div><div class="oc-card-stat-l">Terms</div></div>
         <div class="oc-card-stat"><div class="oc-card-stat-n">—</div><div class="oc-card-stat-l">Rating</div></div>
     </div>
