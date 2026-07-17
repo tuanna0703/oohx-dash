@@ -212,6 +212,20 @@ class Screen extends Model
         return $query->where('active', true);
     }
 
+    /**
+     * The screens the public marketplace is allowed to show.
+     *
+     * `active` is the media owner's own on/off switch — it says nothing about
+     * whether the sàn has approved that owner to trade. Both must hold, so no
+     * public read should use `active` on its own.
+     */
+    public function scopePubliclyVisible($query)
+    {
+        return Owner::gateActive(
+            $query->withoutGlobalScope('owner_scope')->where('screens.active', true)
+        );
+    }
+
     public function scopeOnline($query)
     {
         return $query->where('status', 'online');

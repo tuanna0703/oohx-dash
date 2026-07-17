@@ -24,8 +24,7 @@ class SitemapController extends Controller
             $urls->push(['loc' => url('/agency'), 'priority' => '0.6', 'changefreq' => 'monthly']);
 
             // Screens
-            Screen::withoutGlobalScope('owner_scope')
-                ->where('active', true)
+            Screen::publiclyVisible()
                 ->whereNotNull('slug')
                 ->select('slug', 'updated_at')
                 ->orderByDesc('updated_at')
@@ -54,8 +53,7 @@ class SitemapController extends Controller
                 });
 
             // Products
-            Product::withoutGlobalScope('owner_scope')
-                ->where('status', 'active')
+            Product::publiclyVisible()
                 ->whereNotNull('slug')
                 ->select('slug', 'updated_at')
                 ->each(function ($product) use ($urls) {

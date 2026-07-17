@@ -16,7 +16,7 @@ class ProductService
     public function getProductsPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
     {
         $query = Product::query()
-            ->active()
+            ->publiclyVisible()
             ->with(['owner:id,name,slug', 'network:id,name', 'site:id,name,city'])
             ->withCount('screens');
 
@@ -82,7 +82,7 @@ class ProductService
     public function getProductBySlug(string $slug): ?Product
     {
         return Product::where('slug', $slug)
-            ->active()
+            ->publiclyVisible()
             ->with([
                 'owner:id,name,slug,logo_url',
                 'network:id,name',
@@ -100,7 +100,7 @@ class ProductService
     public function getSimilarProducts(Product $product, int $limit = 4): Collection
     {
         return Product::query()
-            ->active()
+            ->publiclyVisible()
             ->where('id', '!=', $product->id)
             ->where(function ($q) use ($product) {
                 $q->where('category', $product->category)
@@ -120,7 +120,7 @@ class ProductService
     {
         return Cache::remember('fp:featured_products', 900, function () use ($limit) {
             return Product::query()
-                ->active()
+                ->publiclyVisible()
                 ->featured()
                 ->with(['owner:id,name,slug', 'network:id,name'])
                 ->withCount('screens')
@@ -136,7 +136,7 @@ class ProductService
     public function getFilterAggregates(): array
     {
         return Cache::remember('fp:product_filters', 1800, function () {
-            $categories = Product::active()
+            $categories = Product::publiclyVisible()
                 ->selectRaw('category, count(*) as count')
                 ->groupBy('category')
                 ->orderByDesc('count')
@@ -147,7 +147,7 @@ class ProductService
                     'count' => (int) $r->count,
                 ]);
 
-            $types = Product::active()
+            $types = Product::publiclyVisible()
                 ->selectRaw('type, count(*) as count')
                 ->groupBy('type')
                 ->get()
@@ -157,7 +157,7 @@ class ProductService
                     'count' => (int) $r->count,
                 ]);
 
-            $cities = Product::active()
+            $cities = Product::publiclyVisible()
                 ->whereNotNull('city')
                 ->selectRaw('city, count(*) as count')
                 ->groupBy('city')

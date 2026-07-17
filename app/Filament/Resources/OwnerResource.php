@@ -42,8 +42,70 @@ class OwnerResource extends Resource
                     ->required(),
                 Forms\Components\Select::make('status')
                     ->options(['pending'=>'Pending','active'=>'Active','suspended'=>'Suspended'])
-                    ->default('pending')->required(),
+                    ->default('pending')->required()
+                    ->helperText('Chỉ owner ở trạng thái Active mới hiển thị công khai trên sàn. Duyệt sau khi đã rà xong hồ sơ pháp lý bên dưới.'),
             ]),
+
+            Forms\Components\Section::make('Hồ sơ pháp lý')
+                ->description('Thông tin bắt buộc lưu trữ theo yêu cầu đăng ký sàn TMĐT. Rà soát xong mới chuyển trạng thái sang Active.')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Placeholder::make('legal_completeness')
+                        ->label('Tình trạng hồ sơ')
+                        ->columnSpan(2)
+                        ->content(function (?Owner $record) {
+                            if (! $record) {
+                                return 'Lưu bản ghi để kiểm tra.';
+                            }
+
+                            return $record->hasCompleteLegalProfile()
+                                ? '✓ Đã đủ thông tin tối thiểu để duyệt.'
+                                : '⚠ Chưa đủ thông tin tối thiểu (tên pháp lý, MST + ngày/nơi cấp, người đại diện, email, điện thoại, ĐKKD).';
+                        }),
+                    Forms\Components\TextInput::make('legal_name')
+                        ->label('Tên công ty (theo ĐKKD)')
+                        ->maxLength(255)->columnSpan(2),
+                    Forms\Components\TextInput::make('tax_code')
+                        ->label('Mã số thuế')->maxLength(20),
+                    Forms\Components\DatePicker::make('tax_code_issued_on')
+                        ->label('Ngày cấp')->displayFormat('d/m/Y'),
+                    Forms\Components\TextInput::make('tax_code_issued_by')
+                        ->label('Nơi cấp')->maxLength(255)->columnSpan(2)
+                        ->placeholder('Sở Tài chính thành phố ...'),
+                    Forms\Components\TextInput::make('legal_representative')
+                        ->label('Người đại diện theo pháp luật')->maxLength(255)->columnSpan(2),
+                    Forms\Components\FileUpload::make('business_license_path')
+                        ->label('Giấy đăng ký kinh doanh')
+                        ->helperText('PDF hoặc ảnh, tối đa 10MB. Lưu ở khu vực riêng, không truy cập công khai được.')
+                        ->columnSpan(2)
+                        // disk 'private': đây là giấy tờ pháp lý của đối tác, không
+                        // phải ảnh bìa — không được nằm cạnh logo trên disk public.
+                        ->disk('private')
+                        ->directory('owners/licenses')
+                        ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                        ->maxSize(10240)
+                        ->downloadable(),
+                    Forms\Components\DateTimePicker::make('verified_at')
+                        ->label('Thời điểm xác thực hồ sơ')
+                        ->helperText('Điền khi đã đối chiếu xong giấy tờ.'),
+                ]),
+
+            Forms\Components\Section::make('Tài khoản nhận tiền')
+                ->description('Người mua chuyển khoản trực tiếp cho media owner — OOHX không thu hộ. Thiếu thông tin này thì màn hình của owner không thanh toán được.')
+                ->columns(2)
+                ->collapsible()
+                ->schema([
+                    Forms\Components\TextInput::make('bank_name')
+                        ->label('Ngân hàng')->maxLength(255)
+                        ->placeholder('Vietcombank (VCB)'),
+                    Forms\Components\TextInput::make('bank_account_number')
+                        ->label('Số tài khoản')->maxLength(40),
+                    Forms\Components\TextInput::make('bank_account_name')
+                        ->label('Chủ tài khoản')->maxLength(255)
+                        ->placeholder('CONG TY TNHH ...'),
+                    Forms\Components\TextInput::make('bank_branch')
+                        ->label('Chi nhánh')->maxLength(255),
+                ]),
 
             Forms\Components\Section::make('Hồ sơ công khai')->columns(2)->collapsible()->schema([
                 Forms\Components\TextInput::make('tagline')

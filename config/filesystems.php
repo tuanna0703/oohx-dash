@@ -47,6 +47,22 @@ return [
             'report' => false,
         ],
 
+        /**
+         * Giấy tờ pháp lý của đối tác (ĐKKD của media owner).
+         *
+         * Tách khỏi 'local' để chỗ chứa nói rõ ý định: đây là dữ liệu chỉ admin
+         * được xem, không có URL công khai, không nằm dưới public/storage.
+         * 'serve' => false: không tự sinh route phục vụ file.
+         */
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'serve' => false,
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

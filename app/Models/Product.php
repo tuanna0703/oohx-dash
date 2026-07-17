@@ -173,6 +173,20 @@ class Product extends Model
         return $query->where('status', 'active');
     }
 
+    /**
+     * The products the public marketplace is allowed to show.
+     *
+     * status='active' is the media owner's own listing switch; it does not mean
+     * the sàn has approved the owner behind it. Both must hold.
+     */
+    public function scopePubliclyVisible($query)
+    {
+        return Owner::gateActive(
+            $query->withoutGlobalScope('owner_scope')->where('products.status', 'active'),
+            'products.owner_id'
+        );
+    }
+
     public function scopeFeatured($query)
     {
         return $query->where('featured', true);

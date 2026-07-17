@@ -37,7 +37,7 @@ class FrontpageService
     public function getHeroStats(): array
     {
         return Cache::remember('fp:hero_stats', 1800, function () {
-            $totalScreens = Screen::withoutGlobalScope('owner_scope')->where('active', true)->count();
+            $totalScreens = Screen::publiclyVisible()->count();
 
             $totalCities = DB::table('screens')
                 ->join('sites', 'screens.site_id', '=', 'sites.id')
@@ -46,10 +46,11 @@ class FrontpageService
                 ->whereNull('sites.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw("COUNT(DISTINCT TRIM(SUBSTRING_INDEX(sites.city, '>', 1))) as cnt")
                 ->value('cnt');
 
-            $totalOwners = Screen::withoutGlobalScope('owner_scope')->where('active', true)
+            $totalOwners = Screen::publiclyVisible()
                 ->distinct()
                 ->count('owner_id');
 
@@ -74,6 +75,7 @@ class FrontpageService
                 ->where('screens.active', true)
                 ->whereNull('screens.deleted_at')
                 ->where('venue_categories.is_active', true)
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw('
                     venue_categories.slug as type,
                     COALESCE(venue_categories.name_vi, venue_categories.name) as label,
@@ -115,6 +117,7 @@ class FrontpageService
                 ->whereNull('sites.deleted_at')
                 ->whereNull('networks.deleted_at')
                 ->where('networks.status', 'active')
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw('venue_categories.slug as cat_slug, networks.code, networks.name, COUNT(DISTINCT screens.id) as count')
                 ->groupBy('venue_categories.slug', 'networks.code', 'networks.name')
                 ->orderByDesc('count')
@@ -184,6 +187,7 @@ class FrontpageService
                 ->whereNull('sites.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1)) as province, count(*) as count")
                 ->groupByRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1))")
                 ->orderByDesc('count')
@@ -219,6 +223,7 @@ class FrontpageService
                 ->whereNull('screens.deleted_at')
                 ->whereNotNull('sites.city')
                 ->where('sites.city', '!=', '')
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1)) as province, count(*) as count")
                 ->groupByRaw("TRIM(SUBSTRING_INDEX(sites.city, '>', 1))")
                 ->get();
@@ -263,7 +268,7 @@ class FrontpageService
     public function getFeaturedScreens(int $limit = 4): Collection
     {
         return Cache::remember('fp:featured_screens', 900, function () use ($limit) {
-            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
+            return Screen::publiclyVisible()
                 ->whereHas('spec', fn ($q) => $q->where(fn ($sq) =>
                     $sq->whereNotNull('photos')->where('photos', '!=', '[]')
                        ->orWhere(fn ($sq2) => $sq2->whereNotNull('photo_url')->where('photo_url', '!=', ''))
@@ -385,9 +390,7 @@ class FrontpageService
 
     public function getOwnerScreens(string $ownerId, Request $request = null, int $perPage = 12): LengthAwarePaginator
     {
-        $query = Screen::withoutGlobalScope('owner_scope')
-            ->where('owner_id', $ownerId)
-            ->where('active', true);
+        $query = Screen::publiclyVisible()->where('owner_id', $ownerId);
 
         // Apply filters if request provided
         if ($request) {
@@ -494,8 +497,10 @@ class FrontpageService
      */
     public function getNetworksPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
     {
-        $query = Network::withoutGlobalScope('owner_scope')
-            ->where('status', 'active')
+        $query = Owner::gateActive(
+                Network::withoutGlobalScope('owner_scope')->where('networks.status', 'active'),
+                'networks.owner_id'
+            )
             ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
             ->with(['owner:id,name,slug,cover_url']);
 
@@ -523,8 +528,10 @@ class FrontpageService
      */
     public function getSitesPaginated(Request $request, int $perPage = 20): LengthAwarePaginator
     {
-        $query = Site::withoutGlobalScope('owner_scope')
-            ->where('status', 'active')
+        $query = Owner::gateActive(
+                Site::withoutGlobalScope('owner_scope')->where('sites.status', 'active'),
+                'sites.owner_id'
+            )
             ->withCount(['screens as screen_count' => fn ($q) => $q->where('active', true)])
             ->with(['owner:id,name,slug,cover_url', 'network:id,name']);
 
@@ -591,6 +598,7 @@ class FrontpageService
                 ->where('screens.active', true)
                 ->whereNull('screens.deleted_at')
                 ->where('screen_inventory.floor_cpm', '>', 0)
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw('MIN(screen_inventory.floor_cpm) as min_price, MAX(screen_inventory.floor_cpm) as max_price')
                 ->first();
 
@@ -603,6 +611,7 @@ class FrontpageService
                 ->whereNull('sites.deleted_at')
                 ->whereNull('networks.deleted_at')
                 ->where('networks.status', 'active')
+                ->tap(fn ($q) => Owner::gateActive($q))
                 ->selectRaw('networks.id, networks.code, networks.name, COUNT(DISTINCT screens.id) as count')
                 ->groupBy('networks.id', 'networks.code', 'networks.name')
                 ->orderByDesc('count')
@@ -639,7 +648,7 @@ class FrontpageService
     public function getScreenDetail(string $id): ?Screen
     {
         return Cache::remember("fp:screen:{$id}", 300, function () use ($id) {
-            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
+            return Screen::publiclyVisible()
                 ->with([
                     'spec:screen_id,photo_url,photos,width_px,height_px,width_cm,height_cm,allow_image,allow_video',
                     'inventory:screen_id,floor_cpm,floor_cpm_currency,venue_type,vn_category_id,pricing_model,io_rate,io_rate_unit,io_kpi_spots_per_day',
@@ -661,7 +670,7 @@ class FrontpageService
     public function getSimilarScreens(Screen $screen, int $limit = 4): Collection
     {
         return Cache::remember("fp:similar:{$screen->id}", 600, function () use ($screen, $limit) {
-            return Screen::withoutGlobalScope('owner_scope')->where('active', true)
+            return Screen::publiclyVisible()
                 ->where('id', '!=', $screen->id)
                 ->where(function ($q) use ($screen) {
                     $q->whereHas('site', fn ($sq) => $sq->where('city', $screen->site?->city))
@@ -707,8 +716,7 @@ class FrontpageService
     {
         $cityName = $this->resolveCityName($citySlug);
 
-        $query = Screen::withoutGlobalScope('owner_scope')
-            ->where('active', true)
+        $query = Screen::publiclyVisible()
             ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')
                 ->where('lat', '!=', 0)->where('lon', '!=', 0));
 
@@ -835,8 +843,7 @@ class FrontpageService
         return Cache::remember("fp:map_count:{$citySlug}", 1800, function () use ($citySlug) {
             $cityName = $this->resolveCityName($citySlug);
 
-            $query = Screen::withoutGlobalScope('owner_scope')
-                ->where('active', true)
+            $query = Screen::publiclyVisible()
                 ->whereHas('site', fn ($q) => $q->whereNotNull('lat')->whereNotNull('lon')
                     ->where('lat', '!=', 0)->where('lon', '!=', 0));
 
@@ -889,8 +896,7 @@ class FrontpageService
 
     private function buildScreenQuery(Request $request)
     {
-        return Screen::withoutGlobalScope('owner_scope')
-            ->where('active', true)
+        return Screen::publiclyVisible()
             ->when($request->filled('q'), function ($q) use ($request) {
                 $search = $request->input('q');
                 $q->where(function ($sub) use ($search) {
