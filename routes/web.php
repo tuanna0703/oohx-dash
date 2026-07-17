@@ -9,7 +9,9 @@ use App\Http\Controllers\Buyer\BuyerSettingsController;
 use App\Http\Controllers\Buyer\CartController;
 use App\Http\Controllers\Buyer\PaymentController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PublicReflectionController;
 use App\Http\Controllers\FrontpageController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Http;
@@ -47,6 +49,18 @@ Route::domain($fpDomain)->group(function () {
     // Products (new marketplace listing)
     Route::get('/products',           [ProductController::class, 'index'])->name('fp.products');
     Route::get('/products/{slug}',    [ProductController::class, 'show'])->name('fp.product-detail');
+
+    // ── Trang chính sách bắt buộc của sàn TMĐT ──
+    // Ràng buộc whereIn để route này chỉ nhận đúng các slug đã khai trong config,
+    // không nuốt mọi đường dẫn một cấp còn lại.
+    Route::get('/{slug}', [PolicyController::class, 'show'])
+        ->whereIn('slug', array_keys(config('policies.pages')))
+        ->name('fp.policy');
+
+    // ── Tiếp nhận phản ánh của tổ chức xã hội ──
+    Route::get('/phan-anh-to-chuc-xa-hoi',           [PublicReflectionController::class, 'create'])->name('fp.reflections.create');
+    Route::post('/phan-anh-to-chuc-xa-hoi',          [PublicReflectionController::class, 'store'])->name('fp.reflections.store')->middleware('throttle:5,60');
+    Route::get('/phan-anh-to-chuc-xa-hoi/danh-sach', [PublicReflectionController::class, 'index'])->name('fp.reflections.index');
 
     // ── Buyer auth (no guest middleware — accessible always) ──
     Route::get('/login',              [BuyerAuthController::class, 'showLogin'])->name('login');

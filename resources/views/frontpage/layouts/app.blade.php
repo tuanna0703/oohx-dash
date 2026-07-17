@@ -20,6 +20,8 @@
     @stack('head')
 </head>
 <body class="{{ $bodyClass ?? '' }}">
+    @include('frontpage.partials.trial-notice')
+
     @include('frontpage.partials.header')
 
     @yield('content')
