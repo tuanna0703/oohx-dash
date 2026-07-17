@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Buyer;
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Creative;
+use App\Models\PolicyConsent;
 use App\Services\AvailabilityService;
 use App\Services\CampaignService;
 use App\Services\CartService;
+use App\Services\PolicyConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +21,7 @@ class BookingController extends Controller
         private CampaignService $campaignService,
         private CartService $cartService,
         private AvailabilityService $availabilityService,
+        private PolicyConsentService $consents,
     ) {}
 
     /**
@@ -143,12 +146,27 @@ class BookingController extends Controller
     {
         $this->authorizeCampaign($request, $campaign);
 
+        $request->validate([
+            'confirm_accuracy' => ['accepted'],
+            'accept_terms'     => ['accepted'],
+        ], [
+            'confirm_accuracy.accepted' => 'Bạn cần xác nhận thông tin booking là chính xác.',
+            'accept_terms.accepted'     => 'Bạn cần đồng ý với Quy chế hoạt động và Chính sách bảo mật để gửi booking.',
+        ]);
+
         $conflicts = $this->availabilityService->validateCampaign($campaign->id);
         if (! empty($conflicts)) {
             return back()->withErrors(['conflicts' => 'Có ' . count($conflicts) . ' màn hình bị xung đột SOV. Vui lòng điều chỉnh.']);
         }
 
         $this->campaignService->submit($campaign, $request->user());
+
+        $this->consents->record(
+            ['terms', 'privacy'],
+            PolicyConsent::CONTEXT_BOOKING,
+            $request,
+            subjectId: $campaign->id,
+        );
 
         return redirect()->route('buyer.campaigns.show', $campaign)->with('success', 'Campaign đã được gửi chờ duyệt!');
     }

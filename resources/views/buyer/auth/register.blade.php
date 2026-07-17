@@ -47,11 +47,20 @@
                 <label for="organization_type">Loại hình</label>
                 <select id="organization_type" name="organization_type" required>
                     <option value="">Chọn loại hình</option>
-                    <option value="agency" {{ old('organization_type') === 'agency' ? 'selected' : '' }}>Agency</option>
-                    <option value="brand" {{ old('organization_type') === 'brand' ? 'selected' : '' }}>Brand / Nhãn hàng</option>
-                    <option value="client" {{ old('organization_type') === 'client' ? 'selected' : '' }}>Client / Khách hàng</option>
+                    <option value="agency" {{ old('organization_type') === 'agency' ? 'selected' : '' }}>Đại lý quảng cáo</option>
+                    <option value="brand" {{ old('organization_type') === 'brand' ? 'selected' : '' }}>Nhãn hàng</option>
+                    <option value="client" {{ old('organization_type') === 'client' ? 'selected' : '' }}>Khách hàng</option>
                 </select>
             </div>
+
+            <label class="consent">
+                <input type="checkbox" name="accept_privacy" value="1"
+                       {{ old('accept_privacy') ? 'checked' : '' }} required>
+                <span>
+                    Tôi đã đọc và đồng ý với
+                    <a href="{{ route('fp.policy', 'chinh-sach-bao-mat') }}" target="_blank" rel="noopener">Chính sách bảo mật thông tin</a>
+                </span>
+            </label>
 
             <button type="submit" class="btn btn-p auth-submit">Tạo tài khoản</button>
         </form>

@@ -8,7 +8,7 @@
     <div class="wz-steps">
         <div class="wz-step done"><div class="wz-step-n">&#10003;</div><div class="wz-step-l">Thông tin</div></div>
         <div class="wz-step-line done"></div>
-        <div class="wz-step done"><div class="wz-step-n">&#10003;</div><div class="wz-step-l">Creative</div></div>
+        <div class="wz-step done"><div class="wz-step-n">&#10003;</div><div class="wz-step-l">Nội dung quảng cáo</div></div>
         <div class="wz-step-line done"></div>
         <div class="wz-step on"><div class="wz-step-n">3</div><div class="wz-step-l">Xác nhận</div></div>
     </div>
@@ -36,10 +36,10 @@
                 <div class="wz-card-title">Thông tin Campaign</div>
                 <div class="wz-info-grid">
                     <div class="wz-info-item"><div class="wz-info-l">Tên</div><div class="wz-info-v">{{ $campaign->name }}</div></div>
-                    <div class="wz-info-item"><div class="wz-info-l">Brand</div><div class="wz-info-v">{{ $campaign->brand_name ?? '—' }}</div></div>
+                    <div class="wz-info-item"><div class="wz-info-l">Nhãn hàng</div><div class="wz-info-v">{{ $campaign->brand_name ?? '—' }}</div></div>
                     <div class="wz-info-item"><div class="wz-info-l">Ngành hàng</div><div class="wz-info-v">{{ $campaign->category ?? '—' }}</div></div>
                     <div class="wz-info-item"><div class="wz-info-l">Thời gian</div><div class="wz-info-v">{{ $campaign->start_date->format('d/m/Y') }} → {{ $campaign->end_date->format('d/m/Y') }}</div></div>
-                    <div class="wz-info-item"><div class="wz-info-l">Budget</div><div class="wz-info-v">{{ $campaign->total_budget ? number_format($campaign->total_budget, 0, ',', '.') . ' ₫' : '—' }}</div></div>
+                    <div class="wz-info-item"><div class="wz-info-l">Ngân sách</div><div class="wz-info-v">{{ $campaign->total_budget ? number_format($campaign->total_budget, 0, ',', '.') . ' ₫' : '—' }}</div></div>
                 </div>
             </div>
 
@@ -110,10 +110,22 @@
                 @if(empty($conflicts))
                 <form method="POST" action="{{ route('buyer.booking.submit', $campaign) }}" style="margin-top:16px">
                     @csrf
-                    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
-                        <input type="checkbox" id="agree" required style="margin-top:3px;accent-color:var(--bl)">
-                        <label for="agree" style="font-size:12px;color:var(--t3);line-height:1.5;cursor:pointer">Tôi xác nhận thông tin booking chính xác. Booking sẽ được gửi đến media owner để phê duyệt trong vòng 48h.</label>
-                    </div>
+                    {{-- name="confirm_accuracy": trước đây checkbox này chỉ có id nên
+                         không hề được gửi lên server — tắt JS là qua. --}}
+                    <label class="consent">
+                        <input type="checkbox" name="confirm_accuracy" value="1" required>
+                        <span>Tôi xác nhận thông tin booking chính xác. Booking sẽ được gửi đến media owner để phê duyệt trong vòng 48h.</span>
+                    </label>
+
+                    <label class="consent">
+                        <input type="checkbox" name="accept_terms" value="1" required>
+                        <span>
+                            Tôi đã đọc và đồng ý với
+                            <a href="{{ route('fp.policy', 'quy-che-hoat-dong') }}" target="_blank" rel="noopener">Quy chế hoạt động</a>
+                            và
+                            <a href="{{ route('fp.policy', 'chinh-sach-bao-mat') }}" target="_blank" rel="noopener">Chính sách bảo mật</a>
+                        </span>
+                    </label>
                     <button type="submit" class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px;height:48px;font-size:15px">
                         <svg viewBox="0 0 24 24" fill="#fff" style="width:18px;height:18px"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                         Gửi Booking
