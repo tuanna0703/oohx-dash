@@ -11,7 +11,7 @@ class Payment extends Model
     use HasUlids;
 
     protected $fillable = [
-        'campaign_id', 'organization_id',
+        'campaign_id', 'organization_id', 'owner_id',
         'amount', 'currency', 'method',
         'transaction_ref', 'gateway_ref',
         'status', 'paid_at', 'due_date',
@@ -34,6 +34,17 @@ class Payment extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Media owner nhận khoản tiền này.
+     *
+     * Null với các payment tạo trước khi sàn chuyển sang mô hình trả thẳng cho
+     * người bán.
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(Owner::class);
     }
 
     public function isPending(): bool { return $this->status === 'pending'; }

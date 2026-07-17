@@ -40,50 +40,82 @@
                 <div style="font-size:13px;color:var(--t3);margin-top:6px">Campaign sẽ tự động kích hoạt</div>
             </div>
             @else
-            {{-- Payment method selection --}}
+            {{-- Thanh toán trực tiếp cho từng media owner.
+                 OOHX không thu hộ — đúng như hồ sơ đăng ký với Bộ Công Thương:
+                 "thanh toán trực tiếp giữa khách hàng và nhà cung cấp dịch vụ
+                 quảng cáo; OOHX.NET hỗ trợ ghi nhận giao dịch và đối soát". --}}
             <div class="wz-card" style="margin-top:16px">
-                <div class="wz-card-title">Chọn phương thức thanh toán</div>
-                <form method="POST" action="{{ route('buyer.payment.process', $campaign) }}">
-                    @csrf
-                    <input type="hidden" name="amount" value="{{ $summary['remaining'] }}">
+                <div class="wz-card-title">Thanh toán</div>
+                <p class="pay-note">
+                    Bạn chuyển khoản <strong>trực tiếp cho từng media owner</strong>.
+                    OOHX không thu hộ, chỉ ghi nhận giao dịch và đối soát.
+                    @if($byOwner->count() > 1)
+                        Campaign này gồm màn hình của {{ $byOwner->count() }} media owner,
+                        nên cần {{ $byOwner->count() }} lần chuyển khoản riêng.
+                    @endif
+                </p>
 
-                    <div class="pay-methods">
-                        <label class="pay-method on">
-                            <input type="radio" name="method" value="bank_transfer" checked>
-                            <div class="pay-method-icon">
-                                <svg viewBox="0 0 24 24" fill="var(--bl)" style="width:24px;height:24px"><path d="M4 10h3v7H4zm6 0h3v7h-3zm-8 9h20v3H2zm14-9h3v7h-3zM12 1L2 6v2h20V6L12 1z"/></svg>
-                            </div>
+                @foreach($byOwner as $row)
+                    @php
+                        $owner = $row['owner'];
+                    @endphp
+                    <div class="pay-owner {{ $row['is_paid'] ? 'is-paid' : '' }}">
+                        <div class="pay-owner-hd">
                             <div>
-                                <div class="pay-method-title">Chuyển khoản ngân hàng</div>
-                                <div class="pay-method-sub">Xác nhận trong 1-2 ngày làm việc</div>
+                                <div class="pay-owner-name">{{ $owner->legal_name ?: $owner->name }}</div>
+                                @if($owner->tax_code)
+                                    <div class="pay-owner-tax">MST: {{ $owner->tax_code }}</div>
+                                @endif
                             </div>
-                        </label>
-                        <label class="pay-method pay-method-disabled">
-                            <input type="radio" name="method" value="vnpay" disabled>
-                            <div class="pay-method-icon">
-                                <svg viewBox="0 0 24 24" fill="var(--t4)" style="width:24px;height:24px"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                            </div>
-                            <div>
-                                <div class="pay-method-title">VNPay <span class="badge b-gray" style="font-size:10px;margin-left:4px">Sắp ra mắt</span></div>
-                                <div class="pay-method-sub">Thanh toán online qua VNPay</div>
-                            </div>
-                        </label>
-                    </div>
+                            @if($row['is_paid'])
+                                <span class="badge b-green">Đã ghi nhận</span>
+                            @endif
+                        </div>
 
-                    {{-- Bank transfer info --}}
-                    <div class="pay-bank-info">
-                        <div class="pay-bank-title">Thông tin chuyển khoản</div>
-                        <div class="pay-bank-row"><span>Ngân hàng</span><span>Vietcombank (VCB)</span></div>
-                        <div class="pay-bank-row"><span>Số tài khoản</span><span style="font-weight:700;letter-spacing:1px">1234 5678 9012</span></div>
-                        <div class="pay-bank-row"><span>Chủ tài khoản</span><span>CONG TY OOHX VIETNAM</span></div>
-                        <div class="pay-bank-row"><span>Nội dung CK</span><span style="font-weight:700;color:var(--bl)">{{ $campaign->code }}</span></div>
-                        <div class="pay-bank-row"><span>Số tiền</span><span style="font-weight:700">{{ number_format($summary['remaining'], 0, ',', '.') }} ₫</span></div>
-                    </div>
+                        <div class="pay-bank-info">
+                            @if($owner->hasBankDetails())
+                                <div class="pay-bank-row"><span>Ngân hàng</span><span>{{ $owner->bank_name }}</span></div>
+                                <div class="pay-bank-row"><span>Số tài khoản</span><span style="font-weight:700;letter-spacing:1px">{{ $owner->bank_account_number }}</span></div>
+                                <div class="pay-bank-row"><span>Chủ tài khoản</span><span>{{ $owner->bank_account_name }}</span></div>
+                                @if($owner->bank_branch)
+                                    <div class="pay-bank-row"><span>Chi nhánh</span><span>{{ $owner->bank_branch }}</span></div>
+                                @endif
+                                <div class="pay-bank-row"><span>Nội dung CK</span><span style="font-weight:700;color:var(--bl)">{{ $campaign->code }}</span></div>
+                            @else
+                                {{-- Nói thẳng ra thay vì hiện một khối trống hoặc số giả. --}}
+                                <div class="pay-bank-missing">
+                                    Media owner này chưa cung cấp thông tin tài khoản nhận tiền.
+                                    Vui lòng liên hệ OOHX qua hotline {{ config('policies.company.hotline') }}
+                                    để được hỗ trợ.
+                                </div>
+                            @endif
+                            <div class="pay-bank-row"><span>Chi phí</span><span>{{ number_format($row['cost'], 0, ',', '.') }} ₫</span></div>
+                            <div class="pay-bank-row"><span>VAT (10%)</span><span>{{ number_format($row['vat'], 0, ',', '.') }} ₫</span></div>
+                            <div class="pay-bank-row"><span>Cần chuyển</span><span style="font-weight:700">{{ number_format($row['remaining'], 0, ',', '.') }} ₫</span></div>
+                        </div>
 
-                    <button type="submit" class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px;height:48px;margin-top:16px;font-size:15px">
-                        Xác nhận đã chuyển khoản
-                    </button>
-                </form>
+                        @if(! $row['is_paid'] && $owner->hasBankDetails())
+                            <form method="POST" action="{{ route('buyer.payment.process', $campaign) }}">
+                                @csrf
+                                <input type="hidden" name="method" value="bank_transfer">
+                                <input type="hidden" name="owner_id" value="{{ $owner->id }}">
+                                <input type="hidden" name="amount" value="{{ $row['remaining'] }}">
+
+                                <label class="consent">
+                                    <input type="checkbox" name="accept_terms" value="1" required>
+                                    <span>
+                                        Bằng cách thanh toán, tôi đồng ý với
+                                        <a href="{{ route('fp.policy', 'quy-che-hoat-dong') }}" target="_blank" rel="noopener">Quy chế hoạt động</a>
+                                    </span>
+                                </label>
+
+                                <button type="submit" class="btn btn-p" style="width:100%;justify-content:center;border-radius:10px;height:44px;font-size:14px">
+                                    Xác nhận đã chuyển khoản cho {{ $owner->name }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endforeach
             </div>
             @endif
 

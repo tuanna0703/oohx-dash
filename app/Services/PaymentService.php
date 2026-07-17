@@ -4,23 +4,34 @@ namespace App\Services;
 
 use App\Models\Campaign;
 use App\Models\CampaignActivity;
+use App\Models\Owner;
 use App\Models\Payment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class PaymentService
 {
+    /** VAT áp cho dịch vụ quảng cáo. */
+    private const VAT_RATE = 0.1;
+
     /**
      * Create a payment record for a campaign.
      */
-    public function createPayment(Campaign $campaign, string $method, ?float $amount = null): Payment
-    {
+    public function createPayment(
+        Campaign $campaign,
+        string $method,
+        ?float $amount = null,
+        ?string $ownerId = null,
+    ): Payment {
         $totalCost = $campaign->bookingLines()
             ->whereIn('status', ['approved', 'active'])
+            ->when($ownerId, fn ($q) => $q->where('owner_id', $ownerId))
             ->sum('estimated_cost');
 
         $payment = Payment::create([
             'campaign_id'     => $campaign->id,
             'organization_id' => $campaign->organization_id,
+            'owner_id'        => $ownerId,
             'amount'          => $amount ?? $totalCost,
             'currency'        => $campaign->currency ?? 'VND',
             'method'          => $method,
@@ -146,6 +157,54 @@ class PaymentService
             'remaining'      => (float) max(0, $totalCost * 1.1 - $totalPaid - $pending),
             'is_fully_paid'  => $totalPaid >= ($totalCost * 1.1),
         ];
+    }
+
+    /**
+     * Số tiền phải trả cho từng media owner trong campaign.
+     *
+     * Sàn không thu hộ: người mua chuyển thẳng cho từng media owner, nên một
+     * campaign gồm màn hình của ba owner sinh ra ba lần chuyển khoản. Hàm này là
+     * nguồn duy nhất cho việc chia số tiền đó — trang thanh toán và phần đối soát
+     * phải đọc cùng một chỗ, nếu không hai bên sẽ trôi ra khỏi nhau.
+     *
+     * @return Collection<int, array{owner: Owner, cost: float, vat: float, total: float, paid: float, remaining: float, is_paid: bool}>
+     */
+    public function breakdownByOwner(Campaign $campaign): Collection
+    {
+        $costs = $campaign->bookingLines()
+            ->whereIn('status', ['approved', 'active', 'completed'])
+            ->selectRaw('owner_id, SUM(estimated_cost) as cost')
+            ->groupBy('owner_id')
+            ->pluck('cost', 'owner_id');
+
+        if ($costs->isEmpty()) {
+            return collect();
+        }
+
+        $owners = Owner::whereIn('id', $costs->keys())->get()->keyBy('id');
+
+        $paidByOwner = $campaign->payments()
+            ->whereIn('status', ['completed', 'pending', 'processing'])
+            ->selectRaw('owner_id, SUM(amount) as paid')
+            ->groupBy('owner_id')
+            ->pluck('paid', 'owner_id');
+
+        return $costs->map(function ($cost, $ownerId) use ($owners, $paidByOwner) {
+            $cost  = (float) $cost;
+            $vat   = $cost * self::VAT_RATE;
+            $total = $cost + $vat;
+            $paid  = (float) ($paidByOwner[$ownerId] ?? 0);
+
+            return [
+                'owner'     => $owners[$ownerId] ?? null,
+                'cost'      => $cost,
+                'vat'       => $vat,
+                'total'     => $total,
+                'paid'      => $paid,
+                'remaining' => max(0, $total - $paid),
+                'is_paid'   => $paid >= $total,
+            ];
+        })->filter(fn ($row) => $row['owner'] !== null)->values();
     }
 
     private function generateTransactionRef(): string

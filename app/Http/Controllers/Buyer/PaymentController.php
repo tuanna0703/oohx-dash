@@ -4,14 +4,19 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
+use App\Models\PolicyConsent;
 use App\Services\PaymentService;
+use App\Services\PolicyConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
 {
-    public function __construct(private PaymentService $paymentService) {}
+    public function __construct(
+        private PaymentService $paymentService,
+        private PolicyConsentService $consents,
+    ) {}
 
     /**
      * GET /booking/{campaign}/payment — Show payment page
@@ -27,12 +32,13 @@ class PaymentController extends Controller
         );
 
         $summary = $this->paymentService->getSummary($campaign);
-        $payments = $campaign->payments()->latest()->get();
+        $payments = $campaign->payments()->with('owner:id,name')->latest()->get();
 
         return view('buyer.booking.payment', [
             'campaign' => $campaign,
             'summary'  => $summary,
             'payments' => $payments,
+            'byOwner'  => $this->paymentService->breakdownByOwner($campaign),
         ]);
     }
 
@@ -44,9 +50,24 @@ class PaymentController extends Controller
         $this->authorize($request, $campaign);
 
         $data = $request->validate([
-            'method' => ['required', 'in:bank_transfer,vnpay,momo'],
-            'amount' => ['nullable', 'numeric', 'min:1000'],
+            'method'   => ['required', 'in:bank_transfer,vnpay,momo'],
+            'amount'   => ['nullable', 'numeric', 'min:1000'],
+            // Người mua chuyển thẳng cho từng media owner, nên mỗi lần xác nhận
+            // phải nói rõ là đã trả cho ai. exists+booking_lines: chỉ chấp nhận
+            // owner thật sự có màn hình trong campaign này.
+            'owner_id' => ['required', 'string', 'exists:owners,id'],
+
+            'accept_terms' => ['accepted'],
+        ], [
+            'accept_terms.accepted' => 'Bạn cần đồng ý với Quy chế hoạt động để xác nhận thanh toán.',
+            'owner_id.required'     => 'Không xác định được media owner nhận khoản thanh toán này.',
         ]);
+
+        abort_unless(
+            $campaign->bookingLines()->where('owner_id', $data['owner_id'])->exists(),
+            422,
+            'Media owner này không có màn hình nào trong campaign'
+        );
 
         $method = $data['method'];
 
@@ -60,7 +81,19 @@ class PaymentController extends Controller
         }
 
         // Bank transfer — create pending payment
-        $payment = $this->paymentService->createPayment($campaign, 'bank_transfer', $data['amount'] ?? null);
+        $payment = $this->paymentService->createPayment(
+            $campaign,
+            'bank_transfer',
+            $data['amount'] ?? null,
+            $data['owner_id'],
+        );
+
+        $this->consents->record(
+            ['terms'],
+            PolicyConsent::CONTEXT_PAYMENT,
+            $request,
+            subjectId: $campaign->id,
+        );
 
         return redirect()->route('buyer.payment.success', [
             'campaign' => $campaign,
