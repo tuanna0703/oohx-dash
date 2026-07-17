@@ -221,12 +221,16 @@ class FrontpageController extends Controller
         $ownerModel = $this->fp->getOwnerBySlug($owner);
         abort_unless($ownerModel, 404);
 
+        $reviews = app(\App\Services\OwnerReviewService::class);
+
         return view('frontpage.owner-detail', [
             'owner'            => $ownerModel,
             'ownerScreens'     => $this->fp->getOwnerScreens($ownerModel->id, $request),
             'filters'          => $this->fp->getOwnerFilterAggregates($ownerModel->id),
             'locationsByRegion' => $this->fp->getLocationsByRegion(),
             'vnCatLabels'      => $this->fp->getVnCategoryLabels(),
+            'ratingSummary'    => $reviews->summaryFor($ownerModel->id),
+            'ownerReviews'     => $reviews->publishedFor($ownerModel->id),
         ]);
     }
 }

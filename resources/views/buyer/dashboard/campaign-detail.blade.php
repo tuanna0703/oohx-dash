@@ -63,6 +63,62 @@
         </div>
     </div>
 
+    {{-- Đánh giá media owner (yêu cầu review mục 6).
+         Chỉ hiện khi campaign đã chạy — đánh giá dịch vụ chưa được cung cấp thì
+         không dựa trên trải nghiệm nào. --}}
+    @if($reviewableOwners->isNotEmpty() || $myReviews->isNotEmpty())
+    <div class="buyer-section">
+        <h2 class="buyer-section-title">Đánh giá media owner</h2>
+
+        @error('rating')
+            <div class="cart-alert cart-alert-err">{{ $message }}</div>
+        @enderror
+
+        @foreach($myReviews as $review)
+            <div class="rv-done">
+                <div class="rv-done-hd">
+                    <span class="rv-done-owner">{{ $review->owner->name }}</span>
+                    <span class="rv-stars" aria-label="{{ $review->rating }} trên 5 sao">
+                        {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
+                    </span>
+                </div>
+                @if($review->comment)
+                    <p class="rv-done-cmt">{{ $review->comment }}</p>
+                @endif
+                <div class="rv-done-st">
+                    @if($review->status === \App\Models\OwnerReview::STATUS_PUBLISHED)
+                        Đã hiển thị công khai
+                    @elseif($review->status === \App\Models\OwnerReview::STATUS_REJECTED)
+                        Không được duyệt hiển thị
+                    @else
+                        Đang chờ kiểm duyệt
+                    @endif
+                </div>
+            </div>
+        @endforeach
+
+        @foreach($reviewableOwners as $owner)
+            <form method="POST" action="{{ route('buyer.campaigns.reviews.store', $campaign) }}" class="rv-form">
+                @csrf
+                <input type="hidden" name="owner_id" value="{{ $owner->id }}">
+                <div class="rv-form-hd">Đánh giá <strong>{{ $owner->name }}</strong></div>
+
+                <div class="rv-rate">
+                    @for($i = 5; $i >= 1; $i--)
+                        <input type="radio" name="rating" id="r-{{ $owner->id }}-{{ $i }}" value="{{ $i }}" required>
+                        <label for="r-{{ $owner->id }}-{{ $i }}" title="{{ $i }} sao">★</label>
+                    @endfor
+                </div>
+
+                <textarea name="comment" rows="3" maxlength="2000"
+                          placeholder="Nhận xét về chất lượng dịch vụ, đúng hẹn, hỗ trợ... (không bắt buộc)"></textarea>
+
+                <button type="submit" class="btn btn-p rv-submit">Gửi đánh giá</button>
+            </form>
+        @endforeach
+    </div>
+    @endif
+
     {{-- Activity log --}}
     <div class="buyer-section">
         <h2 class="buyer-section-title">Lịch sử hoạt động</h2>

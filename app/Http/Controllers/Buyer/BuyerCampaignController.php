@@ -9,6 +9,8 @@ use Illuminate\View\View;
 
 class BuyerCampaignController extends Controller
 {
+    public function __construct(private readonly \App\Services\OwnerReviewService $reviews) {}
+
     public function index(Request $request): View
     {
         $org = $request->user()->currentOrganization;
@@ -39,7 +41,11 @@ class BuyerCampaignController extends Controller
         ]);
 
         return view('buyer.dashboard.campaign-detail', [
-            'campaign' => $campaign,
+            'campaign'         => $campaign,
+            'reviewableOwners' => $this->reviews->reviewableOwners($campaign),
+            'myReviews'        => \App\Models\OwnerReview::where('campaign_id', $campaign->id)
+                ->with('owner:id,name')
+                ->get(),
         ]);
     }
 }

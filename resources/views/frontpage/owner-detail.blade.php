@@ -167,6 +167,13 @@
                 {{ ucfirst(str_replace('_', ' ', $owner->type)) }}
             </span>
             @endif
+            @if($ratingSummary['count'] > 0)
+            <span class="fp-meta-item own-rating">
+                <span class="rv-stars" aria-hidden="true">★</span>
+                <span class="own-rating-avg">{{ number_format($ratingSummary['avg'], 1) }}</span>
+                <span class="own-rating-cnt">({{ $ratingSummary['count'] }} đánh giá)</span>
+            </span>
+            @endif
         </div>
     </div>
     <div class="fp-header-actions">
@@ -303,6 +310,29 @@
                             <span class="fp-venue-tag">{{ $vt }}</span>
                         @endforeach
                     </div>
+                </div>
+                @endif
+
+                {{-- Card: Đánh giá của người mua (review mục 6) --}}
+                @if($ownerReviews->isNotEmpty())
+                <div class="fp-card">
+                    <div class="fp-card-title">
+                        Đánh giá từ người mua ({{ $ratingSummary['count'] }})
+                    </div>
+                    @foreach($ownerReviews as $rv)
+                        <div class="own-rv">
+                            <div class="own-rv-hd">
+                                <span class="own-rv-org">{{ $rv->organization->name }}</span>
+                                <span class="rv-stars" aria-label="{{ $rv->rating }} trên 5 sao">
+                                    {{ str_repeat('★', $rv->rating) }}{{ str_repeat('☆', 5 - $rv->rating) }}
+                                </span>
+                            </div>
+                            @if($rv->comment)
+                                <p class="own-rv-cmt">{{ $rv->comment }}</p>
+                            @endif
+                            <div class="own-rv-date">{{ $rv->published_at?->format('d/m/Y') }}</div>
+                        </div>
+                    @endforeach
                 </div>
                 @endif
             </div>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Buyer\BuyerDashboardController;
 use App\Http\Controllers\Buyer\BuyerReportController;
 use App\Http\Controllers\Buyer\BuyerSettingsController;
 use App\Http\Controllers\Buyer\CartController;
+use App\Http\Controllers\Buyer\OwnerReviewController;
 use App\Http\Controllers\Buyer\PaymentController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\PolicyController;
@@ -108,6 +109,7 @@ Route::domain($fpDomain)->group(function () {
         Route::get('/campaigns',                       [BuyerCampaignController::class, 'index'])->name('campaigns');
         Route::get('/campaigns/{campaign}',            [BuyerCampaignController::class, 'show'])->name('campaigns.show');
         Route::get('/campaigns/{campaign}/report',   [BuyerReportController::class, 'show'])->name('campaigns.report');
+        Route::post('/campaigns/{campaign}/reviews', [OwnerReviewController::class, 'store'])->name('campaigns.reviews.store');
         Route::get('/settings',                        [BuyerSettingsController::class, 'index'])->name('settings');
         Route::put('/settings/profile',                [BuyerSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::put('/settings/password',               [BuyerSettingsController::class, 'updatePassword'])->name('settings.password');
